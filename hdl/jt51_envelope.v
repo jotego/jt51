@@ -1,0 +1,381 @@
+/*  This file is part of JT51.
+
+    JT51 is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    JT51 is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with JT51.  If not, see <http://www.gnu.org/licenses/>.
+	
+	Author: Jose Tejada Gomez. Twitter: @topapate
+	Version: 1.0
+	Date: 27-10-2016
+	*/
+
+`timescale 1ns / 1ps
+
+/*
+
+	tab size 4
+
+*/
+
+module jt51_envelope(
+	`ifdef TEST_SUPPORT
+	input				test_eg,
+	`endif
+	input			 	rst,
+	input			 	clk,
+	input				zero,
+	// envelope configuration
+	input		[4:0]	keycode_III,
+	input		[4:0]	arate,
+	input		[4:0]	rate1,	
+	input		[4:0]	rate2,	
+	input		[3:0]	rrate,	
+	input		[3:0]	d1l,
+	input		[1:0]	ks,	
+	// envelope operation
+	input				keyon,
+	input				keyoff,
+	// envelope number
+	input		[6:0]	tl,
+	input		[6:0]	am,
+	input		[1:0]	ams,
+	input				amsen,
+	output	reg	[9:0]	eg
+);
+
+ // eg[9:6] -> direct attenuation (divide by 2)
+		// eg[5:0] -> mantisa attenuation (uses LUT)
+		// 1 LSB of eg is -0.09257 dB
+
+parameter ATTACK=2'd0, DECAY1=2'd1, DECAY2=2'd2, RELEASE=2'd3;
+
+reg		[4:0]	d1level;
+reg		[2:0]	cnt_V;
+reg		[5:0]	rate_IV;
+wire	[6:0]	tl_out;
+wire	[1:0]	ams_out;
+wire			amsen_out;
+reg		[9:0]	eg_in, eg_out_III, eg_out_IV, eg_out_V, eg_out_VI;
+wire	[9:0]	eg_out;
+reg		[11:0]	sum_eg_tl;
+
+reg 	step_V, step_VI;
+reg		sum_up;
+reg		keyon_II, keyon_III, keyon_IV, keyon_V, keyon_VI;
+reg		keyoff_II;
+reg 	[5:0]	rate_V;
+reg		[5:1]	rate_VI;
+
+reg		[4:0]	rate1_II, rate2_II, arate_II;
+reg		[3:0]	rrate_II;
+
+// remember: { log_msb, pow_addr } <= log_val[11:0] + { tl, 5'd0 } + { eg, 2'd0 };
+
+reg		[1:0]	eg_cnt_base;
+reg		[14:0]	eg_cnt;
+
+reg		[8:0]	am_final;
+
+always @(*) begin : sum_eg_and_tl
+	casex( {amsen_out, ams_out } )
+		3'b0xx,3'b100: am_final <= 9'd0;
+		3'b101: am_final <= { 2'b00, am };
+		3'b110: am_final <= { 1'b0, am, 1'b0};
+		3'b111: am_final <= { am, 2'b0      };
+	endcase
+	`ifdef TEST_SUPPORT
+	if( test_eg && tl_out!=7'd0 )
+		sum_eg_tl <= 11'd0;
+	else
+	`endif
+		sum_eg_tl <= { tl_out,   3'd0 } 
+		           + eg_in 
+				   + { am_final, 1'b0 };
+end
+
+always @(posedge clk) begin : envelope_counter
+	if( rst ) begin
+		eg_cnt_base	<= 2'd0;
+		eg_cnt		<=15'd0;
+	end
+	else begin
+		if( zero ) begin
+			// envelope counter increases every 3 output samples,
+			// there is one sample every 32 clock ticks
+			if( eg_cnt_base == 2'd2 ) begin
+				eg_cnt 		<= eg_cnt + 1'b1;
+				eg_cnt_base	<= 2'd0;
+			end
+			else eg_cnt_base <= eg_cnt_base + 1'b1;
+		end
+	end
+end
+
+wire			cnt_out; // = all_cnt_last[3*31-1:3*30];
+
+reg		[6:0]	pre_rate_III;
+reg		[4:0]	cfg_III;
+wire	[1:0]	ks_III;
+
+always @(*) begin : pre_rate_calc
+	if( cfg_III == 5'd0 )
+		pre_rate_III <= 6'd0;
+	else
+		case( ks_III )
+			2'd3:	pre_rate_III <= { cfg_III, 1'b0 } + keycode_III;
+			2'd2:	pre_rate_III <= { cfg_III, 1'b0 } + { 1'b0, keycode_III[4:1] };
+			2'd1:	pre_rate_III <= { cfg_III, 1'b0 } + { 2'b0, keycode_III[4:2] };
+			2'd0:	pre_rate_III <= { cfg_III, 1'b0 } + { 3'b0, keycode_III[4:3] };
+		endcase
+end
+
+
+
+reg [7:0]	step_idx;
+reg	[1:0]	state_in_III, state_in_IV, state_in_V, state_in_VI;
+wire [1:0]	state_out;
+
+always @(*) begin : rate_step
+	if( rate_V[5:4]==2'b11 ) begin // 0 means 1x, 1 means 2x
+		if( rate_V[5:2]==4'hf && state_in_V == ATTACK)
+			step_idx <= 8'b11111111; // Maximum attack speed, rates 60&61
+		else
+		case( rate_V[1:0] )
+			2'd0: step_idx <= 8'b00000000;
+			2'd1: step_idx <= 8'b10001000; // 2
+			2'd2: step_idx <= 8'b10101010; // 4
+			2'd3: step_idx <= 8'b11101110; // 6
+		endcase
+	end
+	else begin
+		if( rate_V[5:2]==4'd0 && state_in_V != ATTACK)
+			step_idx <= 8'b11111110; // limit slowest decay rate_IV
+		else
+		case( rate_V[1:0] )
+			2'd0: step_idx <= 8'b10101010; // 4
+			2'd1: step_idx <= 8'b11101010; // 5
+			2'd2: step_idx <= 8'b11101110; // 6
+			2'd3: step_idx <= 8'b11111110; // 7
+		endcase	
+	end 
+	// a rate_IV of zero keeps the level still
+	step_V <= rate_V[5:1]==5'd0 ? 1'b0 : step_idx[ cnt_V ];
+end
+
+
+
+wire	ar_off_VI;
+reg		ar_off_III;
+
+reg [8:0] ar_sum0;
+reg [9:0] ar_result, ar_sum;
+
+always @(*) begin : ar_calculation
+	casex( rate_VI[5:2] )
+		default: ar_sum0 <= eg_out_VI[9:4] + 1'd1;
+		4'b1100: ar_sum0 <= eg_out_VI[9:4] + 1'd1;		
+		4'b1101: ar_sum0 <= eg_out_VI[9:3] + 1'd1;
+		4'b111x: ar_sum0 <= eg_out_VI[9:2] + 1'd1;
+	endcase
+	if( rate_VI[5:4] == 2'b11 )
+		ar_sum <= step_VI ? { ar_sum0, 1'b0 } : { 1'b0, ar_sum0 };
+	else
+		ar_sum <= step_VI ? { 1'b0, ar_sum0 } : 10'd0;
+	ar_result <= ar_sum<eg_out_VI ? eg_out_VI-ar_sum : 10'd0;
+end
+
+always @(posedge clk) begin
+	// I
+	if( d1l == 4'd15 )
+		d1level <= 5'h10; // 48dB 
+	else
+		d1level <= d1l;
+	keyon_II <= keyon;
+	keyoff_II<= keyoff;
+	{ arate_II, rate1_II, rate2_II, rrate_II } <= { arate, rate1, rate2, rrate };
+	
+	//	II
+	ar_off_III	<= arate_II == 5'h1f;
+	// trigger release
+	if( keyoff_II ) begin
+		cfg_III <= { rrate_II, 1'b1 };
+		state_in_III <= RELEASE;
+	end
+	else begin
+		// trigger 1st decay
+		if( keyon_II ) begin
+			cfg_III <= arate_II;
+			state_in_III <= ATTACK;
+		end
+		else begin : sel_rate
+			case ( state_out )
+				ATTACK: begin
+					if( eg_out==10'd0 ) begin
+						state_in_III <= DECAY1;
+						cfg_III			 <= rate1_II;
+					end
+					else begin
+						state_in_III <= state_out; // attack
+						cfg_III			 <= arate_II;
+					end
+				end
+				DECAY1: begin
+					if( eg_out[9:5] >= d1level ) begin
+						cfg_III <= rate2_II;
+						state_in_III <= DECAY2;
+					end
+					else begin
+						cfg_III	<=	rate1_II;
+						state_in_III <= state_out;	// decay1				
+					end
+				end
+				DECAY2: begin
+						cfg_III	<=	rate2_II;
+						state_in_III <= state_out;	// decay2				
+					end
+				RELEASE: begin
+						cfg_III	<=	{ rrate_II, 1'b1 };
+						state_in_III <= state_out;	// release				
+					end
+			endcase
+		end
+	end
+
+	keyon_III <= keyon_II;
+	eg_out_III <= eg_out;
+
+	// III		
+	state_in_IV <= state_in_III;
+	eg_out_IV <= eg_out_III;
+	rate_IV <= pre_rate_III[6] ? 6'd63 : pre_rate_III[5:0];
+	keyon_IV <= keyon_III;
+
+	// IV
+	state_in_V	<= state_in_IV;
+	rate_V <= rate_IV;
+	keyon_V <= keyon_IV;
+	eg_out_V <= eg_out_IV;
+    if( state_in_IV == ATTACK )
+	    casex( rate_IV[5:2] )
+		    4'h0: cnt_V <= eg_cnt[13:11]; 
+		    4'h1: cnt_V <= eg_cnt[12:10]; 
+		    4'h2: cnt_V <= eg_cnt[11: 9]; 
+		    4'h3: cnt_V <= eg_cnt[10: 8]; 
+		    4'h4: cnt_V <= eg_cnt[ 9: 7]; 
+		    4'h5: cnt_V <= eg_cnt[ 8: 6]; 
+		    4'h6: cnt_V <= eg_cnt[ 7: 5]; 
+		    4'h7: cnt_V <= eg_cnt[ 6: 4]; 
+		    4'h8: cnt_V <= eg_cnt[ 5: 3]; 
+		    4'h9: cnt_V <= eg_cnt[ 4: 2]; 
+		    4'ha: cnt_V <= eg_cnt[ 3: 1]; 
+		    default: cnt_V <= eg_cnt[ 2: 0]; 
+	    endcase
+    else
+	    casex( rate_IV[5:2] )
+		    4'h0: cnt_V <= eg_cnt[14:12]; 
+		    4'h1: cnt_V <= eg_cnt[13:11]; 
+		    4'h2: cnt_V <= eg_cnt[12:10]; 
+		    4'h3: cnt_V <= eg_cnt[11: 9]; 
+		    4'h4: cnt_V <= eg_cnt[10: 8]; 
+		    4'h5: cnt_V <= eg_cnt[ 9: 7]; 
+		    4'h6: cnt_V <= eg_cnt[ 8: 6]; 
+		    4'h7: cnt_V <= eg_cnt[ 7: 5]; 
+		    4'h8: cnt_V <= eg_cnt[ 6: 4]; 
+		    4'h9: cnt_V <= eg_cnt[ 5: 3]; 
+		    4'ha: cnt_V <= eg_cnt[ 4: 2]; 
+		    4'hb: cnt_V <= eg_cnt[ 3: 1]; 
+		    default: cnt_V <= eg_cnt[ 2: 0]; 
+	    endcase
+
+	// V
+	state_in_VI <= state_in_V;	
+	rate_VI <= rate_V[5:1];
+	keyon_VI <= keyon_V;
+	eg_out_VI <= eg_out_V;
+	sum_up <= cnt_V[0] != cnt_out;
+	step_VI <= step_V;
+	// VI
+	if( keyon_VI ) begin
+		if( ar_off_VI )
+			eg_in <= 10'd0;
+		/*else // todo: verify in silicon
+			eg_in <= 10'h3ff;*/
+	end
+	else
+	if( state_in_VI == ATTACK ) begin
+		if( sum_up && eg_out_VI != 10'd0 )
+			if( rate_VI[5:1]==5'd31 ) 
+				eg_in <= 10'd0; 
+			else
+				eg_in <= ar_result;
+		else
+			eg_in <= eg_out_VI;
+	end
+	else begin : DECAY_SUM
+		if( sum_up ) begin
+			if ( eg_out_VI<= (10'd1023-10'd8) ) 
+				case( rate_VI[5:2] )
+					4'b1100: eg_in <= eg_out_VI + { step_VI, ~step_VI }; // 12
+					4'b1101: eg_in <= eg_out_VI + { step_VI, ~step_VI, 1'b0 }; // 13
+					4'b1110: eg_in <= eg_out_VI + { step_VI, ~step_VI, 2'b0 }; // 14
+					4'b1111: eg_in <= eg_out_VI + 4'd8;// 15
+					default: eg_in <= eg_out_VI + { step_VI, 1'b0 };
+				endcase
+			else eg_in <= 10'h3FF;
+		end
+		else eg_in <= eg_out_VI;
+	end
+	// VII
+	eg <= sum_eg_tl[11:10] > 2'b0 ? {10{1'b1}} : sum_eg_tl[9:0];
+end
+
+// Shift registers
+
+jt51_sh #( .width(1), .stages(3) ) u_aroffsh(
+	.clk	( clk		),
+	.din	( ar_off_III),
+	.drop	( ar_off_VI	)
+);
+
+jt51_sh #( .width(2), .stages(2) ) u_kssh(
+	.clk	( clk		),
+	.din	( ks 		),
+	.drop	( ks_III	)
+);
+
+
+jt51_sh #( .width(10), .stages(6) ) u_tlsh(
+	.clk	( clk		),
+	.din	( { tl, amsen, ams }	),
+	.drop	( { tl_out, amsen_out, ams_out }	)
+);
+
+jt51_sh #( .width(10), .stages(27) ) u_egsh(
+	.clk	( clk		),
+	.din	( eg_in		),
+	.drop	( eg_out	)
+);
+
+jt51_sh #( .width(1), .stages(32) ) u_cntsh(
+	.clk	( clk		),
+	.din	( cnt_V[0]	),
+	.drop	( cnt_out	)
+);
+
+jt51_sh #( .width(2), .stages(31) ) u_statesh(
+	.clk	( clk		),
+	.din	( state_in_III	),
+	.drop	( state_out )
+);
+
+endmodule
+
