@@ -1,0 +1,3 @@
+[submodule "mc6809"]
+	path = mc6809
+	url = git@github.com:cavnex/mc6809.git
