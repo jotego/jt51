@@ -40,9 +40,9 @@ wire signed [data_width-1:0] mem_left, mem_right;
 
 // pointers
 reg [addr_width-1:0] addr_left, addr_right, 
-	forward, rev, in_pointer,
-	forward_next, rev_next,in_pointer_next;
-	
+	forward, rev, in_pointer;
+
+
 reg update, last_sample;
 
 reg	[1:0]	state;
@@ -77,10 +77,8 @@ parameter mac_width=(data_width+1)+coeff_width;
 parameter acc_width=output_width; // mac_width+3;
 reg	signed [acc_width-1:0] acc_left, acc_right;
 
-(* multstyle = "dsp" *) reg signed [mac_width-1:0] mac;
-reg signed [acc_width-1:0] mac_trim;
 //integer acc,mac;
-reg [addr_width-1:0]  next;
+wire [addr_width-1:0]  next = cnt+1'b1;
 
 reg signed [data_width:0] sum;
 
@@ -101,15 +99,18 @@ always @(*) begin
 		else
 			sum = buffer_right + mem_right;
 	end
-	mac = coeff*sum;
-	mac_trim = mac>>>(mac_width-acc_width+acc_extra); 
-	next = cnt+1'b1;
 end
 
-always @(*)  begin
-	in_pointer_next = in_pointer - 1'b1;
-	forward_next = forward+1'b1;
+// wire signed [mac_width-1:0] mac = coeff*sum;
+// wire signed [acc_width-1:0] mac_trim = mac[mac_width-1:mac_width-acc_width];
+wire signed [acc_width-1:0] mac_trim = (coeff*sum)>>>(mac_width-acc_width);
+
+wire [addr_width-1:0]
+	in_pointer_next = in_pointer - 1'b1,
+	forward_next = forward+1'b1,
 	rev_next = rev-1'b1;
+
+always @(*)  begin
 	case( state )
 		default: begin
 			addr_left = update ? rev : in_pointer;

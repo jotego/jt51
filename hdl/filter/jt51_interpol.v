@@ -92,7 +92,7 @@ end else begin
 	end
 end
 
-localparam fir8_w=20; // at least 16
+localparam fir8_w=16; // at least 16
 localparam fir4_w=16; // at least 16
 wire [fir8_w-1:0] fir8_out_l, fir8_out_r;
 wire [fir4_w-1:0] fir4_out_l, fir4_out_r;
@@ -102,7 +102,7 @@ assign out_r = fir4_out_r[15:0];
 //assign out_l = fir8_out_l[15:0];
 //assign out_r = fir8_out_r[15:0];
 
-wire fir8_sample;
+//wire fir8_sample;
 
 jt51_fir8 #(.data_width(16), .output_width(fir8_w)) u_fir8 (
 	.clk		( clk 			),
@@ -111,8 +111,8 @@ jt51_fir8 #(.data_width(16), .output_width(fir8_w)) u_fir8 (
 	.left_in	( fir_left_in 	),
 	.right_in	( fir_right_in 	),
 	.left_out	( fir8_out_l	),
-	.right_out	( fir8_out_r	),
-	.sample_out	( fir8_sample	)
+	.right_out	( fir8_out_r	)
+	// .sample_out	( fir8_sample	)
 );
 
 jt51_fir4 #(.data_width(16), .output_width(fir4_w)) u_fir4 (
