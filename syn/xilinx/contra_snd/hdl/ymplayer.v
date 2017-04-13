@@ -25,7 +25,7 @@ wire send_data_s = &send_data_shr;
 always @(posedge clk50)
 	send_data_shr <= { send_data_shr[8:0], send_data };
 	
-wire rst_clk4, E, Q;
+wire E, Q, clk_dac;
 
 clocks u_clocks(
     .rst	( rst		),
@@ -33,7 +33,8 @@ clocks u_clocks(
 	.locked	( locked	),
 	.divide_more( send_data_s ),
     //.clk_cpu( clk		),
-	// .clk_dac( clk_dac	),
+	.clk_dac( clk_dac	),
+	.clk_dac_sel( sw_sel[1] ),
 	.E		( E 	),
 	.Q		( Q		)
 );
@@ -106,7 +107,7 @@ jt51_interpol i_jt51_interpol (
 
 reg [15:0] dacin_l, dacin_r;
 
-always @(posedge clk_per)
+always @(posedge clk_dac)
 	if( sw_sel[2] ) begin
 		dacin_l <= inter_l;
 		dacin_r <= inter_r;
@@ -120,7 +121,7 @@ wire dac2_l, dac2_r;
 wire dacmist_l, dacmist_r; 
 
 speaker u_speaker(
-	.clk100		( clk_per	), 
+	.clk100		( clk_dac	), 
 	.left_in	( dacin_l	),
 	.right_in	( dacin_r	),
 	.left_out	( dacmist_l	),
@@ -138,8 +139,8 @@ always @(posedge clk_per)
 	end
 
 
-jt51_dac2 i_jt51_dac2_l (.clk(clk_per), .rst(rst), .din(dacin_l), .dout(dac2_l));
-jt51_dac2 i_jt51_dac2_r (.clk(clk_per), .rst(rst), .din(dacin_r), .dout(dac2_r));
+jt51_dac2 i_jt51_dac2_l (.clk(clk_dac), .rst(rst), .din(dacin_l), .dout(dac2_l));
+jt51_dac2 i_jt51_dac2_r (.clk(clk_dac), .rst(rst), .din(dacin_r), .dout(dac2_r));
 
 
 `else
@@ -213,7 +214,7 @@ bus_manager #(RAM_MSB) bus_mng(
 //	.rst50			( rst_clk50		),
 //	.clk50			( clk50			),
 //	.clk_per		( clk_per		),
-	.sw_sel			( sw_sel[1:0]	),
+	.game_sel		( sw_sel[0]		),
 	.ROM_data_out	( ROM_data_out	),
 	.RAM_data		( RAM_data		),
 	.sound_latch	( sound_latch	),
@@ -230,6 +231,8 @@ bus_manager #(RAM_MSB) bus_mng(
 	);
 
 `ifndef NOCPU
+wire cpu_firq_n = 1'b1;
+
 mc6809i cpu_good(
     .D		( cpu_data_in	),
     .DOut	( cpu_data_out	),
@@ -238,7 +241,7 @@ mc6809i cpu_good(
 //    .BS		( BS			),
 //    .BA		( BA			),
     .nIRQ	( ~irq			),
-    .nFIRQ	( ~cpu_firq		),
+    .nFIRQ	( cpu_firq_n	),
     .nNMI	( 1'b1			),
     .AVMA	( AVMA			),
 //    .BUSY	( BUSY			),

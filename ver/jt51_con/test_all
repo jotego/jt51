@@ -1,0 +1,32 @@
+#!/bin/bash
+
+rm -f /tmp/test_command test_all.log
+
+CON=0
+TL=0
+FL=0
+OP=0
+
+while [ $CON -lt 8 ]; do
+FL=0
+while [ $FL  -lt 8 ]; do
+OP=15
+while [ $OP  -lt 16 ]; do
+TL=0
+while [ $TL  -lt 4 ]; do
+	echo CON $CON FL $FL OP $OP TL $TL
+	#echo CON $CON FL $FL OP $OP TL $TL >> /tmp/test_command
+    go -q CON $CON FL $FL OP $OP TL $TL > /tmp/x
+    if [ "$?" != "0" ]; then exit 1; fi
+    cat /tmp/x >> test_all.log
+    TL=$((TL+1))
+done
+OP=$((OP+1))
+done
+FL=$((FL+1))
+done
+CON=$((CON+1))
+done
+
+#cat /tmp/test_command | parallel go -q -r | tee -a test_all.log
+echo $(grep FAIL test_all.log|wc -l) errors

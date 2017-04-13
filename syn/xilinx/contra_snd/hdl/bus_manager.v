@@ -9,7 +9,7 @@ module bus_manager #(parameter RAM_MSB=10)(
 	input [7:0]	RAM_data,
 	input [7:0] jt_data_out,
 	// Other system elements
-	input [1:0] sw_sel,
+	input		game_sel,
 	input [7:0]	sound_latch,
 	output		clear_irq,
 	// CPU control
@@ -50,7 +50,7 @@ always @(*) begin
 			4'b01XX: cpu_data_in = RAM_data;
 			4'b001X: cpu_data_in = ROM_data_out;
 			4'b0001: cpu_data_in = sound_latch;
-			default: cpu_data_in = {8{sw_sel[1]}};
+			default: cpu_data_in = 8'h0;
 		endcase
 	else
 		cpu_data_in = 8'h0;
@@ -61,7 +61,7 @@ wire opm_cs_contra = !addr[15] && !addr[14] && addr[13];
 wire opm_cs_ddragon= addr>=16'h2800 && addr<=16'h2801;
 
 always @(*)
-	if( sw_sel[0] ) begin
+	if( game_sel ) begin
 		RAM_cs	= cpu_vma && (addr>=ram_start_ddragon && addr<=ram_end_ddragon);
 		opm_cs_n= !(cpu_vma && opm_cs_ddragon);
 		LATCH_rd= cpu_vma && addr==16'h1000; // Sound latch at $1000

@@ -1,0 +1,176 @@
+#!/bin/bash
+
+CH=0
+CON=7
+OPMASK=1
+TL=0
+FL=0
+AR=31
+KS=0
+D1R=0
+D2R=0
+RR=15
+D1L=0
+OCT=2
+NOTE=9
+MUL=1
+DT1=0
+DT2=0
+KF=0
+
+DUMPSIGNALS=DONTDUMP
+RANDEXT=
+VERBOSE=1
+INCDIR="."
+INCCMD=
+WAIT0=DONTWAITFOR0
+BORRADIR=0
+KEEP=0
+OTHER=
+
+while [ $# -gt 0 ]; do
+	if [ $1 = "-w" ]; then
+		echo "Signal dump enabled"
+		DUMPSIGNALS=DUMPSIGNALS
+		shift
+		continue
+	fi
+	if [ $1 = "-r" ]; then
+		RANDEXT=_${RANDOM}${RANDOM}
+		INCDIR=inc${RANDEXT}
+		INCCMD=" -I "$INCDIR" "
+		BORRADIR=1
+		mkdir $INCDIR
+		rm -f inputs.vh
+		shift
+		continue
+	fi
+	if [ $1 = "-k" ]; then
+		KEEP=1
+		shift
+		continue
+	fi
+	if [ $1 = "-q" ]; then VERBOSE=0; shift; continue; fi
+	if [ $1 = "-0" ]; then WAIT0=WAITFOR0; shift; continue;  fi
+
+	if [ $1 = "AR"  ]; then shift; AR=$1;  fi
+	if [ $1 = "KS"  ]; then shift; KS=$1;  fi
+	if [ $1 = "D1R" ]; then shift; D1R=$1; fi
+	if [ $1 = "D2R" ]; then shift; D2R=$1; fi
+	if [ $1 = "D1L" ]; then shift; D1L=$1; fi
+	if [ $1 = "RR"  ]; then shift; RR=$1;  fi
+	if [ $1 = "TL"  ]; then shift; TL=$1;  fi
+	if [ $1 = "OCT"  ]; then shift; OCT=$1;  fi
+	if [ $1 = "NOTE"  ]; then shift; NOTE=$1;  fi
+    if [ $1 = "CH"  ]; then shift; CH=$1;  fi
+    if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  fi
+    if [ $1 = "CON"  ]; then shift; CON=$1;  fi
+    if [ $1 = "FL"  ]; then shift; FL=$1;  fi	
+	if [ ${1:0:1} = "-" ]; then OTHER="$OTHER $1"; fi
+	shift
+done
+
+
+basename=con_${CON}_ch_${CH}_op_${OPMASK}_tl_${TL}_fl_${FL}
+ref_file=$jt51/data/conn/${basename}.ym
+
+if [ $VERBOSE -eq 1 ]; then
+	echo Channel=$CH Connection=$CON OPMASK=$OPMASK TL=$TL FL=$FL
+	echo KS=$KS AR=$AR D1R=$D1R D2R=$D2R RR=$RR D1L=$D1L
+	echo OCT=$OCT NOTE=$NOTE
+	echo $WAIT0 $RANDEXT
+	echo Additional commands to "'inputs'" = $OTHER
+fi
+
+rm -f inputs.vh
+make --quiet && inputs $OTHER CH $CH CON $CON OPMASK $OPMASK FL $FL TL $TL \
+	AR $AR KS $KS D1R $D1R D2R $D2R RR $RR D1L $D1L \
+	OCT $OCT NOTE $NOTE MUL $MUL DT1 $DT1 DT2 $DT2 KF $KF > $INCDIR/inputs.vh
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
+INCDIR2=../../hdl
+TOP=jt51_test
+
+
+if [ $(hostname) == "despacho" ]; then
+  iverilog jt51_test.v -f ../common/basic.f -s $TOP -I $INCDIR2 -I $INCDIR -DIVERILOG -DDUMP_SND_TOP \
+  	-D$DUMPSIGNALS -D$WAIT0 -DDUMPLEFT -DTEST_SUPPORT -o basic$RANDEXT && basic$RANDEXT -lxt > s$RANDEXT
+  if [ $? -ne 0 ]; then
+  	if [ -e s$RANDEXT ]; then cat s$RANDEXT; fi
+  	rm -f s$RANDEXT
+  	exit 1
+  fi
+  rm basic$RANDEXT
+else
+  ncverilog jt51_test.v -f ../common/basic.f +incdir+$INCDIR+$INCDIR2 +access+rc +nctop+$TOP +define+NCVERILOG+DUMP_SND_TOP+DUMPLEFT+$DUMPSIGNALS+TEST_SUPPORT+$WAIT0 > s$RANDEXT
+  if [ $? -ne 0 ]; then
+  	if [ -e s$RANDEXT ]; then cat s$RANDEXT; fi
+  	rm -f s$RANDEXT
+  	exit 1
+  fi
+fi
+
+# compare results
+
+myfile=${basename}.jt
+if [ $VERBOSE -eq 1 ]; then
+	echo "Output dumped to " $myfile
+fi
+cat s$RANDEXT | awk '/dump start/,/dump end/' | head -n -1 | tail -n +2 > $myfile
+lines=$( cat $myfile | wc -l )
+if [ $lines -eq 0 ]; then
+	echo El fichero de salida esta vacio! Creo uno con ceros
+    yes 0 | head -n 1024 > $myfile
+    lines=1024
+fi
+
+
+if [ ! -e $ref_file ]; then
+	if [ $VERBOSE -eq 1 ]; then
+		echo No existe el fichero de referencia $ref_file Usare uno fabricado.
+	fi        
+    ref_file=r$RANDEXT
+    borra_ref=SI
+    $jt51/bin/print_con CON $CON OPMASK $OPMASK TL $TL FL $FL LEN $lines > $ref_file
+    if [ $? -ne 0 ]; then
+    	echo "Problema con el comando print_con"
+        exit 1
+    fi
+else
+	borra_ref=NO
+fi
+
+
+
+#rm s$RANDEXT
+head -n $lines $ref_file | sdiff -E -W -s $myfile - > /dev/null
+if [ $? -ne 0 ];	then
+	echo TEST FAIL
+	echo :vsplit $myfile > borrame
+	echo Compare files with:
+	echo gvim $ref_file -s borrame
+	echo gnuplot:
+	echo plot \'$ref_file\' with linespoints, \'$myfile\' with linespoints
+	exit 1
+else
+	lines_ref=$(cat $ref_file | wc -l)
+	if [[ $lines -eq 0 && $lines_ref -ne 0 ]]; then
+    	echo TEST FAIL: CON $CON FL $FL OP $OP TL $TL
+		echo Verilog dump was empty
+		exit 1
+	fi
+	if [ $KEEP -eq 0 ]; then
+		rm $myfile
+        if [ $INCDIR != "." ]; then rm -rf $INCDIR; fi
+        if [ $borra_ref == SI ]; then rm $ref_file; fi
+	fi
+    if [ $VERBOSE -eq 1 ]; then 
+		echo TEST PASS
+    fi
+	exit 0
+fi
+
+exit 1
+

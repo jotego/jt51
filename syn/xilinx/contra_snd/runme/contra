@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "Los interruptores de la placa hay que ponerlos todos a 0"
+UART=/dev/ttyUSB0
+stty -F $UART 921600 raw -echo
+echo Volcando...
+cat 633e01.12a > $UART
+echo Volcado completo
+echo -e -n "\x40" > $UART
+#si no reseteo el terminal se queda mal. No entiendo porque.
+reset

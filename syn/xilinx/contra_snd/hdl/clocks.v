@@ -4,18 +4,39 @@ module clocks(
     input	rst,
     input	clk50,
 	input	divide_more,
+	input	clk_dac_sel,
     output	clk_cpu,
 	output	locked,
-    // output	clk_dac,
+    output	clk_dac,
 	output	reg rst_clk4,
 	output	E,
 	output	Q
     );
 	
-	wire	clk_base; // 4*3.58MHz
-	
+	wire clk_base;	// 4*3.58MHz
 	reg [1:0] clk4_cnt;
 	reg	Qr, Er;
+
+	reg clk_dac_sel2, clk_dac_aux;
+
+	always @(negedge clk_base)
+		clk_dac_sel2 <= clk_dac_sel;
+
+	reg dac_cnt;
+	
+	always @(posedge clk_base or posedge rst)
+		if( rst )
+			dac_cnt <= 1'b0;
+		else begin
+			if( clk_dac_sel2 )
+				clk_dac_aux <= ~clk_dac_aux;
+			else	
+				{ clk_dac_aux, dac_cnt } <= { clk_dac_aux, dac_cnt } + 1'b1;			
+		end
+
+
+	// BUFG dacbuf( .I(clk_dac_aux), .O(clk_dac) );
+	assign clk_dac = clk_base;
 
 	always @(posedge clk_base or posedge rst) 
 		if (rst) begin
