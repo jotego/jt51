@@ -9,8 +9,7 @@ int main( int argc, char *argv[] ) {
 	int con=7, tl=0, opmask=1, fl=0;
     int len=1024;
 	for(int k=1; k<argc-1; k++ ) {
-		string p;
-		stringstream( argv[k] ) >> p;
+		string p(argv[k]);
 		if( p=="CON" ) {  stringstream( argv[++k] ) >> con; continue; }
 		if( p=="OPMASK" ) {  stringstream( argv[++k] ) >> opmask; continue; }
 		if( p=="FL" ) {  stringstream( argv[++k] ) >> fl; continue; }

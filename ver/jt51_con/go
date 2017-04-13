@@ -28,6 +28,15 @@ BORRADIR=0
 KEEP=0
 OTHER=
 
+if (which verilator &> /dev/null); then
+	SIMULATOR=verilator
+else if (which iverilog &> /dev/null ); then
+	SIMULATOR=iverilog
+else
+	SIMULATOR=ncverilog
+fi
+fi
+
 while [ $# -gt 0 ]; do
 	if [ $1 = "-w" ]; then
 		echo "Signal dump enabled"
@@ -66,6 +75,14 @@ while [ $# -gt 0 ]; do
     if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  fi
     if [ $1 = "CON"  ]; then shift; CON=$1;  fi
     if [ $1 = "FL"  ]; then shift; FL=$1;  fi	
+    if [ $1 = "-sim" ]; then 
+    	shift; 
+    	SIMULATOR=$1; 
+    	if [[ $SIMULATOR != iverilog && $SIMULATOR != verilator && $SIMULATOR != ncverilog ]]; then
+    		echo "Unsupported simulator: " $SIMULATOR
+    		exit 1
+    	fi
+    	fi
 	if [ ${1:0:1} = "-" ]; then OTHER="$OTHER $1"; fi
 	shift
 done
@@ -93,8 +110,20 @@ fi
 INCDIR2=../../hdl
 TOP=jt51_test
 
+echo Simulating using $SIMULATOR
 
-if [ $(hostname) == "despacho" ]; then
+case $SIMULATOR in
+verilator)
+	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe jt51_con.cc --cc --top-module jt51 \
+		&& cd obj_dir \
+		&& make -f Vjt51.mk && Vjt51
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+	echo Work in progress
+	exit 1
+	;;
+iverilog)
   iverilog jt51_test.v -f ../common/basic.f -s $TOP -I $INCDIR2 -I $INCDIR -DIVERILOG -DDUMP_SND_TOP \
   	-D$DUMPSIGNALS -D$WAIT0 -DDUMPLEFT -DTEST_SUPPORT -o basic$RANDEXT && basic$RANDEXT -lxt > s$RANDEXT
   if [ $? -ne 0 ]; then
@@ -103,14 +132,16 @@ if [ $(hostname) == "despacho" ]; then
   	exit 1
   fi
   rm basic$RANDEXT
-else
+  ;;
+ncverilog)
   ncverilog jt51_test.v -f ../common/basic.f +incdir+$INCDIR+$INCDIR2 +access+rc +nctop+$TOP +define+NCVERILOG+DUMP_SND_TOP+DUMPLEFT+$DUMPSIGNALS+TEST_SUPPORT+$WAIT0 > s$RANDEXT
   if [ $? -ne 0 ]; then
   	if [ -e s$RANDEXT ]; then cat s$RANDEXT; fi
   	rm -f s$RANDEXT
   	exit 1
   fi
-fi
+  ;;
+esac
 
 # compare results
 

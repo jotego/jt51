@@ -1,5 +1,5 @@
 CC=g++
-CPPFLAGS=-std=c++11 -Wall
+CPPFLAGS=-Wall
 #-O3
 #-g -ggdb
 

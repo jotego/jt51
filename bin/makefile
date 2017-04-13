@@ -1,5 +1,6 @@
 CC=g++
-CPPFLAGS=-std=c++11 -Wall -pthread -g -ggdb
+#CPPFLAGS=-std=c++11 -Wall -pthread -g -ggdb
+CPPFLAGS=-Wall -pthread -g -ggdb
 #-O3
 #-g -ggdb
 

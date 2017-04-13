@@ -1,10 +1,26 @@
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 using namespace std;
 
+ofstream verilator;
+
+
+void pverilator( int k, int adr, int val, string comment ) {
+	// verilator input
+	if( comment.size() > 0 )
+		verilator << " // " << comment << '\n';
+	verilator << "reg[" << dec << k << "] = 0x" << hex << adr << "; \t";
+	verilator<< "val[" << dec << k << "] = 0x" << val << ";";
+	verilator<< '\n';
+}
+
+
 void p( int adr, int val, string comment ="" ) {
-	static int k=0;
+	// iverilog/ncverilog input
+	static int k=0;	
+	pverilator( k, adr, val, comment );
 	cout << "cfg[" << dec << k++ << "] = { 8'h" << hex << adr << ", 8'h" << val << " };";
 	if( comment.size() > 0 )
 		cout << " // " << comment;
@@ -16,9 +32,11 @@ int main( int argc, char *argv[] ) {
     //int d1r=1, d2r=1, rr=15, d1l=15, ar=31, ks=3;
 	//int oct=0, note=0, kf=0, mul=1, dt1=0, dt2=0;
 	bool egtest = false, op0test=false;
+
+	verilator.open("obj_dir/inputs.h");
+
 	for(int k=1; k<argc-1; k++ ) {
-		string p;
-		stringstream( argv[k] ) >> p;
+		string p( argv[k] );
 		if( p=="CON" ) stringstream( argv[++k] ) >> con;
 		if( p=="CH" ) stringstream( argv[++k] ) >> ch;
 		if( p=="OPMASK" ) stringstream( argv[++k] ) >> opmask;
