@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if ! g++ inputs.cc -o inputs;
+then
+	exit 1
+fi
+
+if ! inputs >> inputs.vh; then echo "Error processing the inputs"; exit 1; fi
+
+iverilog -I ../../hdl  \
+	-f ../common/basic.f -f ../common/fir.f jt51_interpol_tb.v \
+	 -s jt51_interpol_tb -o sim  && sim -lxt

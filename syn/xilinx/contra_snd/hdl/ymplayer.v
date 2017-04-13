@@ -160,7 +160,6 @@ wire		rom_prog;
 ram32 ROM( // 32kb
 	.clka	( clk_per		),
 	.dina	( fsm_data		),
-	.ena	( 1'b1			),
 	.wea	( fsm_wr		),
 	.douta	( ROM_data_out	),
 	.addra	( rom_prog ? fsm_addr : cpu_addr[14:0])

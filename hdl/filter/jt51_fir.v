@@ -101,9 +101,9 @@ always @(*) begin
 	end
 end
 
-// wire signed [mac_width-1:0] mac = coeff*sum;
-// wire signed [acc_width-1:0] mac_trim = mac[mac_width-1:mac_width-acc_width];
-wire signed [acc_width-1:0] mac_trim = (coeff*sum)>>>(mac_width-acc_width);
+wire signed [mac_width-1:0] mac = coeff*sum;
+wire signed [acc_width-1:0] mac_trim = mac[mac_width-1:mac_width-acc_width];
+//wire signed [acc_width-1:0] mac_trimx = (coeff*sum)>>>(mac_width-acc_width);
 
 wire [addr_width-1:0]
 	in_pointer_next = in_pointer - 1'b1,
