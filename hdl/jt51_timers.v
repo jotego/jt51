@@ -99,8 +99,8 @@ always@(posedge clk)
 reg [mult_width+counter_width-1:0] next, init;
 
 always @(*) begin
-	{overflow, next } <= { 1'b0, cnt, mult } + 1'b1;
-	init <= { start_value, { (mult_width){1'b0} } };
+	{overflow, next } = { 1'b0, cnt, mult } + 1'b1;
+	init = { start_value, { (mult_width){1'b0} } };
 end
 
 always @(posedge clk) begin : counter

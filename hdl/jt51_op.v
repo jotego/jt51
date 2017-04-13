@@ -102,42 +102,42 @@ always @(*) begin
 	case( cur_op_I )
 		default: // M1, FL
 			case( fb_I )
-				3'd0: modulation <= 20'd0;
-				3'd1: modulation <= (mod3+mod7)<<1;
-				3'd2: modulation <= (mod3+mod7)<<2;
-				3'd3: modulation <= (mod3+mod7)<<3;
-				3'd4: modulation <= (mod3+mod7)<<4;
-				3'd5: modulation <= (mod3+mod7)<<5;
-				3'd6: modulation <= (mod3+mod7)<<6;
-				3'd7: modulation <= (mod3+mod7)<<7;
+				3'd0: modulation = 20'd0;
+				3'd1: modulation = (mod3+mod7)<<1;
+				3'd2: modulation = (mod3+mod7)<<2;
+				3'd3: modulation = (mod3+mod7)<<3;
+				3'd4: modulation = (mod3+mod7)<<4;
+				3'd5: modulation = (mod3+mod7)<<5;
+				3'd6: modulation = (mod3+mod7)<<6;
+				3'd7: modulation = (mod3+mod7)<<7;
 			endcase
 		C1: case(con_I)
 				3'd7, 3'd2, 3'd1:
-					modulation <= 20'd0;
+					modulation = 20'd0;
 				default:
-					modulation <= mod1<<9; // M1
+					modulation = mod1<<9; // M1
 			endcase
 		C2: case(con_I)
 				default: // 3'd4, 3'd1, 3'd0:
-					modulation <= mod1<<9; // M2
+					modulation = mod1<<9; // M2
 				3'd2:
-					modulation <= (mod1+mod2)<<9; // M2+M1
+					modulation = (mod1+mod2)<<9; // M2+M1
 				3'd3:
-					modulation <= (mod1+mod4)<<9; // M2+C1
+					modulation = (mod1+mod4)<<9; // M2+C1
 				3'd5:
-					modulation <= mod2<<9; // M1
+					modulation = mod2<<9; // M1
 				3'd7, 3'd6:
-					modulation <= 20'd0;
+					modulation = 20'd0;
 			endcase
 		M2: case(con_I)
 				default: // 3'd2, 3'd0:
-					modulation <= mod2<<9; // C1
+					modulation = mod2<<9; // C1
 				3'd1:
-					modulation <= (mod2+mod4)<<9; // C1+M1
+					modulation = (mod2+mod4)<<9; // C1+M1
 				3'd5:
-					modulation <= mod4<<9; // M1
+					modulation = mod4<<9; // M1
 				3'd7, 3'd6, 3'd4, 3'd3:
-					modulation <= 20'd0;
+					modulation = 20'd0;
 			endcase
 	endcase
 end

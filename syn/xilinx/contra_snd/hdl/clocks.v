@@ -36,7 +36,8 @@ module clocks(
 
 
 	// BUFG dacbuf( .I(clk_dac_aux), .O(clk_dac) );
-	assign clk_dac = clk_base;
+	// assign clk_dac = clk_base;
+	assign clk_dac = clk4_cnt[0];
 
 	always @(posedge clk_base or posedge rst) 
 		if (rst) begin

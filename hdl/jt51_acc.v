@@ -40,9 +40,9 @@ reg  [13:0] op_value;
 
 always @(*) begin
 	if( ne && op31_acc ) // cambiar a OP 31
-		op_value <= { noise, 4'd0 };
+		op_value = { noise, 4'd0 };
 	else
-		op_value <= op_out;
+		op_value = op_out;
 end
 
 jt51_sum_op u_left(

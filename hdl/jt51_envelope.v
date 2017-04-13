@@ -87,17 +87,17 @@ reg		[8:0]	am_final;
 
 always @(*) begin : sum_eg_and_tl
 	casex( {amsen_out, ams_out } )
-		3'b0xx,3'b100: am_final <= 9'd0;
-		3'b101: am_final <= { 2'b00, am };
-		3'b110: am_final <= { 1'b0, am, 1'b0};
-		3'b111: am_final <= { am, 2'b0      };
+		3'b0xx,3'b100: am_final = 9'd0;
+		3'b101: am_final = { 2'b00, am };
+		3'b110: am_final = { 1'b0, am, 1'b0};
+		3'b111: am_final = { am, 2'b0      };
 	endcase
 	`ifdef TEST_SUPPORT
 	if( test_eg && tl_out!=7'd0 )
-		sum_eg_tl <= 11'd0;
+		sum_eg_tl = 11'd0;
 	else
 	`endif
-		sum_eg_tl <= { tl_out,   3'd0 } 
+		sum_eg_tl = { tl_out,   3'd0 } 
 		           + eg_in 
 				   + { am_final, 1'b0 };
 end
@@ -128,13 +128,13 @@ wire	[1:0]	ks_III;
 
 always @(*) begin : pre_rate_calc
 	if( cfg_III == 5'd0 )
-		pre_rate_III <= 6'd0;
+		pre_rate_III = 6'd0;
 	else
 		case( ks_III )
-			2'd3:	pre_rate_III <= { cfg_III, 1'b0 } + keycode_III;
-			2'd2:	pre_rate_III <= { cfg_III, 1'b0 } + { 1'b0, keycode_III[4:1] };
-			2'd1:	pre_rate_III <= { cfg_III, 1'b0 } + { 2'b0, keycode_III[4:2] };
-			2'd0:	pre_rate_III <= { cfg_III, 1'b0 } + { 3'b0, keycode_III[4:3] };
+			2'd3:	pre_rate_III = { cfg_III, 1'b0 } + keycode_III;
+			2'd2:	pre_rate_III = { cfg_III, 1'b0 } + { 1'b0, keycode_III[4:1] };
+			2'd1:	pre_rate_III = { cfg_III, 1'b0 } + { 2'b0, keycode_III[4:2] };
+			2'd0:	pre_rate_III = { cfg_III, 1'b0 } + { 3'b0, keycode_III[4:3] };
 		endcase
 end
 
@@ -147,28 +147,28 @@ wire [1:0]	state_out;
 always @(*) begin : rate_step
 	if( rate_V[5:4]==2'b11 ) begin // 0 means 1x, 1 means 2x
 		if( rate_V[5:2]==4'hf && state_in_V == ATTACK)
-			step_idx <= 8'b11111111; // Maximum attack speed, rates 60&61
+			step_idx = 8'b11111111; // Maximum attack speed, rates 60&61
 		else
 		case( rate_V[1:0] )
-			2'd0: step_idx <= 8'b00000000;
-			2'd1: step_idx <= 8'b10001000; // 2
-			2'd2: step_idx <= 8'b10101010; // 4
-			2'd3: step_idx <= 8'b11101110; // 6
+			2'd0: step_idx = 8'b00000000;
+			2'd1: step_idx = 8'b10001000; // 2
+			2'd2: step_idx = 8'b10101010; // 4
+			2'd3: step_idx = 8'b11101110; // 6
 		endcase
 	end
 	else begin
 		if( rate_V[5:2]==4'd0 && state_in_V != ATTACK)
-			step_idx <= 8'b11111110; // limit slowest decay rate_IV
+			step_idx = 8'b11111110; // limit slowest decay rate_IV
 		else
 		case( rate_V[1:0] )
-			2'd0: step_idx <= 8'b10101010; // 4
-			2'd1: step_idx <= 8'b11101010; // 5
-			2'd2: step_idx <= 8'b11101110; // 6
-			2'd3: step_idx <= 8'b11111110; // 7
+			2'd0: step_idx = 8'b10101010; // 4
+			2'd1: step_idx = 8'b11101010; // 5
+			2'd2: step_idx = 8'b11101110; // 6
+			2'd3: step_idx = 8'b11111110; // 7
 		endcase	
 	end 
 	// a rate_IV of zero keeps the level still
-	step_V <= rate_V[5:1]==5'd0 ? 1'b0 : step_idx[ cnt_V ];
+	step_V = rate_V[5:1]==5'd0 ? 1'b0 : step_idx[ cnt_V ];
 end
 
 
@@ -181,16 +181,16 @@ reg [9:0] ar_result, ar_sum;
 
 always @(*) begin : ar_calculation
 	casex( rate_VI[5:2] )
-		default: ar_sum0 <= eg_out_VI[9:4] + 1'd1;
-		4'b1100: ar_sum0 <= eg_out_VI[9:4] + 1'd1;		
-		4'b1101: ar_sum0 <= eg_out_VI[9:3] + 1'd1;
-		4'b111x: ar_sum0 <= eg_out_VI[9:2] + 1'd1;
+		default: ar_sum0 = eg_out_VI[9:4] + 1'd1;
+		4'b1100: ar_sum0 = eg_out_VI[9:4] + 1'd1;		
+		4'b1101: ar_sum0 = eg_out_VI[9:3] + 1'd1;
+		4'b111x: ar_sum0 = eg_out_VI[9:2] + 1'd1;
 	endcase
 	if( rate_VI[5:4] == 2'b11 )
-		ar_sum <= step_VI ? { ar_sum0, 1'b0 } : { 1'b0, ar_sum0 };
+		ar_sum = step_VI ? { ar_sum0, 1'b0 } : { 1'b0, ar_sum0 };
 	else
-		ar_sum <= step_VI ? { 1'b0, ar_sum0 } : 10'd0;
-	ar_result <= ar_sum<eg_out_VI ? eg_out_VI-ar_sum : 10'd0;
+		ar_sum = step_VI ? { 1'b0, ar_sum0 } : 10'd0;
+	ar_result = ar_sum<eg_out_VI ? eg_out_VI-ar_sum : 10'd0;
 end
 
 always @(posedge clk) begin

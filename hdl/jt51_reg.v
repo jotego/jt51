@@ -111,7 +111,7 @@ assign busy = busy_op | busy_kon;
 assign cur_op = cur[4:3];
 
 always @(*) begin
-	next <= cur +1'b1;
+	next = cur +1'b1;
 end
 
 wire	[4:0] abs	= { op, ch };

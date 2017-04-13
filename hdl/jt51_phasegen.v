@@ -75,14 +75,14 @@ jt51_phinc_rom u_phinctable(
 
 always @(*) begin : calcpow2
 	case( pow2ind_IV )
-		3'd0: pow2 <= 5'd16;
-		3'd1: pow2 <= 5'd17;
-		3'd2: pow2 <= 5'd19;
-		3'd3: pow2 <= 5'd20;
-		3'd4: pow2 <= 5'd22;
-		3'd5: pow2 <= 5'd24;
-		3'd6: pow2 <= 5'd26;
-		3'd7: pow2 <= 5'd29;
+		3'd0: pow2 = 5'd16;
+		3'd1: pow2 = 5'd17;
+		3'd2: pow2 = 5'd19;
+		3'd3: pow2 = 5'd20;
+		3'd4: pow2 = 5'd22;
+		3'd5: pow2 = 5'd24;
+		3'd6: pow2 = 5'd26;
+		3'd7: pow2 = 5'd29;
 	endcase
 end
 
@@ -91,21 +91,21 @@ reg [4:0] dt1_limited_IV;
 
 always @(*) begin : dt1_limit_mux
 	case( dt1_IV[1:0] )
-		default: dt1_limit <= 5'd8;
-		2'd1: dt1_limit <= 5'd8;
-		2'd2: dt1_limit <= 5'd16;
-		2'd3: dt1_limit <= 5'd22;
+		default: dt1_limit = 5'd8;
+		2'd1: dt1_limit = 5'd8;
+		2'd2: dt1_limit = 5'd16;
+		2'd3: dt1_limit = 5'd22;
 	endcase
 	case( dt1_kf_IV )
-		3'd0:	dt1_unlimited <= { 5'd0, pow2[4]   }; // <2
-		3'd1:	dt1_unlimited <= { 4'd0, pow2[4:3] }; // <4
-		3'd2:	dt1_unlimited <= { 3'd0, pow2[4:2] }; // <8
-		3'd3:	dt1_unlimited <= { 2'd0, pow2[4:1] };
-		3'd4:	dt1_unlimited <= { 1'd0, pow2[4:0] };
-		3'd5:	dt1_unlimited <= { pow2[4:0], 1'd0 };
-		default:dt1_unlimited <= 6'd0;
+		3'd0:	dt1_unlimited = { 5'd0, pow2[4]   }; // <2
+		3'd1:	dt1_unlimited = { 4'd0, pow2[4:3] }; // <4
+		3'd2:	dt1_unlimited = { 3'd0, pow2[4:2] }; // <8
+		3'd3:	dt1_unlimited = { 2'd0, pow2[4:1] };
+		3'd4:	dt1_unlimited = { 1'd0, pow2[4:0] };
+		3'd5:	dt1_unlimited = { pow2[4:0], 1'd0 };
+		default:dt1_unlimited = 6'd0;
 	endcase
-	dt1_limited_IV <= dt1_unlimited > dt1_limit ? 
+	dt1_limited_IV = dt1_unlimited > dt1_limit ? 
 							dt1_limit : dt1_unlimited[4:0]; 
 end
 
@@ -113,14 +113,14 @@ reg signed [8:0] mod;
 
 always @(*) begin
 	case( pms ) // comprobar en silicio
-		3'd0: mod <= 9'd0;
-		3'd1: mod <= { 7'd0, pm[6:5] };
-		3'd2: mod <= { 6'd0, pm[6:4] };
-		3'd3: mod <= { 5'd0, pm[6:3] };
-		3'd4: mod <= { 4'd0, pm[6:2] };
-		3'd5: mod <= { 3'd0, pm[6:1] };
-		3'd6: mod <= { 1'd0, pm[6:0], 1'b0 };
-		3'd7: mod <= {	     pm[6:0], 2'b0 };
+		3'd0: mod = 9'd0;
+		3'd1: mod = { 7'd0, pm[6:5] };
+		3'd2: mod = { 6'd0, pm[6:4] };
+		3'd3: mod = { 5'd0, pm[6:3] };
+		3'd4: mod = { 4'd0, pm[6:2] };
+		3'd5: mod = { 3'd0, pm[6:1] };
+		3'd6: mod = { 1'd0, pm[6:0], 1'b0 };
+		3'd7: mod = {	     pm[6:0], 2'b0 };
 	endcase 	
 end
 

@@ -43,10 +43,10 @@ reg	signed [7:0] pm;
 
 always @(*) begin: signed_to_unsigned
 	if( pm[7] ) begin
-		pm_u[7] <= pm[7];
-		pm_u[6:0] <= ~pm[6:0];
+		pm_u[7] = pm[7];
+		pm_u[6:0] = ~pm[6:0];
 	end
-	else pm_u <= pm;
+	else pm_u = pm;
 end
 
 wire [6:0] noise_am;
@@ -68,27 +68,27 @@ reg sel_base;
 reg [4:0] freq_sel;
 
 always @(*) begin : base_mux
-	freq_sel <= lfo_freq[7:4] 
+	freq_sel = lfo_freq[7:4] 
 		+ ( lfo_w==2'd2 ? 1'b1 : 1'b0 );
 	case( freq_sel )
-		5'h10: sel_base <= base[b0-1]; 
-		5'hf: sel_base <= base[b0+0]; 
-		5'he: sel_base <= base[b0+1]; 
-		5'hd: sel_base <= base[b0+2]; 
-		5'hc: sel_base <= base[b0+3]; 
-		5'hb: sel_base <= base[b0+4]; 
-		5'ha: sel_base <= base[b0+5]; 
-		5'h9: sel_base <= base[b0+6]; 
-		5'h8: sel_base <= base[b0+7]; 
-		5'h7: sel_base <= base[b0+8]; 
-		5'h6: sel_base <= base[b0+9]; 
-		5'h5: sel_base <= base[b0+10]; 
-		5'h4: sel_base <= base[b0+11]; 
-		5'h3: sel_base <= base[b0+12]; 
-		5'h2: sel_base <= base[b0+13]; 
-		5'h1: sel_base <= base[b0+14]; 
-		5'h0: sel_base <= base[b0+15]; 
-		default: sel_base <= base[b0-1]; 
+		5'h10: sel_base = base[b0-1]; 
+		5'hf: sel_base = base[b0+0]; 
+		5'he: sel_base = base[b0+1]; 
+		5'hd: sel_base = base[b0+2]; 
+		5'hc: sel_base = base[b0+3]; 
+		5'hb: sel_base = base[b0+4]; 
+		5'ha: sel_base = base[b0+5]; 
+		5'h9: sel_base = base[b0+6]; 
+		5'h8: sel_base = base[b0+7]; 
+		5'h7: sel_base = base[b0+8]; 
+		5'h6: sel_base = base[b0+9]; 
+		5'h5: sel_base = base[b0+10]; 
+		5'h4: sel_base = base[b0+11]; 
+		5'h3: sel_base = base[b0+12]; 
+		5'h2: sel_base = base[b0+13]; 
+		5'h1: sel_base = base[b0+14]; 
+		5'h0: sel_base = base[b0+15]; 
+		default: sel_base = base[b0-1]; 
 	endcase
 end
 
@@ -99,22 +99,22 @@ reg signed [ 9:0] pm_bresenham;
 
 always @(*) begin : counter_limit
 	case( lfo_freq[3:0] )
-		4'hf: cnt_lim <= 8'd66;
-		4'he: cnt_lim <= 8'd68;
-		4'hd: cnt_lim <= 8'd70;
-		4'hc: cnt_lim <= 8'd73;
-		4'hb: cnt_lim <= 8'd76;
-		4'ha: cnt_lim <= 8'd79;
-		4'h9: cnt_lim <= 8'd82;
-		4'h8: cnt_lim <= 8'd85;
-		4'h7: cnt_lim <= 8'd89;
-		4'h6: cnt_lim <= 8'd93;
-		4'h5: cnt_lim <= 8'd98;
-		4'h4: cnt_lim <= 8'd102;
-		4'h3: cnt_lim <= 8'd108;
-		4'h2: cnt_lim <= 8'd114;
-		4'h1: cnt_lim <= 8'd120;
-		4'h0: cnt_lim <= 8'd128;
+		4'hf: cnt_lim = 8'd66;
+		4'he: cnt_lim = 8'd68;
+		4'hd: cnt_lim = 8'd70;
+		4'hc: cnt_lim = 8'd73;
+		4'hb: cnt_lim = 8'd76;
+		4'ha: cnt_lim = 8'd79;
+		4'h9: cnt_lim = 8'd82;
+		4'h8: cnt_lim = 8'd85;
+		4'h7: cnt_lim = 8'd89;
+		4'h6: cnt_lim = 8'd93;
+		4'h5: cnt_lim = 8'd98;
+		4'h4: cnt_lim = 8'd102;
+		4'h3: cnt_lim = 8'd108;
+		4'h2: cnt_lim = 8'd114;
+		4'h1: cnt_lim = 8'd120;
+		4'h0: cnt_lim = 8'd128;
 	endcase
 end
 
