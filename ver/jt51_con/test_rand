@@ -9,13 +9,15 @@ done
 TL=$((RANDOM%10))
 FL=$((RANDOM%8))
 
-echo -n CON=$CON OPMASK=$OPMASK FL=$FL TL=$TL " "
-if go $CON $OPMASK $TL $FL > test_fl.temp
+echo go CON $CON OPMASK $OPMASK TL $TL FL $FL $*
+if go CON $CON OPMASK $OPMASK TL $TL FL $FL $* > test_fl.temp
 then
 	echo TEST PASS
 	exit 0
 else
 	echo TEST FAIL
+	#echo Use command:
+	#echo go CON $CON OPMASK $OPMASK TL $TL FL $FL $*
 	exit 1
 fi
 

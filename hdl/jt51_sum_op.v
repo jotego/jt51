@@ -29,16 +29,18 @@ module jt51_sum_op(
 
 reg	signed [18:0]	sum;
 
+wire signed [18:0] op_signed = { {5{op_out[13]}}, op_out};
+
 always @(posedge clk) 
 	if( zero ) begin
-		sum <= en_ch ? op_out : 19'd0;
+		sum <= en_ch ? op_signed : 19'd0;
 		if( sum[18:16]==3'd0 || sum[18:16]==3'b111 )
 			out <= sum[15:0];
 		else
 			out<={ sum[18], {15{~sum[18]}}};
 	end
 	else
-		if( en_ch ) sum <= sum + op_out;
+		if( en_ch ) sum <= sum + op_signed;
 
 
 endmodule

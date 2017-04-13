@@ -1,9 +1,11 @@
 #include "Vjt51.h"
+#include "verilated_vcd_c.h"
 #include "verilated.h"
 
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <string>
 
 Vjt51* top;
 vluint64_t main_time = 0;       // Current simulation time
@@ -18,8 +20,21 @@ double sc_time_stamp () {       // Called by $time in Verilog
 int main(int argc, char **argv, char **env) {
 	Verilated::commandArgs(argc, argv);
 	top = new Vjt51;
+	bool trace=false;
+	string jtname="verilator.jt";
+	for( int k=0; k<argc; k++ ) {
+		if( string(argv[k])=="--trace" ) trace=true;
+		if( string(argv[k])=="--jtname" ) { jtname = argv[++k];}
+	}
+	VerilatedVcdC* tfp = new VerilatedVcdC;
+	if( trace ) {
+		Verilated::traceEverOn(true);
+		top->trace(tfp,99);
+		tfp->open("jt51_con.vcd");
+	}
+
 	int reg[65536], val[65535];
-	ofstream of("verilator.jt");
+	ofstream of(jtname.c_str());
 	#include "inputs.h"
 	cout << "JT51 Connection testbench\n";
 	// Reset
@@ -33,6 +48,7 @@ int main(int argc, char **argv, char **env) {
 		top->eval();
 		if( main_time%10==0 ) top->clk = 1-top->clk;
 		main_time++;
+		if(trace) tfp->dump(main_time);
 	}
 	top->rst = 0;
 	int last_a=0, ticks=0;
@@ -73,7 +89,8 @@ int main(int argc, char **argv, char **env) {
 									break;
 								case 1: 
 									wait=val[cmd_cnt]<<8; 
-									cout << "Wait for " << wait << " clock ticks\n";
+									//cout << "Wait for " << wait << " clock ticks\n";
+									top->cs_n = 1;
 									cmd_cnt++;
 									break;
 								default: state = WRITE_VAL; wait=2;
@@ -89,6 +106,7 @@ int main(int argc, char **argv, char **env) {
 							if( main_time>=finish_time ) goto finish;
 						}
 				}
+				else top->cs_n=1;
 			}
 			if( clk==0 && (dout&0x80==0x80)) top->cs_n = 1;
 			int sample = top->sample;
@@ -100,6 +118,7 @@ int main(int argc, char **argv, char **env) {
 			last_sample = sample;
 		}
 		main_time++;
+		if(trace) tfp->dump(main_time);
 		/*
 		int a = top->reg_a;
 		if( a!= last_a) {
@@ -110,6 +129,7 @@ int main(int argc, char **argv, char **env) {
 	}
 finish:
 	cout << "$finish: #" << main_time << '\n';
+	if(trace) tfp->close();
 	delete top;
 	return 0;
 }

@@ -112,16 +112,23 @@ TOP=jt51_test
 
 echo Simulating using $SIMULATOR
 
+myfile=${basename}.jt
+
 case $SIMULATOR in
 verilator)
-	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe jt51_con.cc --cc --top-module jt51 \
+	if [ $DUMPSIGNALS = DUMPSIGNALS ]; then
+		VERILATOR_TRACE=--trace
+	else
+		VERILATOR_TRACE=
+	fi
+	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe jt51_con.cc \
+		--cc --top-module jt51 --trace \
 		&& cd obj_dir \
-		&& make -f Vjt51.mk && Vjt51
+		&& make -f Vjt51.mk && Vjt51 $VERILATOR_TRACE --jtname ../$myfile
 	if [ $? -ne 0 ]; then
 		exit 1
 	fi
-	echo Work in progress
-	exit 1
+	cd ..
 	;;
 iverilog)
   iverilog jt51_test.v -f ../common/basic.f -s $TOP -I $INCDIR2 -I $INCDIR -DIVERILOG -DDUMP_SND_TOP \
@@ -144,8 +151,6 @@ ncverilog)
 esac
 
 # compare results
-
-myfile=${basename}.jt
 if [ $VERBOSE -eq 1 ]; then
 	echo "Output dumped to " $myfile
 fi

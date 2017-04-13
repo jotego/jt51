@@ -12,7 +12,7 @@ void pverilator( int k, int adr, int val, string comment ) {
 	if( comment.size() > 0 )
 		verilator << " // " << comment << '\n';
 	verilator << "reg[" << dec << k << "] = 0x" << hex << adr << "; \t";
-	verilator<< "val[" << dec << k << "] = 0x" << val << ";";
+	verilator<< "val[" << dec << k << "] = 0x" << hex << val << ";";
 	verilator<< '\n';
 }
 
@@ -62,7 +62,7 @@ int main( int argc, char *argv[] ) {
 	cout << " // connection = " << con << " OP mask = " << opmask << " total level = " << tl << '\n';
 	p( 2, (egtest?1:0)|(op0test?2:0), "Enable EG test mode" );	
     for( int ch=0x20; ch<0x40; ch++ ) {
-    	p( ch, ch, "fill value" );
+    	p( ch, 0, "fill value" );
     }
     for( int ch=0x80; ch<0xa0; ch++ ) {
     	p( ch, ch, "fill value" );

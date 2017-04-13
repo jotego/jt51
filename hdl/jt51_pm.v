@@ -36,7 +36,7 @@ reg [6:0] kcin;
 reg carry;
 
 always @(*) begin: kc_input_cleaner
-	{ carry, kcin } = kc[1:0]==3'd3 ? { 1'b0, kc } + 8'd1 : {1'b0,kc};
+	{ carry, kcin } = kc[1:0]==2'd3 ? { 1'b0, kc } + 8'd1 : {1'b0,kc};
 end
 
 always @(*) begin : addition
