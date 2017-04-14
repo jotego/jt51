@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstdlib>
 
 using namespace std;
 
@@ -32,6 +33,9 @@ int main( int argc, char *argv[] ) {
     //int d1r=1, d2r=1, rr=15, d1l=15, ar=31, ks=3;
 	//int oct=0, note=0, kf=0, mul=1, dt1=0, dt2=0;
 	bool egtest = false, op0test=false;
+	int seed=0;
+
+	srand(seed);
 
 	verilator.open("obj_dir/inputs.h");
 
@@ -61,15 +65,14 @@ int main( int argc, char *argv[] ) {
 	}
 	cout << " // connection = " << con << " OP mask = " << opmask << " total level = " << tl << '\n';
 	p( 2, (egtest?1:0)|(op0test?2:0), "Enable EG test mode" );	
-    for( int ch=0x20; ch<0x40; ch++ ) {
-    	p( ch, 0, "fill value" );
+	// Random values for all registers
+    for( int ch=0x20; ch<0xff; ch++ ) {
+    	p( ch, rand()%256, "random value" );
     }
-    for( int ch=0x80; ch<0xa0; ch++ ) {
-    	p( ch, ch, "fill value" );
-    }    
+    // Now program the channel we want
 	p( 0x28+ch, 0x19, "Key code" );
 	p( 0x30+ch, 57<<2, "KF" );
-	for( int op=0; op<32; op++ ) {        
+	for( int op=ch; op<32; op+=8 ) {        
 		p( 0x80+op, 0x1f, "Attack rate" );
 		p( 0xc0+op, op, "D2R, used as marker" );
         p( 0xe0+op, 0xf, "Release rate" );
