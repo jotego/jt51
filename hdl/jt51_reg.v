@@ -35,12 +35,12 @@ module jt51_reg(
 	input			up_amsen,
 	input			up_dt2,
 	input			up_d1l,
-	input			up_kon,
+	input			up_keyon,
 	input	[1:0]	op,		// operator to update
 	input	[2:0]	ch,		// channel to update
 	
 	input			csm,
-	input			flag_A,
+	input			overflow_A,
 
 	output			busy,
 	output	[1:0]	rl_out,
@@ -61,8 +61,7 @@ module jt51_reg(
 	output	[4:0]	d2r_out,
 	output	[3:0]	d1l_out,
 	output	[3:0]	rr_out,
-	output			kon_out,
-	output			koff_out,
+	output			keyon_II,
 
 	output	[1:0]	cur_op,
 
@@ -75,9 +74,6 @@ reg	[4:0] csm_cnt;
 
 wire csm_kon  = csm_state[0];
 wire csm_koff = csm_state[1];
-
-assign kon_out  = kon  | csm_kon;
-assign koff_out = koff | csm_koff;
 
 wire	[1:0]	rl_in	= d_in[7:6];
 wire	[2:0]	fb_in	= d_in[5:3];
@@ -99,14 +95,14 @@ wire	[3:0]	d1l_in	= d_in[7:4];
 wire	[3:0]	rr_in	= d_in[3:0];
 
 wire up = 	up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
-			up_ks | up_amsen | up_dt2 | up_d1l;
+			up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
 
 reg	[4:0]	cnt, next, cur;
 reg			last, last_kon;
 reg	[1:0]	cnt_kon;
-reg			busy_op, busy_kon;
+reg			busy_op;
 
-assign busy = busy_op | busy_kon;
+assign busy = busy_op;
 
 assign cur_op = cur[4:3];
 
@@ -129,7 +125,7 @@ wire up_amsen_op= up_amsen	& update_op;
 wire up_dt2_op	= up_dt2	& update_op;
 wire up_d1l_op	= up_d1l	& update_op;
 
-
+reg  up_keyon_long;
 
 always @(posedge clk) begin : up_counter
 	if( rst ) begin
@@ -138,91 +134,41 @@ always @(posedge clk) begin : up_counter
 		last	<= 1'b0;
 		zero	<= 1'b0;
         busy_op	<= 1'b0;
+        up_keyon_long <= 1'b0;
 	end
 	else begin
 		cur		<= next;
-		zero 	<= cur== 5'd0;
+		zero 	<= next== 5'd0;
 		last	<= up;
 		if( up && !last ) begin
 			cnt		<= cur;
 			busy_op	<= 1'b1;
+			up_keyon_long <= up_keyon;
 		end
-		else if( cnt == cur ) busy_op <= 1'b0;
-	end
-end
-
-
-always @(posedge clk) begin : keyon_csm
-	if( rst ) begin
-		csm_state	<= 2'b0;
-		csm_cnt		<= 5'd0;
-	end
-	else begin
-		if( csm && flag_A ) begin
-			csm_state <= 2'b1; 
-			csm_cnt   <= 5'd0;
-		end
-		else begin
-			if( csm_cnt==5'd31 ) begin
-				if( csm_state==2'b1 ) begin
-					csm_state <= 2'b10;
-					csm_cnt <= 5'd0;
-				end
-				else csm_state <= 2'b0;
+		else if( cnt == cur ) begin
+				busy_op <= 1'b0;
+				up_keyon_long <= 1'b0;
 			end
-			else csm_cnt <= csm_cnt+1'b1;
-		end
 	end
 end
 
-reg	[3:0] kon_op;
+wire [2:0]  cur_ch =  cur[2:0];
+wire [3:0] keyon_op = d_in[6:3];
+wire [2:0] keyon_ch = d_in[2:0];
 
-always @(posedge clk) begin : keyon
-	if( rst ) begin
-		last_kon <= 1'b0;
-        busy_kon <= 1'b0;
-        kon_op	 <= 4'd0;
-        { kon, koff } <= 2'd0;
-	end
-	else begin
-		last_kon<= up_kon;
-		if( up_kon && !last_kon ) begin
-			busy_kon  <= 1'b1;
-			kon_op[0] <= d_in[5]; // M2
-			kon_op[1] <= d_in[4]; // C1
-			kon_op[2] <= d_in[6]; // C2
-			kon_op[3] <= d_in[3]; // M1
-			cnt_kon   <= 2'd0;
-            { kon, koff } <= 2'd0;
-		end
-		else
-		if( busy_kon && next[2:0]==d_in[2:0]) begin
-			case( cnt_kon )
-				2'd0: // M2
-					if(next[4:3]==2'd1) begin
-						{ kon, koff } <= { kon_op[0], ~kon_op[0] };
-						cnt_kon <= 2'd1;
-					end
-                2'd1: // C1
-					if(next[4:3]==2'd2) begin
-						{ kon, koff } <= { kon_op[1], ~kon_op[1] };
-						cnt_kon <= 2'd2;
-					end
-                2'd2: // C2
-					if(next[4:3]==2'd3) begin
-						{ kon, koff } <= { kon_op[2], ~kon_op[2] };
-						cnt_kon <= 2'd3;
-					end
-                2'd3: // M1
-					if(next[4:3]==2'd0) begin
-						{ kon, koff } <= { kon_op[3], ~kon_op[3] };
-						busy_kon <= 1'b0;
-					end
-			endcase
-		end
-        else { kon, koff } <= 2'd0;
-	end
-end
+jt51_kon i_jt51_kon (
+	.rst       (rst       ),
+	.clk       (clk       ),
+	.keyon_op  (keyon_op  ),
+	.keyon_ch  (keyon_ch  ),
+	.cur_op    (cur_op    ),
+	.cur_ch    (cur_ch    ),
+	.up_keyon  (up_keyon_long	  ),
+	.csm       (csm       ),
+	.overflow_A(overflow_A),
+	.keyon_II  (keyon_II  )
+);
+
 
 // memory for OP registers
 
@@ -261,7 +207,6 @@ wire [25:0] reg_ch_in = {
 assign { rl_out, fb_out, con_out, kc_out, kf_out, pms_out, ams_out } = reg_ch_out;
 
 wire [2:0] next_ch = next[2:0];
-wire [2:0]  cur_ch =  cur[2:0];
 wire chdata_wr = |{up_rl_ch, up_kc_ch, up_kf_ch, up_pms_ch };
 
 always @(posedge clk) begin

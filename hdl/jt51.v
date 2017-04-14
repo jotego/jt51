@@ -122,7 +122,7 @@ wire	[3:0]	rr_out;
 wire	[1:0]	cur_op;
 wire			zero;
 assign	sample =zero;
-wire 			koff_out, kon_out;
+wire 			keyon_II;
 
 wire	[7:0]	lfo_freq;
 wire	[1:0]	lfo_w;
@@ -145,31 +145,32 @@ jt51_lfo u_lfo(
 );
 
 wire	[ 4:0]	keycode_III;
-wire	[19:0]	phase_now;
+wire	[19:0]	ph_IX;
+wire			pg_rst_III;
 
 jt51_phasegen u_pg(
-	.clk	( p1		),				// P1
+	.clk		( p1		),				// P1
 	// Channel frequency
-	.kc		( kc_out	),
-	.kf		( kf_out	),
+	.kc			( kc_out	),
+	.kf			( kf_out	),
 	// Operator multiplying
-	.mul	( mul_out	),
+	.mul		( mul_out	),
 	// Operator detuning
-	.dt1	( dt1_out	),
-	.dt2	( dt2_out	),
+	.dt1		( dt1_out	),
+	.dt2		( dt2_out	),
 	// phase modulation from LFO
-	.pms	( pms_out	),
-	.pm		( pm		),
+	.pms		( pms_out	),
+	.pm			( pm		),
 	// phase operation
-	.keyon	( kon_out 	),
-	.keycode_III(keycode_III), // produced in stage II
-	.phase_now(phase_now)
+	.pg_rst_III	( pg_rst_III 	),
+	.keycode_III( keycode_III	),
+	.ph_IX		( ph_IX		)
 );
 
 `ifdef TEST_SUPPORT
 wire		test_eg, test_op0;
 `endif
-wire [9:0]	eg;
+wire [9:0]	eg_IX;
 
 jt51_envelope u_eg(
 	`ifdef TEST_SUPPORT
@@ -187,32 +188,32 @@ jt51_envelope u_eg(
 	.d1l		( d1l_out	),
 	.ks			( ks_out	),
 	// envelope operation
-	.keyon		( kon_out	),
-	.keyoff		( koff_out	),
+	.keyon_II	( keyon_II	),
+	.pg_rst_III	( pg_rst_III	),
 	// envelope number
 	.tl			( tl_out	),
 	.am			( am 		),
 	.ams		( ams_out	),
 	.amsen		( amsen_out	),
-	.eg			( eg		)
+	.eg_IX		( eg_IX	)
 );
 
 wire signed [13:0] op_out;
 
 jt51_op u_op(
 	`ifdef TEST_SUPPORT
-	.test_eg ( test_eg	),
-	.test_op0( test_op0	),	
+	.test_eg 	( test_eg	),
+	.test_op0	( test_op0	),	
 	`endif	
-	.clk	( p1		),
-	.con	( con_out	),
-	.fb		( fb_out	),
-	.phase_cnt(phase_now),
-	.cur_op	( cur_op	),
+	.clk		( p1		),
+	.con_I		( con_out	),
+	.fb_I		( fb_out	),
+	.phase_cnt	( ph_IX		),
+	.cur_op_I	( cur_op	),
 	// volume
-	.eg		( eg		),
+	.eg			( eg_IX		),
 	// output data
-	.out	( op_out	)
+	.op_IX		( op_out	)
 );
 
 wire	[4:0] nfrq;
@@ -225,7 +226,7 @@ jt51_noise u_noise(
 	.zero	( zero		),
 	.ne		( ne		),
 	.nfrq	( nfrq		),
-	.eg		( eg		),
+	.eg		( eg_IX	),
 	.out	( noise_out	),
 	.op31_acc(op31_acc	)
 );
@@ -325,7 +326,7 @@ jt51_mmr u_mmr(
 	.clr_run_B	( clr_run_B		),	
 	.set_run_A	( set_run_A		),
 	.set_run_B	( set_run_B		),	
-	.flag_A		( overflow_A	),
+	.overflow_A	( overflow_A	),
 	`ifdef TEST_SUPPORT	
 	// Test
 	.test_eg	( test_eg		),
@@ -350,8 +351,7 @@ jt51_mmr u_mmr(
 	.d2r_out( d2r_out ),
 	.d1l_out( d1l_out ),
 	.rr_out( rr_out ),
-	.kon_out(kon_out),
-	.koff_out(koff_out),
+	.keyon_II(keyon_II),
 
 	.cur_op(cur_op),
 	.zero(zero)

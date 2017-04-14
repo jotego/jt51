@@ -62,19 +62,19 @@ while [ $# -gt 0 ]; do
 	if [ $1 = "-q" ]; then VERBOSE=0; shift; continue; fi
 	if [ $1 = "-0" ]; then WAIT0=WAITFOR0; shift; continue;  fi
 
-	if [ $1 = "AR"  ]; then shift; AR=$1;  fi
-	if [ $1 = "KS"  ]; then shift; KS=$1;  fi
-	if [ $1 = "D1R" ]; then shift; D1R=$1; fi
-	if [ $1 = "D2R" ]; then shift; D2R=$1; fi
-	if [ $1 = "D1L" ]; then shift; D1L=$1; fi
-	if [ $1 = "RR"  ]; then shift; RR=$1;  fi
-	if [ $1 = "TL"  ]; then shift; TL=$1;  fi
-	if [ $1 = "OCT"  ]; then shift; OCT=$1;  fi
-	if [ $1 = "NOTE"  ]; then shift; NOTE=$1;  fi
-    if [ $1 = "CH"  ]; then shift; CH=$1;  fi
-    if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  fi
-    if [ $1 = "CON"  ]; then shift; CON=$1;  fi
-    if [ $1 = "FL"  ]; then shift; FL=$1;  fi	
+	if [ $1 = "AR"  ]; then shift; AR=$1;  shift; continue; fi
+	if [ $1 = "KS"  ]; then shift; KS=$1;  shift; continue; fi
+	if [ $1 = "D1R" ]; then shift; D1R=$1; shift; continue; fi
+	if [ $1 = "D2R" ]; then shift; D2R=$1; shift; continue; fi
+	if [ $1 = "D1L" ]; then shift; D1L=$1; shift; continue; fi
+	if [ $1 = "RR"  ]; then shift; RR=$1;  shift; continue; fi
+	if [ $1 = "TL"  ]; then shift; TL=$1;  shift; continue; fi
+	if [ $1 = "OCT"  ]; then shift; OCT=$1;  shift; continue; fi
+	if [ $1 = "NOTE"  ]; then shift; NOTE=$1;  shift; continue; fi
+    if [ $1 = "CH"  ]; then shift; CH=$1;  shift; continue; fi
+    if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  shift; continue; fi
+    if [ $1 = "CON"  ]; then shift; CON=$1;  shift; continue; fi
+    if [ $1 = "FL"  ]; then shift; FL=$1;  shift; continue; fi	
     if [ $1 = "-sim" ]; then 
     	shift; 
     	SIMULATOR=$1; 
@@ -82,9 +82,12 @@ while [ $# -gt 0 ]; do
     		echo "Unsupported simulator: " $SIMULATOR
     		exit 1
     	fi
+    	shift
+    	continue
     	fi
-	if [ ${1:0:1} = "-" ]; then OTHER="$OTHER $1"; fi
-	shift
+	if [ ${1:0:1} = "-" ]; then OTHER="$OTHER $1"; shift; continue; fi
+	echo "Unsupported parameter " $1
+	exit 1
 done
 
 
@@ -154,7 +157,10 @@ esac
 if [ $VERBOSE -eq 1 ]; then
 	echo "Output dumped to " $myfile
 fi
-cat s$RANDEXT | awk '/dump start/,/dump end/' | head -n -1 | tail -n +2 > $myfile
+if [ $SIMULATOR != verilator ]; then
+	cat s$RANDEXT | awk '/dump start/,/dump end/' | head -n -1 | tail -n +2 > $myfile
+fi
+
 lines=$( cat $myfile | wc -l )
 if [ $lines -eq 0 ]; then
 	echo El fichero de salida esta vacio! Creo uno con ceros
@@ -177,8 +183,6 @@ if [ ! -e $ref_file ]; then
 else
 	borra_ref=NO
 fi
-
-
 
 #rm s$RANDEXT
 head -n $lines $ref_file | sdiff -E -W -s $myfile - > /dev/null

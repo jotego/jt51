@@ -19,3 +19,4 @@
 ../../hdl/jt51_pm.v
 ../../hdl/jt51_noise.v
 ../../hdl/jt51_noise_lfsr.v
+../../hdl/jt51_kon.v

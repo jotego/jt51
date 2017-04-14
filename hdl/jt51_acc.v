@@ -26,7 +26,7 @@ module jt51_acc(
 	input					op31_acc,
 	input			[1:0]	rl,
 	input	signed	[13:0]	op_out,
-	input					ne,
+	input					ne,		// noise enable
 	input	signed	[ 9:0]	noise,
 	output  signed	[15:0]	left,
     output  signed	[15:0]	right,
@@ -34,67 +34,53 @@ module jt51_acc(
     output  signed	[15:0]	xright    
 );
 
-wire [1:0]	rl_out;
-wire		zero_out;
-reg  [13:0] op_value;
+reg  [13:0] op_val;
 
 always @(*) begin
 	if( ne && op31_acc ) // cambiar a OP 31
-		op_value = { noise, 4'd0 };
+		op_val = { noise, 4'd0 };
 	else
-		op_value = op_out;
+		op_val = op_out;
 end
 
 jt51_sum_op u_left(
-	.clk(clk),
-	.zero(zero_out),
-	.en_ch(rl_out[0]),
-	.op_out(op_value),
-	.out(xleft)
+	.clk	(clk	),
+	.zero	(zero	),
+	.en_ch	(rl[0]	),
+	.op_out	(op_val	),
+	.out	(xleft	)
 );
 
 jt51_sum_op u_right(
-	.clk(clk),
-	.zero(zero_out),
-	.en_ch(rl_out[1]),
-	.op_out(op_value),
-	.out(xright)
-);
-
-jt51_sh #( .width(2), .stages(14) ) u_rlsh(
-	.clk	( clk		),
-	.din	( rl		),
-    .drop	( rl_out	)
-);
-
-jt51_sh #( .width(1), .stages(22) ) u_zerosh(
-	.clk	( clk		),
-	.din	( zero		),
-    .drop	( zero_out	)
+	.clk	(clk	),
+	.zero	(zero	),
+	.en_ch	(rl[1]	),
+	.op_out	(op_val	),
+	.out	(xright	)
 );
 
 wire signed [9:0] left_man, right_man;
 wire [2:0] left_exp, right_exp;
 
 jt51_exp2lin left_reconstruct(
-	.lin( left	),
-	.man( left_man		),
-	.exp( left_exp		)
+	.lin( left		),
+	.man( left_man	),
+	.exp( left_exp	)
 );
 
 jt51_exp2lin right_reconstruct(
-	.lin( right	),
-	.man( right_man		),
-	.exp( right_exp		)
+	.lin( right		),
+	.man( right_man	),
+	.exp( right_exp	)
 );
 
 jt51_lin2exp left2exp(
-  .lin( xleft     ),
+  .lin( xleft    ),
   .man( left_man ),
   .exp( left_exp ) );
 
 jt51_lin2exp right2exp(
-  .lin( xright     ),
+  .lin( xright    ),
   .man( right_man ),
   .exp( right_exp ) );
 
@@ -107,7 +93,7 @@ wire signed [15:0] dump = left;
 initial skip=1;
 
 always @(posedge clk)
-	if( zero_out && (!skip || dump) ) begin
+	if( zero && (!skip || dump) ) begin
 		$display("%d", dump );
 		skip <= 0;
 	end

@@ -42,14 +42,14 @@ module jt51_envelope(
 	input		[3:0]	d1l,
 	input		[1:0]	ks,	
 	// envelope operation
-	input				keyon,
-	input				keyoff,
+	input				keyon_II,
+	output	reg			pg_rst_III,
 	// envelope number
 	input		[6:0]	tl,
 	input		[6:0]	am,
 	input		[1:0]	ams,
 	input				amsen,
-	output	reg	[9:0]	eg
+	output	reg	[9:0]	eg_IX
 );
 
  // eg[9:6] -> direct attenuation (divide by 2)
@@ -64,14 +64,13 @@ reg		[5:0]	rate_IV;
 wire	[6:0]	tl_out;
 wire	[1:0]	ams_out;
 wire			amsen_out;
-reg		[9:0]	eg_in, eg_out_III, eg_out_IV, eg_out_V, eg_out_VI;
+reg		[9:0]	eg_in, eg_out_III, eg_out_IV, eg_out_V, eg_out_VI, eg_VIII;
 wire	[9:0]	eg_out;
 reg		[11:0]	sum_eg_tl;
 
 reg 	step_V, step_VI;
 reg		sum_up;
-reg		keyon_II, keyon_III, keyon_IV, keyon_V, keyon_VI;
-reg		keyoff_II;
+reg		keyon_III, keyon_IV, keyon_V, keyon_VI;
 reg 	[5:0]	rate_V;
 reg		[5:1]	rate_VI;
 
@@ -193,26 +192,32 @@ always @(*) begin : ar_calculation
 	ar_result = ar_sum<eg_out_VI ? eg_out_VI-ar_sum : 10'd0;
 end
 
+
 always @(posedge clk) begin
 	// I
 	if( d1l == 4'd15 )
 		d1level <= 5'h10; // 48dB 
 	else
 		d1level <= d1l;
-	keyon_II <= keyon;
-	keyoff_II<= keyoff;
 	{ arate_II, rate1_II, rate2_II, rrate_II } <= { arate, rate1, rate2, rrate };
-	
-	//	II
-	ar_off_III	<= arate_II == 5'h1f;
+end
+
+//	II
+wire	keyon_last_II;
+wire	keyon_now_II  = !keyon_last_II && keyon_II;
+wire	keyoff_now_II = keyon_last_II && !keyon_II;
+wire	ar_off_II = keyon_now_II && (arate_II == 5'h1f);
+
+always @(posedge clk) begin
+	pg_rst_III <= keyon_now_II;
 	// trigger release
-	if( keyoff_II ) begin
+	if( keyoff_now_II ) begin
 		cfg_III <= { rrate_II, 1'b1 };
 		state_in_III <= RELEASE;
 	end
 	else begin
 		// trigger 1st decay
-		if( keyon_II ) begin
+		if( keyon_now_II ) begin
 			cfg_III <= arate_II;
 			state_in_III <= ATTACK;
 		end
@@ -249,20 +254,20 @@ always @(posedge clk) begin
 			endcase
 		end
 	end
-
-	keyon_III <= keyon_II;
 	eg_out_III <= eg_out;
+end
 
 	// III		
+always @(posedge clk) begin
 	state_in_IV <= state_in_III;
 	eg_out_IV <= eg_out_III;
 	rate_IV <= pre_rate_III[6] ? 6'd63 : pre_rate_III[5:0];
-	keyon_IV <= keyon_III;
+end
 
 	// IV
+always @(posedge clk) begin	
 	state_in_V	<= state_in_IV;
 	rate_V <= rate_IV;
-	keyon_V <= keyon_IV;
 	eg_out_V <= eg_out_IV;
     if( state_in_IV == ATTACK )
 	    casex( rate_IV[5:2] )
@@ -295,21 +300,21 @@ always @(posedge clk) begin
 		    4'hb: cnt_V <= eg_cnt[ 3: 1]; 
 		    default: cnt_V <= eg_cnt[ 2: 0]; 
 	    endcase
+end
 
 	// V
+always @(posedge clk) begin
 	state_in_VI <= state_in_V;	
 	rate_VI <= rate_V[5:1];
-	keyon_VI <= keyon_V;
 	eg_out_VI <= eg_out_V;
 	sum_up <= cnt_V[0] != cnt_out;
 	step_VI <= step_V;
+end
+
 	// VI
-	if( keyon_VI ) begin
-		if( ar_off_VI )
-			eg_in <= 10'd0;
-		/*else // todo: verify in silicon
-			eg_in <= 10'h3ff;*/
-	end
+always @(posedge clk) begin
+	if( ar_off_VI )
+		eg_in <= 10'd0;
 	else
 	if( state_in_VI == ATTACK ) begin
 		if( sum_up && eg_out_VI != 10'd0 )
@@ -334,15 +339,24 @@ always @(posedge clk) begin
 		end
 		else eg_in <= eg_out_VI;
 	end
-	// VII
-	eg <= sum_eg_tl[11:10] > 2'b0 ? {10{1'b1}} : sum_eg_tl[9:0];
 end
+
+	// VII
+always @(posedge clk) begin
+	eg_VIII <= sum_eg_tl[11:10] > 2'b0 ? {10{1'b1}} : sum_eg_tl[9:0];
+end
+
+	// VIII
+always @(posedge clk) begin
+	eg_IX <= eg_VIII;
+end
+
 
 // Shift registers
 
-jt51_sh #( .width(1), .stages(3) ) u_aroffsh(
+jt51_sh #( .width(1), .stages(4) ) u_aroffsh(
 	.clk	( clk		),
-	.din	( ar_off_III),
+	.din	( ar_off_II ),
 	.drop	( ar_off_VI	)
 );
 
@@ -352,6 +366,11 @@ jt51_sh #( .width(2), .stages(2) ) u_kssh(
 	.drop	( ks_III	)
 );
 
+jt51_sh #( .width(1), .stages(32) ) u_konsh(
+	.clk	( clk		),
+	.din	( keyon_II	),
+	.drop	( keyon_last_II	)
+);
 
 jt51_sh #( .width(10), .stages(6) ) u_tlsh(
 	.clk	( clk		),

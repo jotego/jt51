@@ -71,18 +71,20 @@ int main( int argc, char *argv[] ) {
 	p( 0x30+ch, 57<<2, "KF" );
 	for( int op=0; op<32; op++ ) {        
 		p( 0x80+op, 0x1f, "Attack rate" );
+		p( 0xc0+op, op, "D2R, used as marker" );
         p( 0xe0+op, 0xf, "Release rate" );
     }
     /**
     for( int op=0; op<32; op++ ) {
     	p( 0xe0+op, 0xf, "Release rate" );
-    }*/
-    
-	for( int ch=0; ch<8; ch++ ) {
-		p( 8, ch, "key off" );
+    }*/    
+	for( int ch_k=0; ch_k<8; ch_k++ ) {
+		p( 8, (0xf<<3)|ch_k, "key on, to force key off next" );
+		if( ch_k==ch ) 
+			p( 8, ch_k, "key off" );
 	}
-	for( int k=0; k<32; k++ )
-		p( 1,1, "Gives time so keyoff works");	
+	for( int k=0; k<96; k++ )
+	 	p( 1,1, "Gives time so keyoff works");	
 	for( int op=0; op<4; op++ ) {
 		p( 0x40+op*8+ch, 0x1, "MUL" );
 		p( 0x60+op*8+ch, tl, "TL" );

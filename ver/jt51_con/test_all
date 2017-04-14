@@ -17,7 +17,7 @@ while [ $TL  -lt 4 ]; do
 	echo CON $CON FL $FL OP $OP TL $TL
 	#echo CON $CON FL $FL OP $OP TL $TL >> /tmp/test_command
     go -q CON $CON FL $FL OP $OP TL $TL > /tmp/x
-    if [ "$?" != "0" ]; then exit 1; fi
+    #if [ "$?" != "0" ]; then exit 1; fi
     cat /tmp/x >> test_all.log
     TL=$((TL+1))
 done

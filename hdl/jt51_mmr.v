@@ -55,7 +55,7 @@ module jt51_mmr(
 	output	reg			clr_run_B,
 	output	reg			set_run_A,
 	output	reg			set_run_B,
-	input				flag_A,
+	input				overflow_A,
 
 	`ifdef TEST_SUPPORT		
 	// Test
@@ -81,20 +81,19 @@ module jt51_mmr(
 	output	[4:0]	d2r_out,
 	output	[3:0]	d1l_out,
 	output	[3:0]	rr_out,
-	output			kon_out,
-	output			koff_out,
+	output			keyon_II,
 
 	output	[1:0]	cur_op,
 
 	output			zero	
 );
 
-reg [7:0] selected_register;
+reg [7:0] selected_register, din_latch;
 
 reg		up_clr;
 reg		up_rl,	up_kc,	up_kf,	up_pms,
 		up_dt1,	up_tl,	up_ks,	up_dt2,
-		up_d1l,	up_kon,	up_amsen;
+		up_d1l,	up_keyon,	up_amsen;
 
 wire			busy_reg;		
 
@@ -117,7 +116,7 @@ always @(posedge clk) begin : memory_mapped_registers
 		selected_register 	<= 8'h0;
 		busy				<= 1'b0;
 		{ up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
-				up_ks, up_amsen, up_dt2, up_d1l, up_kon } <= 11'd0;		
+				up_ks, up_amsen, up_dt2, up_d1l, up_keyon } <= 11'd0;		
 		`ifdef TEST_SUPPORT
 		{ test_eg, test_op0 } <= 2'd0;
 		`endif
@@ -134,6 +133,7 @@ always @(posedge clk) begin : memory_mapped_registers
 		lfo_rst			<= 1'b0;
 		{ ct2, ct1 }	<= 2'd0;
 		csm				<= 1'b0;
+		din_latch		<= 8'd0;
 	end else begin
 		// WRITE IN REGISTERS
 		if( write && !busy ) begin
@@ -141,6 +141,7 @@ always @(posedge clk) begin : memory_mapped_registers
 			if( !a0 )
 				selected_register <= d_in;
 			else begin
+				din_latch <= d_in;
 				// Global registers
 				if( selected_register < 8'h20 ) begin
 					case( selected_register)
@@ -149,7 +150,7 @@ always @(posedge clk) begin : memory_mapped_registers
 					`ifdef TEST_SUPPORT
 					REG_TEST2:	{ test_op0, test_eg } <= d_in[1:0];
 					`endif
-					REG_KON: 	up_kon 		<= 1'b1;
+					REG_KON: 	up_keyon 		<= 1'b1;
 					REG_NOISE:	{ ne, nfrq } <= { d_in[7], d_in[4:0] };
 					REG_CLKA1:	value_A[9:2]<= d_in;
 					REG_CLKA2:	value_A[1:0]<= d_in[1:0];
@@ -205,9 +206,9 @@ always @(posedge clk) begin : memory_mapped_registers
 			lfo_rst <= 1'b0;
 			{ clr_flag_B, clr_flag_A, load_B, load_A } <= 4'd0;
 			{ clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'd0;
-			
+			up_keyon <= 1'b0;
 			if( |{ up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
-				up_ks, up_amsen, up_dt2, up_d1l, up_kon } == 1'b0 )
+				up_ks, up_amsen, up_dt2, up_d1l, up_keyon } == 1'b0 )
 				busy	<= busy_reg;
 			else
 				busy	<= 1'b1;
@@ -219,7 +220,7 @@ always @(posedge clk) begin : memory_mapped_registers
 				up_clr <= 1'b0;
 				if( up_clr	)
 				{ up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
-					up_ks, up_amsen, up_dt2, up_d1l, up_kon } <= 11'd0;
+					up_ks, up_amsen, up_dt2, up_d1l } <= 10'd0;
 			end
 		end
 	end
@@ -228,49 +229,48 @@ end
 jt51_reg u_reg(
 	.rst	( rst		),
 	.clk	( clk		),				// P1
-	.d_in	( d_in		),
+	.d_in	( din_latch	),
 
-	.up_rl( up_rl ),
-	.up_kc( up_kc ),
-	.up_kf( up_kf ),
-	.up_pms( up_pms ),
-	.up_dt1( up_dt1 ),
-	.up_tl( up_tl ),
-	.up_ks( up_ks ),
-	.up_amsen( up_amsen ),
-	.up_dt2( up_dt2 ),
-	.up_d1l( up_d1l ),
-	.up_kon( up_kon ),
+	.up_rl		( up_rl 	),
+	.up_kc		( up_kc 	),
+	.up_kf		( up_kf 	),
+	.up_pms		( up_pms 	),
+	.up_dt1		( up_dt1 	),
+	.up_tl		( up_tl 	),
+	.up_ks		( up_ks 	),
+	.up_amsen	( up_amsen 	),
+	.up_dt2		( up_dt2 	),
+	.up_d1l		( up_d1l 	),
+	.up_keyon	( up_keyon 	),
 	.op( selected_register[4:3] ),		// operator to update
 	.ch( selected_register[2:0] ),		// channel to update
 	
-	.csm	( csm		),
-	.flag_A	( flag_A	),
+	.csm		( csm		),
+	.overflow_A	( overflow_A),
 
-	.busy( 	busy_reg ),
-	.rl_out( rl_out ),
-	.fb_out( fb_out ),
-	.con_out( con_out ),
-	.kc_out( kc_out ),
-	.kf_out( kf_out ),
-	.pms_out( pms_out ),
-	.ams_out( ams_out ),
-	.dt1_out( dt1_out ),
-	.mul_out( mul_out ),
-	.tl_out( tl_out ),
-	.ks_out( ks_out ),
-	.ar_out( ar_out ),
-	.amsen_out( amsen_out ),
-	.d1r_out( d1r_out ),
-	.dt2_out( dt2_out ),
-	.d2r_out( d2r_out ),
-	.d1l_out( d1l_out ),
-	.rr_out( rr_out ),
-	.kon_out(kon_out),
-	.koff_out(koff_out),
+	.busy		( busy_reg 	),
+	.rl_out		( rl_out 	),
+	.fb_out		( fb_out 	),
+	.con_out	( con_out 	),
+	.kc_out		( kc_out 	),
+	.kf_out		( kf_out 	),
+	.pms_out	( pms_out 	),
+	.ams_out	( ams_out 	),
+	.dt1_out	( dt1_out 	),
+	.mul_out	( mul_out 	),
+	.tl_out		( tl_out 	),
+	.ks_out		( ks_out 	),
+	.ar_out		( ar_out 	),
+	.amsen_out	( amsen_out ),
+	.d1r_out	( d1r_out 	),
+	.dt2_out	( dt2_out 	),
+	.d2r_out	( d2r_out 	),
+	.d1l_out	( d1l_out 	),
+	.rr_out		( rr_out 	),
+	.keyon_II	(keyon_II	),
 
-	.cur_op(cur_op),
-	.zero(zero)
+	.cur_op		(cur_op		),
+	.zero		(zero		)
 );
 
 endmodule

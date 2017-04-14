@@ -33,13 +33,13 @@ module jt51_op(
 	`endif
 	input             	clk,          	// P1
 	input		[19:0] 	phase_cnt,
-	input		[2:0]	con,
-	input		[1:0]	cur_op,
-	input		[2:0]	fb,
+	input		[2:0]	con_I,
+	input		[1:0]	cur_op_I,
+	input		[2:0]	fb_I,
 	// volume
 	input		[9:0]	eg,
 	// output data
-	output reg	signed	[13:0]	out
+	output reg	signed	[13:0]	op_IX
 );
 
 
@@ -48,6 +48,7 @@ reg [ 4:0]	log_msb, log_msb2;
 reg [12:0]	pre; // preattenuation value
 reg [3:0]	sign;
 reg	[12:0]	out_abs;
+reg signed [13:0] op_VIII;
 
 reg 	[7:0]	phase_addr;
 wire 	[11:0]	log_val;	// sine mantisa, in 2's complement
@@ -71,9 +72,9 @@ reg	[9:0]	eg_II, eg_III;
 reg	[9:0]	eg_IV, eg_V, eg_VI;
 `endif
 reg	signed	[19:0]	modulation;
-wire	[2:0]	con_I, con_VII;
-wire	[1:0]	cur_op_VII, cur_op_I;
-wire	[2:0]	fb_I;
+wire	[2:0]	con_VII;
+wire	[1:0]	cur_op_VII; //, cur_op_I;
+// wire	[2:0]	con_I, fb_I;
 
 parameter mod_lat = 5; /* latency */
 parameter mod_stg = 5*8-mod_lat; /* stages */
@@ -197,38 +198,43 @@ always @(posedge clk) begin
 	`ifdef TEST_SUPPORT
 	if( test_op0 ) begin
 		if( cur_op_VII==3'd0)
-			out <= mod[14-1:0];
+			op_VIII <= mod[14-1:0];
 		else
-			out <= 14'd0;
+			op_VIII <= 14'd0;
 	end
 	else			
 	`endif
 	case( con_VII )
 		3'd0, 3'd1, 3'd2, 3'd3:
 			if( cur_op_VII!=2'd3 )
-				out <= 14'd0;
+				op_VIII <= 14'd0;
 			else
-				out <= mod[14-1:0];
+				op_VIII <= mod[14-1:0];
 		3'd4:
 			if( cur_op_VII==2'd0 || cur_op_VII==2'd1 )
-				out <= 14'd0;
+				op_VIII <= 14'd0;
 			else
-				out <= mod[14-1:0];
+				op_VIII <= mod[14-1:0];
 		3'd5, 3'd6:
 			if( cur_op_VII==2'd0 )
-				out <= 14'd0;
+				op_VIII <= 14'd0;
 			else
-				out <= mod[14-1:0];
-		3'd7:	out <= mod[14-1:0];
+				op_VIII <= mod[14-1:0];
+		3'd7:	op_VIII <= mod[14-1:0];
 	endcase
 end
 
+// VIII
+always @(posedge clk) begin 
+	op_IX <= op_VIII;
+end
+/*
 jt51_sh #( .width(8), .stages(7) ) u_con1sh(
 	.clk	( clk	),
 	.din	( { con, cur_op, fb } 	),
     .drop	( { con_I, cur_op_I, fb_I } )
 );
-
+*/
 
 jt51_sh #( .width(5), .stages(6) ) u_con7sh(
 	.clk	( clk	),

@@ -60,6 +60,7 @@ int main(int argc, char **argv, char **env) {
 	const int half_period=140;
 	int clk_time = half_period;
 	int finish_time=0;
+	bool wait_nonzero=true;
 	while( true ) {
 		top->eval();
 		if( clk_time==main_time ) {
@@ -84,7 +85,10 @@ int main(int argc, char **argv, char **env) {
 							switch( reg[cmd_cnt] ) {
 								case 0: 
 									cout << "Done!\n"; 
-									finish_time=main_time+(80*1000*1000);
+									if(trace)
+										finish_time=main_time+(20*1000*1000);
+									else
+										finish_time=main_time+(80*1000*1000);
 									state = WAIT_FINISH;
 									break;
 								case 1: 
@@ -111,11 +115,16 @@ int main(int argc, char **argv, char **env) {
 			if( clk==0 && (dout&0x80==0x80)) top->cs_n = 1;
 			int sample = top->sample;
 
-			if( (sample != last_sample) && sample) {
-				int left = top->left;
-				of << left << '\n';
+			if( clk == 0 ) {
+				if( (sample != last_sample) && sample) {
+					int16_t left = top->left;
+					if( !(left==0 && wait_nonzero) ) {
+						of << left << '\n';
+						wait_nonzero = false;
+					}
+				}
+				last_sample = sample;
 			}
-			last_sample = sample;
 		}
 		main_time++;
 		if(trace) tfp->dump(main_time);

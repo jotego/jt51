@@ -40,17 +40,16 @@ module jt51_phasegen(
 	input		[7:0]   pm,
 	input		[2:0]   pms,
 	// phase operation
-	input				keyon,
+	input				pg_rst_III,
 	output  reg [ 4:0]  keycode_III,
-	output		[19:0]	phase_now
+	output	reg	[19:0]	ph_IX
 );
 
-wire [19:0]	phase_drop;
+wire [19:0]	phase_drop_VII;
 
-reg [19:0]	phase_base_VI, phase_step, phase_step_VII;
+reg [19:0]	phase_base_VI, phase_step_VII, ph_VIII;
 reg [17:0]	phase_base_IV, phase_base_V;
-wire keyon_VII;
-assign	phase_now = keyon_VII ? 20'd0 : phase_drop + phase_step;
+wire pg_rst_VII;
 
 wire		[11:0]	phinc_III;
 
@@ -156,7 +155,10 @@ always @(posedge clk) begin : phase_calculation
 			(keycode_I[7:0]>dt2_lim3  ? 14'd64:14'd0);
 	endcase
 	dt1_II <= dt1;
+end
+
 	// II
+always @(posedge clk) begin	
 	phinc_addr_III	<= keycode_II[9:0];
 	octave_III 	<= keycode_II[13:10];
 	keycode_III	<=	keycode_II[12:8];
@@ -167,7 +169,10 @@ always @(posedge clk) begin : phase_calculation
 		default:dt1_kf_III	<=	keycode_II[13:8];
 	endcase
 	dt1_III   <= dt1_II;
+end
+
 	// III		
+always @(posedge clk) begin
 	case( octave_III )
 		4'd0:	phase_base_IV	<=	{ 8'd0, phinc_III[11:2] };
 		4'd1:	phase_base_IV	<=	{ 7'd0, phinc_III[11:1] };
@@ -183,14 +188,20 @@ always @(posedge clk) begin : phase_calculation
 	pow2ind_IV	<= dt1_kf_III[2:0];
 	dt1_IV		<= dt1_III;
 	dt1_kf_IV	<= dt1_kf_III[5:3];
+end
+
 	// IV LIMIT_BASE
+always @(posedge clk) begin
 	if( phase_base_IV > 18'd82976 ) 
 		phase_base_V <= 18'd82976;
 	else
 		phase_base_V <= phase_base_IV;
 	dt1_offset_V <= dt1_limited_IV;
 	dt1_V <= dt1_IV;
+end
+
 	// V APPLY_DT1
+always @(posedge clk) begin
 	if( dt1_V[1:0]==2'd0 )
 		phase_base_VI	<=	phase_base_V;
 	else begin
@@ -199,16 +210,27 @@ always @(posedge clk) begin : phase_calculation
 		else
 			phase_base_VI	<=	phase_base_V - dt1_offset_V;
 	end
+end
+
 	// VI APPLY_MUL
+always @(posedge clk) begin
 	if( mul_V==4'd0 )
 		phase_step_VII	<= { 1'b0, phase_base_VI[19:1] };
 	else
 		phase_step_VII	<= phase_base_VI * mul_V;
-	// VII have same number of stages as jt51_envelope
-	phase_step	<= phase_step_VII;	
-		`ifdef DISPLAY_STEP
-				$display( "%d", phase_step );
-		`endif 
+end
+
+// VII have same number of stages as jt51_envelope
+always @(posedge clk) begin	
+	ph_VIII <= pg_rst_VII ? 20'd0 : phase_drop_VII + phase_step_VII;
+	`ifdef DISPLAY_STEP
+			$display( "%d", phase_step_VII );
+	`endif 		
+end
+
+// VIII
+always @(posedge clk) begin 
+	ph_IX <= ph_VIII;
 end
 
 jt51_sh #( .width(4), .stages(5) ) u_mulsh(
@@ -217,16 +239,16 @@ jt51_sh #( .width(4), .stages(5) ) u_mulsh(
 	.drop	( mul_V )
 );
 
-jt51_sh #( .width(20), .stages(32) ) u_phsh(
+jt51_sh #( .width(20), .stages(31) ) u_phsh(
 	.clk	( clk	),
-	.din	( phase_now ),
-	.drop	( phase_drop)
+	.din	( ph_VIII ),
+	.drop	( phase_drop_VII)
 );
 
-jt51_sh #( .width(1), .stages(7) ) u_kosh(
+jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
 	.clk	( clk	),
-	.din	( keyon ),
-	.drop	( keyon_VII)
+	.din	( pg_rst_III ),
+	.drop	( pg_rst_VII)
 );
 
 endmodule
