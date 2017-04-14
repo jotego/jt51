@@ -32,16 +32,33 @@ module jt51_op(
 	input				test_op0,
 	`endif
 	input             	clk,          	// P1
-	input		[19:0] 	phase_cnt,
+	input		[9:0] 	pg_phase_X,
 	input		[2:0]	con_I,
 	input		[1:0]	cur_op_I,
 	input		[2:0]	fb_I,
 	// volume
-	input		[9:0]	eg,
+	input		[9:0]	eg_atten_XI,
+	// modulation
+	input				use_prevprev1,
+	input				use_internal_x,
+	input				use_internal_y,    
+	input				use_prev2,
+	input				use_prev1,
+    input				test_214,
+	
+	input 				m1_enters,
+	input 				c1_enters,
+	input				zero,
 	// output data
-	output reg	signed	[13:0]	op_IX
+	output signed	[13:0]	op_XVII
 );
 
+/*	enters  exits
+	m1		c1
+	m2		S4
+	c1		m1
+	S4		m2
+*/
 
 reg	[ 9:0]	phase;
 reg [ 4:0]	log_msb, log_msb2;
@@ -76,17 +93,7 @@ wire	[2:0]	con_VII;
 wire	[1:0]	cur_op_VII; //, cur_op_I;
 // wire	[2:0]	con_I, fb_I;
 
-parameter mod_lat = 5; /* latency */
-parameter mod_stg = 5*8-mod_lat; /* stages */
-reg	[14*mod_stg-1:0] mod;
 
-wire signed [13:0] mod1 = mod[ (16-mod_lat)*14-1: (15-mod_lat)*14 ];
-wire signed [13:0] mod2 = mod[ (24-mod_lat)*14-1: (23-mod_lat)*14 ];
-wire signed [13:0] mod3 = mod[ (32-mod_lat)*14-1: (31-mod_lat)*14 ];
-wire signed [13:0] mod4 = mod[ (40-mod_lat)*14-1: (39-mod_lat)*14 ];
-wire signed [13:0] mod7;
-
-wire mod7_en = cur_op_I==2'd0;
 
 jt51_sh2 #( .width(14), .stages(8) ) u_mod7sh(
 	.clk	( clk	),
@@ -96,151 +103,245 @@ jt51_sh2 #( .width(14), .stages(8) ) u_mod7sh(
     .drop	( mod7	)
 );
 
+jt51_sh #( .width(14), .stages(8)) prev1_buffer(
+	.clk	( clk	),
+	.din	( c1_enters ? op_XVII : prev1 ),
+	.drop	( prev1	)
+);
 
-parameter M1=2'd0, M2=2'd1, C1=02'd2, C2=2'd3;
+jt51_sh #( .width(14), .stages(8)) prevprev1_buffer(
+	.clk	( clk	),
+	.din	( c1_enters ? prev1 : prevprev1 ),
+	.drop	( prevprev1	)
+);
+
+jt51_sh #( .width(14), .stages(8)) prev2_buffer(
+	.clk	( clk	),
+	.din	( m1_enters ? op_XVII : prev2 ),
+	.drop	( prev2	)
+);
+
+// REGISTER/CYCLE 1
+// Creation of phase modulation (FM) feedback signal, before shifting
+reg [13:0]  x,  y;
+reg [14:0]	xs, ys, pm_preshift_II;
+reg			m1_II;
 
 always @(*) begin
-	case( cur_op_I )
-		default: // M1, FL
-			case( fb_I )
-				3'd0: modulation = 20'd0;
-				3'd1: modulation = (mod3+mod7)<<1;
-				3'd2: modulation = (mod3+mod7)<<2;
-				3'd3: modulation = (mod3+mod7)<<3;
-				3'd4: modulation = (mod3+mod7)<<4;
-				3'd5: modulation = (mod3+mod7)<<5;
-				3'd6: modulation = (mod3+mod7)<<6;
-				3'd7: modulation = (mod3+mod7)<<7;
-			endcase
-		C1: case(con_I)
-				3'd7, 3'd2, 3'd1:
-					modulation = 20'd0;
-				default:
-					modulation = mod1<<9; // M1
-			endcase
-		C2: case(con_I)
-				default: // 3'd4, 3'd1, 3'd0:
-					modulation = mod1<<9; // M2
-				3'd2:
-					modulation = (mod1+mod2)<<9; // M2+M1
-				3'd3:
-					modulation = (mod1+mod4)<<9; // M2+C1
-				3'd5:
-					modulation = mod2<<9; // M1
-				3'd7, 3'd6:
-					modulation = 20'd0;
-			endcase
-		M2: case(con_I)
-				default: // 3'd2, 3'd0:
-					modulation = mod2<<9; // C1
-				3'd1:
-					modulation = (mod2+mod4)<<9; // C1+M1
-				3'd5:
-					modulation = mod4<<9; // M1
-				3'd7, 3'd6, 3'd4, 3'd3:
-					modulation = 20'd0;
-			endcase
-	endcase
-end
 
+	x  = ( {14{use_prevprev1}}  & prevprev1 ) |
+		  ( {14{use_internal_x}} & op_XVII ) |
+          ( {14{use_prev2}}      & prev2 );
+	y  = ( {14{use_prev1}}      & prev1 ) |
+		  ( {14{use_internal_y}} & op_XVII );
+	xs = { x[13], x }; // sign-extend
+	ys = { y[13], y }; // sign-extend
+end
 
 always @(posedge clk) begin
-	// I
-	phase <= (phase_cnt + modulation)>>10;
-	eg_II <= eg;
-	// II
-	phase_addr	<= phase[8]? ~phase[7:0]:phase[7:0];
-	sign[0]		<= phase[9];
-	eg_III <= eg_II;
-	// III
-	{ log_msb, pow_addr } <= log_val[11:0] + { eg_III, 2'b0};
-	sign[1]	<= sign[0];
-	`ifdef TEST_SUPPORT
-	eg_IV <= eg_III;
-	`endif
-	// IV
-	pre		<= pow_val;
-	log_msb2<= log_msb;
-	sign[2]	<= sign[1];
-	`ifdef TEST_SUPPORT
-	eg_V <= eg_IV;
-	`endif
-	// V
-	case( log_msb2 )
-		5'h0: out_abs <= pre;
-		5'h1: out_abs <= pre >> 1;
-		5'h2: out_abs <= pre >> 2;
-		5'h3: out_abs <= pre >> 3;
-		5'h4: out_abs <= pre >> 4;
-		5'h5: out_abs <= pre >> 5;
-		5'h6: out_abs <= pre >> 6;
-		5'h7: out_abs <= pre >> 7;
-		5'h8: out_abs <= pre >> 8;
-		5'h9: out_abs <= pre >> 9;
-		5'hA: out_abs <= pre >> 10;
-		5'hB: out_abs <= pre >> 11;
-		5'hC: out_abs <= pre >> 12;
-		default: out_abs <= 13'd0;
+	pm_preshift_II <= xs + ys; // carry is discarded
+    m1_II <= m1_enters;
+end
+
+/* REGISTER/CYCLE 2-7 (also YM2612 extra cycles 1-6)
+   Shifting of FM feedback signal, adding phase from PG to FM phase
+   In YM2203, phasemod_II is not registered at all, it is latched on the first edge 
+   in add_pg_phase and the second edge is the output of add_pg_phase. In the YM2612, there
+   are 6 cycles worth of registers between the generated (non-registered) phasemod_II signal
+   and the input to add_pg_phase.     */
+
+reg  [9:0]	phasemod_II;
+wire [9:0]	phasemod_X;
+
+always @(*) begin
+	// Shift FM feedback signal
+	if (!m1_II ) // Not m1
+		phasemod_II = pm_preshift_II[10:1]; // Bit 0 of pm_preshift_II is never used
+	else // m1
+		case( fb_II )
+			3'd0: phasemod_II = 10'd0;		
+			3'd1: phasemod_II = { {4{pm_preshift_II[14]}}, pm_preshift_II[14:9] };
+			3'd2: phasemod_II = { {3{pm_preshift_II[14]}}, pm_preshift_II[14:8] };
+			3'd3: phasemod_II = { {2{pm_preshift_II[14]}}, pm_preshift_II[14:7] };
+			3'd4: phasemod_II = {    pm_preshift_II[14],   pm_preshift_II[14:6] };
+			3'd5: phasemod_II = pm_preshift_II[14:5];
+			3'd6: phasemod_II = pm_preshift_II[13:4];
+			3'd7: phasemod_II = pm_preshift_II[12:3];
+		endcase
+end
+
+// REGISTER/CYCLE 2-9
+jt12_sh #( .width(10), .stages(8)) phasemod_sh(
+	.clk	( clk	),
+	.din	( phasemod_II ),
+	.drop	( phasemod_X	)
+);
+
+
+// REGISTER/CYCLE 10
+reg [ 9:0]	phase;
+// Sets the maximum number of fanouts for a register or combinational
+// cell.  The Quartus II software will replicate the cell and split
+// the fanouts among the duplicates until the fanout of each cell
+// is below the maximum.
+
+reg [ 7:0]	phaselo_XI, aux_X;
+
+always @(*) begin
+	phase	= phasemod_X + pg_phase_X;
+	aux_X	= phase[7:0] ^ {8{~phase[8]}};
+end
+
+always @(posedge clk) begin    
+	phaselo_XI <= aux_X;
+	signbit_XI <= phase[9];     
+
+end
+
+wire [45:0] sta_XI;
+
+jt51_phrom u_phrom(
+	.clk	( clk		),
+	.addr	( aux_X[5:1]),
+	.ph		( sta_XI	)
+);
+
+// REGISTER/CYCLE 11
+// Sine table    
+// Main sine table body
+reg [18:0]	stb;
+reg [10:0]	stf, stg;
+reg [11:0]	logsin;
+reg [10:0]	subtresult;
+
+always @(*) begin
+	//sta_XI = sinetable[ phaselo_XI[5:1] ];
+	// 2-bit row chooser
+	case( phaselo_XI[7:6] )
+		2'b00: stb = { 10'b0, sta_XI[29], sta_XI[25], 2'b0, sta_XI[18], 
+        	sta_XI[14], 1'b0, sta_XI[7] , sta_XI[3] };
+		2'b01: stb = { 6'b0 , sta_XI[37], sta_XI[34], 2'b0, sta_XI[28], 
+        	sta_XI[24], 2'b0, sta_XI[17], sta_XI[13], sta_XI[10], sta_XI[6], sta_XI[2] };
+		2'b10: stb = { 2'b0, sta_XI[43], sta_XI[41], 2'b0, sta_XI[36],
+        	sta_XI[33], 2'b0, sta_XI[27], sta_XI[23], 1'b0, sta_XI[20],
+            sta_XI[16], sta_XI[12], sta_XI[9], sta_XI[5], sta_XI[1] };
+		default: stb = {
+			  sta_XI[45], sta_XI[44], sta_XI[42], sta_XI[40]
+			, sta_XI[39], sta_XI[38], sta_XI[35], sta_XI[32]
+			, sta_XI[31], sta_XI[30], sta_XI[26], sta_XI[22]
+			, sta_XI[21], sta_XI[19], sta_XI[15], sta_XI[11]
+			, sta_XI[8], sta_XI[4], sta_XI[0] };
 	endcase
-	sign[3]	<= sign[2];
-	`ifdef TEST_SUPPORT
-	eg_VI <= eg_V;
-	`endif
-	// VI
-    mod[14*mod_stg-1:14] <= mod[14*(mod_stg-1)-1:0];
-	`ifdef TEST_SUPPORT
-	if( test_eg)
-		mod[14-1:0]	<= eg_VI;
+	// Fixed value to sum
+	stf = { stb[18:15], stb[12:11], stb[8:7], stb[4:3], stb[0] };
+	// Gated value to sum; bit 14 is indeed used twice
+	if( phaselo_XI[0] )
+		stg = { 2'b0, stb[14], stb[14:13], stb[10:9], stb[6:5], stb[2:1] };
 	else
-	`endif
-		mod[14-1:0]	<= sign[3] ? ~{1'b0,out_abs}+1'b1 : {1'b0,out_abs} ;
-	// VII
-	`ifdef TEST_SUPPORT
-	if( test_op0 ) begin
-		if( cur_op_VII==3'd0)
-			op_VIII <= mod[14-1:0];
-		else
-			op_VIII <= 14'd0;
-	end
-	else			
-	`endif
-	case( con_VII )
-		3'd0, 3'd1, 3'd2, 3'd3:
-			if( cur_op_VII!=2'd3 )
-				op_VIII <= 14'd0;
-			else
-				op_VIII <= mod[14-1:0];
-		3'd4:
-			if( cur_op_VII==2'd0 || cur_op_VII==2'd1 )
-				op_VIII <= 14'd0;
-			else
-				op_VIII <= mod[14-1:0];
-		3'd5, 3'd6:
-			if( cur_op_VII==2'd0 )
-				op_VIII <= 14'd0;
-			else
-				op_VIII <= mod[14-1:0];
-		3'd7:	op_VIII <= mod[14-1:0];
+		stg = 11'd0;
+	// Sum to produce final logsin value
+	logsin = stf + stg; // Carry-out of 11-bit addition becomes 12th bit
+	// Invert-subtract logsin value from EG attenuation value, with inverted carry
+	// In the actual chip, the output of the above logsin sum is already inverted.
+	// The two LSBs go through inverters (so they're non-inverted); the eg_atten_XI signal goes through inverters.
+	// The adder is normal except the carry-in is 1. It's a 10-bit adder.
+	// The outputs are inverted outputs, including the carry bit.
+	//subtresult = not (('0' & not eg_atten_XI) - ('1' & logsin([11:2])));
+	// After a little pencil-and-paper, turns out this is equivalent to a regular adder!
+	subtresult = eg_atten_XI + logsin[11:2];
+	// Place all but carry bit into result; also two LSBs of logsin
+	// If addition overflowed, make it the largest value (saturate)
+	atten_internal_XI = { subtresult[9:0], logsin[1:0] } | {12{subtresult[10]}};
+end
+
+jt51_exprom u_exprom(
+	.clk	( clk		),
+	.addr	( atten_internal_XI[5:1] ),
+	.exp	( exp_XII		)
+);
+
+// Register cycle 12
+// Exponential table
+wire [44:0] exp_XII;
+reg [11:0]	totalatten_XII;
+reg [12:0]	etb;
+reg [ 9:0]	etf, etg;
+
+always @(posedge clk) begin
+	totalatten_XII <= atten_internal_XI;
+	signbit_XII <= signbit_XI;    
+end
+
+//wire [1:0] et_sel  = totalatten_XII[7:6];
+//wire [4:0] et_fine = totalatten_XII[5:1];
+
+// Main sine table body
+always @(*) begin    
+	// 2-bit row chooser	
+	case( totalatten_XII[7:6] )
+		2'b00: begin
+				etf = { 1'b1, exp_XII[44:36]  };
+				etg = { 1'b1, exp_XII[35:34] };				
+			end
+		2'b01: begin
+				etf = exp_XII[33:24];
+				etg = { 2'b10, exp_XII[23] };				
+			end
+		2'b10: begin
+				etf = { 1'b0, exp_XII[22:14]  };
+				etg = exp_XII[13:11];				
+			end
+		2'b11: begin
+				etf = { 2'b00, exp_XII[10:3]  };
+				etg = exp_XII[2:0];
+			end
+
+	endcase	
+end
+
+reg [9:0]	mantissa_XIII;
+reg [3:0]	exponent_XIII;
+
+always @(posedge clk) begin
+    //RESULT
+	mantissa_XIII <= etf + ( totalatten_XII[0] ? 3'd0 : etg ); //carry-out discarded
+	exponent_XIII <= totalatten_XII[11:8];
+	signbit_XIII <= signbit_X;     
+end
+
+// REGISTER/CYCLE 13
+// Introduce test bit as MSB, 2's complement & Carry-out discarded
+reg [12:0]	shifter, shifter_2, shifter_3;
+
+always @(*) begin    
+	// Floating-point to integer, and incorporating sign bit
+	// Two-stage shifting of mantissa_XIII by exponent_XIII
+	shifter = { 3'b001, mantissa_XIII };
+	case( ~exponent_XIII[1:0] )
+		2'b00: shifter_2 = { 1'b0, shifter[12:1] }; // LSB discarded
+		2'b01: shifter_2 = shifter;
+		2'b10: shifter_2 = { shifter[11:0], 1'b0 };
+		2'b11: shifter_2 = { shifter[10:0], 2'b0 };
+	endcase
+	case( ~exponent_XIII[3:2] )
+		2'b00: shifter_3 = {12'b0, shifter_2[12]   };
+		2'b01: shifter_3 = { 8'b0, shifter_2[12:8] };
+		2'b10: shifter_3 = { 4'b0, shifter_2[12:4] };
+		2'b11: shifter_3 = shifter_2;
 	endcase
 end
 
-// VIII
-always @(posedge clk) begin 
-	op_IX <= op_VIII;
+reg signed [13:0] op_XIII;
+
+always @(*) begin
+	// REGISTER CYCLE 13
+	op_XIII = ({ test_214, shifter_3 } ^ {14{signbit_XIII}}) + signbit_XIII;               
 end
-/*
-jt51_sh #( .width(8), .stages(7) ) u_con1sh(
-	.clk	( clk	),
-	.din	( { con, cur_op, fb } 	),
-    .drop	( { con_I, cur_op_I, fb_I } )
-);
-*/
 
-jt51_sh #( .width(5), .stages(6) ) u_con7sh(
-	.clk	( clk	),
-	.din	( { con_I, cur_op_I }	),
-    .drop	( { con_VII, cur_op_VII } )
+jt51_sh #( .width(14), .stages(5)) out_padding(
+	.clk	( clk		),
+	.din	( op_XII	),
+	.drop	( op_XVII	)
 );
-
 
 endmodule
