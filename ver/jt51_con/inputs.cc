@@ -31,7 +31,8 @@ void p( int adr, int val, string comment ="" ) {
 int main( int argc, char *argv[] ) {
 	int con=7, tl=0, opmask=1, ch=7, fl=0;
     //int d1r=1, d2r=1, rr=15, d1l=15, ar=31, ks=3;
-	//int oct=0, note=0, kf=0, mul=1, dt1=0, dt2=0;
+	//int oct=0, note=0, kf=0, dt1=0, dt2=0;
+	int mul=1;
 	bool egtest = false, op0test=false;
 	int seed=0;
 
@@ -56,8 +57,9 @@ int main( int argc, char *argv[] ) {
         /*
 		if( p=="OCT" ) stringstream( argv[++k] ) >> oct;
 		if( p=="NOTE" ) stringstream( argv[++k] ) >> note;
-		if( p=="KF" ) stringstream( argv[++k] ) >> kf;
+		if( p=="KF" ) stringstream( argv[++k] ) >> kf; */
 		if( p=="MUL" ) stringstream( argv[++k] ) >> mul;
+		/*
 		if( p=="DT1" ) stringstream( argv[++k] ) >> dt1;
 		if( p=="DT2" ) stringstream( argv[++k] ) >> dt2;*/
 		if( p=="-egtest" ) egtest=true;
@@ -66,8 +68,10 @@ int main( int argc, char *argv[] ) {
 	cout << " // connection = " << con << " OP mask = " << opmask << " total level = " << tl << '\n';
 	p( 2, (egtest?1:0)|(op0test?2:0), "Enable EG test mode" );	
 	// Random values for all registers
-    for( int ch=0x20; ch<0xff; ch++ ) {
-    	p( ch, rand()%256, "random value" );
+    for( int k=0x20; k<0xff; k++ ) {
+    	int val = rand()%256;
+    	if( (k&0xf8)==0x20 ) val &= 0x3f; // output RL disabled channels
+    	p( k, val, "random value" );
     }
     // Now program the channel we want
 	p( 0x28+ch, 0x19, "Key code" );
@@ -83,13 +87,12 @@ int main( int argc, char *argv[] ) {
     }*/    
 	for( int ch_k=0; ch_k<8; ch_k++ ) {
 		p( 8, (0xf<<3)|ch_k, "key on, to force key off next" );
-		if( ch_k==ch ) 
-			p( 8, ch_k, "key off" );
+		p( 8, ch_k, "key off" );
 	}
 	for( int k=0; k<96; k++ )
 	 	p( 1,1, "Gives time so keyoff works");	
 	for( int op=0; op<4; op++ ) {
-		p( 0x40+op*8+ch, 0x1, "MUL" );
+		p( 0x40+op*8+ch, mul, "MUL" );
 		p( 0x60+op*8+ch, tl, "TL" );
 		p( 0xc0+op*8+ch, 0x0, "DT2" );
 	}

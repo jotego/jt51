@@ -75,6 +75,7 @@ while [ $# -gt 0 ]; do
     if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  shift; continue; fi
     if [ $1 = "CON"  ]; then shift; CON=$1;  shift; continue; fi
     if [ $1 = "FL"  ]; then shift; FL=$1;  shift; continue; fi	
+    if [ $1 = "MUL"  ]; then shift; MUL=$1;  shift; continue; fi	
     if [ $1 = "-sim" ]; then 
     	shift; 
     	SIMULATOR=$1; 

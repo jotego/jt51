@@ -45,7 +45,7 @@ module jt51_phasegen(
 	output	reg	[19:0]	ph_IX
 );
 
-wire [19:0]	phase_drop_VII;
+wire [19:0]	ph_VII;
 
 reg [19:0]	phase_base_VI, phase_step_VII, ph_VIII;
 reg [17:0]	phase_base_IV, phase_base_V;
@@ -63,7 +63,7 @@ reg	[4:0]	pow2;
 reg	[4:0]	dt1_offset_V;
 reg	[2:0]	pow2ind_IV;
 
-wire [3:0]	mul_V;
+wire [3:0]	mul_VI;
 reg [2:0]	dt1_II, dt1_III, dt1_IV, dt1_V;
 
 jt51_phinc_rom u_phinctable(
@@ -214,15 +214,15 @@ end
 
 	// VI APPLY_MUL
 always @(posedge clk) begin
-	if( mul_V==4'd0 )
+	if( mul_VI==4'd0 )
 		phase_step_VII	<= { 1'b0, phase_base_VI[19:1] };
 	else
-		phase_step_VII	<= phase_base_VI * mul_V;
+		phase_step_VII	<= phase_base_VI * mul_VI;
 end
 
 // VII have same number of stages as jt51_envelope
 always @(posedge clk) begin	
-	ph_VIII <= pg_rst_VII ? 20'd0 : phase_drop_VII + phase_step_VII;
+	ph_VIII <= pg_rst_VII ? 20'd0 : ph_VII + phase_step_VII;
 	`ifdef DISPLAY_STEP
 			$display( "%d", phase_step_VII );
 	`endif 		
@@ -234,20 +234,20 @@ always @(posedge clk) begin
 end
 
 jt51_sh #( .width(4), .stages(5) ) u_mulsh(
-	.clk	( clk	),
-	.din	( mul ),
-	.drop	( mul_V )
+	.clk	( clk		),
+	.din	( mul		),
+	.drop	( mul_VI	)
 );
 
 jt51_sh #( .width(20), .stages(31) ) u_phsh(
-	.clk	( clk	),
-	.din	( ph_VIII ),
-	.drop	( phase_drop_VII)
+	.clk	( clk		),
+	.din	( ph_VIII	),
+	.drop	( ph_VII	)
 );
 
 jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
-	.clk	( clk	),
-	.din	( pg_rst_III ),
+	.clk	( clk		),
+	.din	( pg_rst_III),
 	.drop	( pg_rst_VII)
 );
 
