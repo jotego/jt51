@@ -26,7 +26,7 @@
 
 */
 
-module jt51_envelope(
+module jt51_eg(
 	`ifdef TEST_SUPPORT
 	input				test_eg,
 	`endif
@@ -35,20 +35,20 @@ module jt51_envelope(
 	input				zero,
 	// envelope configuration
 	input		[4:0]	keycode_III,
-	input		[4:0]	arate,
-	input		[4:0]	rate1,	
-	input		[4:0]	rate2,	
-	input		[3:0]	rrate,	
-	input		[3:0]	d1l,
-	input		[1:0]	ks,	
+	input		[4:0]	arate_II,
+	input		[4:0]	rate1_II,	
+	input		[4:0]	rate2_II,	
+	input		[3:0]	rrate_II,	
+	input		[3:0]	d1l_I,
+	input		[1:0]	ks_III,	
 	// envelope operation
 	input				keyon_II,
 	output	reg			pg_rst_III,
 	// envelope number
-	input		[6:0]	tl,
+	input		[6:0]	tl_VII,
 	input		[6:0]	am,
-	input		[1:0]	ams,
-	input				amsen,
+	input		[1:0]	ams_VII,
+	input				amsen_VII,
 	output		[9:0]	eg_XI
 );
 
@@ -58,15 +58,15 @@ module jt51_envelope(
 
 parameter ATTACK=2'd0, DECAY1=2'd1, DECAY2=2'd2, RELEASE=2'd3;
 
-reg		[4:0]	d1level;
+reg		[4:0]	d1level_II;
 reg		[2:0]	cnt_V;
 reg		[5:0]	rate_IV;
-wire	[6:0]	tl_out;
-wire	[1:0]	ams_out;
-wire			amsen_out;
-reg		[9:0]	eg_in, eg_out_III, eg_out_IV, eg_out_V, eg_out_VI, eg_VIII;
-wire	[9:0]	eg_out;
-reg		[11:0]	sum_eg_tl;
+wire	[6:0]	tl_VII;
+wire	[1:0]	ams_VII;
+wire			amsen_VII;
+reg		[9:0]	eg_VII, eg_out_III, eg_out_IV, eg_out_V, eg_VI, eg_VIII;
+wire	[9:0]	eg_II;
+reg		[11:0]	sum_eg_tl_VII;
 
 reg 	step_V, step_VI;
 reg		sum_up;
@@ -74,32 +74,12 @@ reg		keyon_III, keyon_IV, keyon_V, keyon_VI;
 reg 	[5:0]	rate_V;
 reg		[5:1]	rate_VI;
 
-reg		[4:0]	rate1_II, rate2_II, arate_II;
-reg		[3:0]	rrate_II;
-
 // remember: { log_msb, pow_addr } <= log_val[11:0] + { tl, 5'd0 } + { eg, 2'd0 };
 
 reg		[1:0]	eg_cnt_base;
 reg		[14:0]	eg_cnt;
 
-reg		[8:0]	am_final;
-
-always @(*) begin : sum_eg_and_tl
-	casex( {amsen_out, ams_out } )
-		3'b0xx,3'b100: am_final = 9'd0;
-		3'b101: am_final = { 2'b00, am };
-		3'b110: am_final = { 1'b0, am, 1'b0};
-		3'b111: am_final = { am, 2'b0      };
-	endcase
-	`ifdef TEST_SUPPORT
-	if( test_eg && tl_out!=7'd0 )
-		sum_eg_tl = 11'd0;
-	else
-	`endif
-		sum_eg_tl = { tl_out,   3'd0 } 
-		           + eg_in 
-				   + { am_final, 1'b0 };
-end
+reg		[8:0]	am_final_VII;
 
 always @(posedge clk) begin : envelope_counter
 	if( rst ) begin
@@ -141,7 +121,6 @@ end
 
 reg [7:0]	step_idx;
 reg	[1:0]	state_in_III, state_in_IV, state_in_V, state_in_VI;
-wire [1:0]	state_out;
 
 always @(*) begin : rate_step
 	if( rate_V[5:4]==2'b11 ) begin // 0 means 1x, 1 means 2x
@@ -175,31 +154,13 @@ end
 wire	ar_off_VI;
 reg		ar_off_III;
 
-reg [8:0] ar_sum0;
-reg [9:0] ar_result, ar_sum;
-
-always @(*) begin : ar_calculation
-	casex( rate_VI[5:2] )
-		default: ar_sum0 = eg_out_VI[9:4] + 1'd1;
-		4'b1100: ar_sum0 = eg_out_VI[9:4] + 1'd1;		
-		4'b1101: ar_sum0 = eg_out_VI[9:3] + 1'd1;
-		4'b111x: ar_sum0 = eg_out_VI[9:2] + 1'd1;
-	endcase
-	if( rate_VI[5:4] == 2'b11 )
-		ar_sum = step_VI ? { ar_sum0, 1'b0 } : { 1'b0, ar_sum0 };
-	else
-		ar_sum = step_VI ? { 1'b0, ar_sum0 } : 10'd0;
-	ar_result = ar_sum<eg_out_VI ? eg_out_VI-ar_sum : 10'd0;
-end
-
 
 always @(posedge clk) begin
 	// I
-	if( d1l == 4'd15 )
-		d1level <= 5'h10; // 48dB 
+	if( d1l_I == 4'd15 )
+		d1level_II <= 5'h10; // 48dB 
 	else
-		d1level <= d1l;
-	{ arate_II, rate1_II, rate2_II, rrate_II } <= { arate, rate1, rate2, rrate };
+		d1level_II <= d1l_I;
 end
 
 //	II
@@ -207,6 +168,7 @@ wire	keyon_last_II;
 wire	keyon_now_II  = !keyon_last_II && keyon_II;
 wire	keyoff_now_II = keyon_last_II && !keyon_II;
 wire	ar_off_II = keyon_now_II && (arate_II == 5'h1f);
+wire [1:0]	state_II;
 
 always @(posedge clk) begin
 	pg_rst_III <= keyon_now_II;
@@ -222,39 +184,39 @@ always @(posedge clk) begin
 			state_in_III <= ATTACK;
 		end
 		else begin : sel_rate
-			case ( state_out )
+			case ( state_II )
 				ATTACK: begin
-					if( eg_out==10'd0 ) begin
+					if( eg_II==10'd0 ) begin
 						state_in_III <= DECAY1;
 						cfg_III			 <= rate1_II;
 					end
 					else begin
-						state_in_III <= state_out; // attack
+						state_in_III <= state_II; // attack
 						cfg_III			 <= arate_II;
 					end
 				end
 				DECAY1: begin
-					if( eg_out[9:5] >= d1level ) begin
+					if( eg_II[9:5] >= d1level_II ) begin
 						cfg_III <= rate2_II;
 						state_in_III <= DECAY2;
 					end
 					else begin
 						cfg_III	<=	rate1_II;
-						state_in_III <= state_out;	// decay1				
+						state_in_III <= state_II;	// decay1				
 					end
 				end
 				DECAY2: begin
 						cfg_III	<=	rate2_II;
-						state_in_III <= state_out;	// decay2				
+						state_in_III <= state_II;	// decay2				
 					end
 				RELEASE: begin
 						cfg_III	<=	{ rrate_II, 1'b1 };
-						state_in_III <= state_out;	// release				
+						state_in_III <= state_II;	// release				
 					end
 			endcase
 		end
 	end
-	eg_out_III <= eg_out;
+	eg_out_III <= eg_II;
 end
 
 	// III		
@@ -306,44 +268,80 @@ end
 always @(posedge clk) begin
 	state_in_VI <= state_in_V;	
 	rate_VI <= rate_V[5:1];
-	eg_out_VI <= eg_out_V;
+	eg_VI <= eg_out_V;
 	sum_up <= cnt_V[0] != cnt_out;
 	step_VI <= step_V;
 end
 
-	// VI
+///////////////////////////////////////
+// VI
+reg [8:0] ar_sum0_VI;
+reg [9:0] ar_result_VI, ar_sum_VI;
+
+always @(*) begin : ar_calculation
+	casex( rate_VI[5:2] )
+		default: ar_sum0_VI = eg_VI[9:4] + 1'd1;
+		4'b1100: ar_sum0_VI = eg_VI[9:4] + 1'd1;		
+		4'b1101: ar_sum0_VI = eg_VI[9:3] + 1'd1;
+		4'b111x: ar_sum0_VI = eg_VI[9:2] + 1'd1;
+	endcase
+	if( rate_VI[5:4] == 2'b11 )
+		ar_sum_VI = step_VI ? { ar_sum0_VI, 1'b0 } : { 1'b0, ar_sum0_VI };
+	else
+		ar_sum_VI = step_VI ? { 1'b0, ar_sum0_VI } : 10'd0;
+	ar_result_VI = ar_sum_VI<eg_VI ? eg_VI-ar_sum_VI : 10'd0;
+end
+
+
 always @(posedge clk) begin
 	if( ar_off_VI )
-		eg_in <= 10'd0;
+		eg_VII <= 10'd0;
 	else
 	if( state_in_VI == ATTACK ) begin
-		if( sum_up && eg_out_VI != 10'd0 )
+		if( sum_up && eg_VI != 10'd0 )
 			if( rate_VI[5:1]==5'd31 ) 
-				eg_in <= 10'd0; 
+				eg_VII <= 10'd0; 
 			else
-				eg_in <= ar_result;
+				eg_VII <= ar_result_VI;
 		else
-			eg_in <= eg_out_VI;
+			eg_VII <= eg_VI;
 	end
 	else begin : DECAY_SUM
 		if( sum_up ) begin
-			if ( eg_out_VI<= (10'd1023-10'd8) ) 
+			if ( eg_VI<= (10'd1023-10'd8) ) 
 				case( rate_VI[5:2] )
-					4'b1100: eg_in <= eg_out_VI + { step_VI, ~step_VI }; // 12
-					4'b1101: eg_in <= eg_out_VI + { step_VI, ~step_VI, 1'b0 }; // 13
-					4'b1110: eg_in <= eg_out_VI + { step_VI, ~step_VI, 2'b0 }; // 14
-					4'b1111: eg_in <= eg_out_VI + 4'd8;// 15
-					default: eg_in <= eg_out_VI + { step_VI, 1'b0 };
+					4'b1100: eg_VII <= eg_VI + { step_VI, ~step_VI }; // 12
+					4'b1101: eg_VII <= eg_VI + { step_VI, ~step_VI, 1'b0 }; // 13
+					4'b1110: eg_VII <= eg_VI + { step_VI, ~step_VI, 2'b0 }; // 14
+					4'b1111: eg_VII <= eg_VI + 4'd8;// 15
+					default: eg_VII <= eg_VI + { step_VI, 1'b0 };
 				endcase
-			else eg_in <= 10'h3FF;
+			else eg_VII <= 10'h3FF;
 		end
-		else eg_in <= eg_out_VI;
+		else eg_VII <= eg_VI;
 	end
 end
 
-	// VII
+// VII
+always @(*) begin : sum_eg_and_tl
+	casex( {amsen_VII, ams_VII } )
+		3'b0xx,3'b100: am_final_VII = 9'd0;
+		3'b101: am_final_VII = { 2'b00, am };
+		3'b110: am_final_VII = { 1'b0, am, 1'b0};
+		3'b111: am_final_VII = { am, 2'b0      };
+	endcase
+	`ifdef TEST_SUPPORT
+	if( test_eg && tl_VII!=7'd0 )
+		sum_eg_tl_VII = 11'd0;
+	else
+	`endif
+	sum_eg_tl_VII = { tl_VII,   3'd0 } 
+	           + eg_VII 
+			   + { am_final_VII, 1'b0 };
+end
+
 always @(posedge clk) begin
-	eg_VIII <= sum_eg_tl[11:10] > 2'b0 ? {10{1'b1}} : sum_eg_tl[9:0];
+	eg_VIII <= sum_eg_tl_VII[11:10] > 2'b0 ? {10{1'b1}} : sum_eg_tl_VII[9:0];
 end
 
 jt51_sh #( .width(10), .stages(3) ) u_egpadding (
@@ -355,16 +353,16 @@ jt51_sh #( .width(10), .stages(3) ) u_egpadding (
 
 // Shift registers
 
+jt51_sh #( .width(10), .stages(32-11+2) ) u_egsh(
+	.clk	( clk		),
+	.din	( eg_XI		),
+	.drop	( eg_II		)
+);
+
 jt51_sh #( .width(1), .stages(4) ) u_aroffsh(
 	.clk	( clk		),
 	.din	( ar_off_II ),
 	.drop	( ar_off_VI	)
-);
-
-jt51_sh #( .width(2), .stages(2) ) u_kssh(
-	.clk	( clk		),
-	.din	( ks 		),
-	.drop	( ks_III	)
 );
 
 jt51_sh #( .width(1), .stages(32) ) u_konsh(
@@ -373,29 +371,56 @@ jt51_sh #( .width(1), .stages(32) ) u_konsh(
 	.drop	( keyon_last_II	)
 );
 
-jt51_sh #( .width(10), .stages(6) ) u_tlsh(
-	.clk	( clk		),
-	.din	( { tl, amsen, ams }	),
-	.drop	( { tl_out, amsen_out, ams_out }	)
-);
-
-jt51_sh #( .width(10), .stages(27) ) u_egsh(
-	.clk	( clk		),
-	.din	( eg_in		),
-	.drop	( eg_out	)
-);
-
 jt51_sh #( .width(1), .stages(32) ) u_cntsh(
 	.clk	( clk		),
 	.din	( cnt_V[0]	),
 	.drop	( cnt_out	)
 );
 
-jt51_sh #( .width(2), .stages(31) ) u_statesh(
+jt51_sh #( .width(2), .stages(32-3+2) ) u_statesh(
 	.clk	( clk		),
 	.din	( state_in_III	),
-	.drop	( state_out )
+	.drop	( state_II )
 );
+
+`ifdef SIMULATION
+/* verilator lint_off PINMISSING */
+wire [4:0] cnt;
+
+sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt));
+
+sep32 #(.width(10),.stg(11)) sep_eg(
+	.clk	( clk			),
+	.mixed	( eg_XI			),
+	.cnt	( cnt			)
+	);
+
+sep32 #(.width(7),.stg(7)) sep_tl(
+	.clk	( clk			),
+	.mixed	( tl_VII		),
+	.cnt	( cnt			)
+	);
+
+sep32 #(.width(2),.stg(2)) sep_state(
+	.clk	( clk			),
+	.mixed	( state_II		),
+	.cnt	( cnt			)
+	);
+
+sep32 #(.width(5),.stg(6)) sep_rate(
+	.clk	( clk			),
+	.mixed	( rate_VI		),
+	.cnt	( cnt			)
+	);
+
+sep32 #(.width(9),.stg(7)) sep_amfinal(
+	.clk	( clk			),
+	.mixed	( am_final_VII	),
+	.cnt	( cnt			)
+	);
+
+/* verilator lint_on PINMISSING */
+`endif
 
 endmodule
 

@@ -98,7 +98,7 @@ ref_file=$jt51/data/conn/${basename}.ym
 if [ $VERBOSE -eq 1 ]; then
 	echo Channel=$CH Connection=$CON OPMASK=$OPMASK TL=$TL FL=$FL
 	echo KS=$KS AR=$AR D1R=$D1R D2R=$D2R RR=$RR D1L=$D1L
-	echo OCT=$OCT NOTE=$NOTE
+	echo OCT=$OCT NOTE=$NOTE MUL=$MUL
 	echo $WAIT0 $RANDEXT
 	echo Additional commands to "'inputs'" = $OTHER
 fi
@@ -122,11 +122,13 @@ case $SIMULATOR in
 verilator)
 	if [ $DUMPSIGNALS = DUMPSIGNALS ]; then
 		VERILATOR_TRACE=--trace
+		VERILATOR_SIM="../common/sep32.v ../common/sep32_cnt.v -DSIMULATION"
 	else
 		VERILATOR_TRACE=
+		VERILATOR_SIM=
 	fi
 	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe jt51_con.cc \
-		--cc --top-module jt51 --trace \
+		--cc --top-module jt51 --trace $VERILATOR_SIM \
 		&& cd obj_dir \
 		&& make -f Vjt51.mk && Vjt51 $VERILATOR_TRACE --jtname ../$myfile
 	if [ $? -ne 0 ]; then
@@ -135,7 +137,8 @@ verilator)
 	cd ..
 	;;
 iverilog)
-  iverilog jt51_test.v -f ../common/basic.f -s $TOP -I $INCDIR2 -I $INCDIR -DIVERILOG -DDUMP_SND_TOP \
+  iverilog jt51_test.v ../common/sep32_cnt.v ../common/sep32.v -f ../common/basic.f -s $TOP \
+  	-I $INCDIR2 -I $INCDIR -DIVERILOG -DDUMP_SND_TOP -DSIMULATION \
   	-D$DUMPSIGNALS -D$WAIT0 -DDUMPLEFT -DTEST_SUPPORT -o basic$RANDEXT && basic$RANDEXT -lxt > s$RANDEXT
   if [ $? -ne 0 ]; then
   	if [ -e s$RANDEXT ]; then cat s$RANDEXT; fi
@@ -170,19 +173,12 @@ if [ $lines -eq 0 ]; then
 fi
 
 
-if [ ! -e $ref_file ]; then
-	if [ $VERBOSE -eq 1 ]; then
-		echo No existe el fichero de referencia $ref_file Usare uno fabricado.
-	fi        
-    ref_file=r$RANDEXT
-    borra_ref=SI
-    $jt51/bin/print_con CON $CON OPMASK $OPMASK TL $TL FL $FL LEN $lines > $ref_file
-    if [ $? -ne 0 ]; then
-    	echo "Problema con el comando print_con"
-        exit 1
-    fi
-else
-	borra_ref=NO
+ref_file=r$RANDEXT
+borra_ref=SI
+$jt51/bin/print_con CON $CON OPMASK $OPMASK TL $TL FL $FL LEN $lines > $ref_file
+if [ $? -ne 0 ]; then
+	echo "Could not execute print_con"
+    exit 1
 fi
 
 #rm s$RANDEXT

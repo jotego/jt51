@@ -100,24 +100,24 @@ jt51_timers timers(
 
 `define YM_TIMER_CTRL 8'h14
 
-wire	[1:0]	rl_out;
+wire	[1:0]	rl_I;
 wire	[2:0]	fb_II;
-wire	[2:0]	con_out;
-wire	[6:0]	kc_out;
-wire	[5:0]	kf_out;
-wire	[2:0]	pms_out;
-wire	[1:0]	ams_out;
-wire	[2:0]	dt1_out;
-wire	[3:0]	mul_out;
-wire	[6:0]	tl_out;
-wire	[1:0]	ks_out;
-wire	[4:0]	ar_out;
-wire			amsen_out;
-wire	[4:0]	d1r_out;
-wire	[1:0]	dt2_out;
-wire	[4:0]	d2r_out;
-wire	[3:0]	d1l_out;
-wire	[3:0]	rr_out;
+wire	[2:0]	con_I;
+wire	[6:0]	kc_I;
+wire	[5:0]	kf_I;
+wire	[2:0]	pms_I;
+wire	[1:0]	ams_VII;
+wire	[2:0]	dt1_II;
+wire	[3:0]	mul_VI;
+wire	[6:0]	tl_VII;
+wire	[1:0]	ks_III;
+wire	[4:0]	arate_II;
+wire			amsen_VII;
+wire	[4:0]	rate1_II;
+wire	[1:0]	dt2_I;
+wire	[4:0]	rate2_II;
+wire	[3:0]	d1l_I;
+wire	[3:0]	rrate_II;
 
 wire	[1:0]	cur_op;
 wire			zero;
@@ -151,23 +151,24 @@ wire	[ 4:0]	keycode_III;
 wire	[ 9:0]	ph_X;
 wire			pg_rst_III;
 
-jt51_phasegen u_pg(
+jt51_pg u_pg(
 	.clk		( p1		),				// P1
+	.zero		( zero		),
 	// Channel frequency
-	.kc			( kc_out	),
-	.kf			( kf_out	),
+	.kc_I		( kc_I		),
+	.kf_I		( kf_I		),
 	// Operator multiplying
-	.mul		( mul_out	),
+	.mul_VI		( mul_VI	),
 	// Operator detuning
-	.dt1		( dt1_out	),
-	.dt2		( dt2_out	),
+	.dt1_II		( dt1_II	),
+	.dt2_I		( dt2_I		),
 	// phase modulation from LFO
-	.pms		( pms_out	),
+	.pms_I		( pms_I		),
 	.pm			( pm		),
 	// phase operation
 	.pg_rst_III	( pg_rst_III 	),
 	.keycode_III( keycode_III	),
-	.ph_X		( ph_X		)
+	.pg_phase_X	( ph_X			)
 );
 
 `ifdef TEST_SUPPORT
@@ -175,7 +176,7 @@ wire		test_eg, test_op0;
 `endif
 wire [9:0]	eg_XI;
 
-jt51_envelope u_eg(
+jt51_eg	u_eg(
 	`ifdef TEST_SUPPORT
 	.test_eg	( test_eg	),
 	`endif	
@@ -184,20 +185,20 @@ jt51_envelope u_eg(
 	.zero		( zero		),
 	// envelope configuration
 	.keycode_III(keycode_III),	// used in stage III
-	.arate		( ar_out	),
-	.rate1		( d1r_out	),
-	.rate2		( d2r_out	),
-	.rrate		( rr_out	),
-	.d1l		( d1l_out	),
-	.ks			( ks_out	),
+	.arate_II	( arate_II	),
+	.rate1_II	( rate1_II	),
+	.rate2_II	( rate2_II	),
+	.rrate_II	( rrate_II	),
+	.d1l_I		( d1l_I		),
+	.ks_III		( ks_III	),
 	// envelope operation
 	.keyon_II	( keyon_II	),
-	.pg_rst_III	( pg_rst_III	),
+	.pg_rst_III	( pg_rst_III),
 	// envelope number
-	.tl			( tl_out	),
+	.tl_VII		( tl_VII	),
 	.am			( am 		),
-	.ams		( ams_out	),
-	.amsen		( amsen_out	),
+	.ams_VII	( ams_VII	),
+	.amsen_VII	( amsen_VII	),
 	.eg_XI		( eg_XI	)
 );
 
@@ -205,18 +206,18 @@ wire signed [13:0] op_out;
 
 jt51_op u_op(
 	`ifdef TEST_SUPPORT
-	.test_eg 	( test_eg	),
-	.test_op0	( test_op0	),	
+	.test_eg 		( test_eg			),
+	.test_op0		( test_op0			),	
 	`endif	
-	.clk		( p1		),
-	.pg_phase_X	( ph_X		),
-	.con_I		( con_out	),
-	.fb_II		( fb_II		),
+	.clk			( p1				),
+	.pg_phase_X		( ph_X				),
+	.con_I			( con_I				),
+	.fb_II			( fb_II				),
 	// volume
-	.eg_atten_XI( eg_XI		),
+	.eg_atten_XI	( eg_XI				),
 	// modulation
-	.m1_enters	( m1_enters		),
-	.c1_enters	( c1_enters		),
+	.m1_enters		( m1_enters			),
+	.c1_enters		( c1_enters			),
 	// Operator
 	.use_prevprev1	( use_prevprev1		),
 	.use_internal_x	( use_internal_x	),
@@ -224,7 +225,9 @@ jt51_op u_op(
 	.use_prev2		( use_prev2			),
 	.use_prev1		( use_prev1			),	
 	.test_214		( 1'b0				),
-	// .zero			( zero				),
+	`ifdef SIMULATION
+	.zero			( zero				),
+	`endif
 	// output data
 	.op_XVII		( op_out			)
 );
@@ -252,8 +255,8 @@ jt51_acc u_acc(
 	.c1_enters	( c1_enters		),
 	.c2_enters	( c2_enters		),
 	.op31_acc	( op31_acc		),
-	.rl			( rl_out		),
-	.con_I		( con_out		),
+	.rl_I		( rl_I			),
+	.con_I		( con_I			),
 	.op_out 	( op_out		),
 	.ne			( ne			),
 	.noise		( noise_out		),
@@ -347,29 +350,29 @@ jt51_mmr u_mmr(
 	.overflow_A	( overflow_A	),
 	`ifdef TEST_SUPPORT	
 	// Test
-	.test_eg	( test_eg		),
-	.test_op0	( test_op0		),
+	.test_eg	( test_eg	),
+	.test_op0	( test_op0	),
 	`endif
 	// REG
-	.rl_out		( rl_out 		),
-	.fb_II		( fb_II 		),
-	.con_out	( con_out 		),
-	.kc_out		( kc_out 		),
-	.kf_out		( kf_out 		),
-	.pms_out	( pms_out 		),
-	.ams_out	( ams_out 		),
-	.dt1_out	( dt1_out 		),
-	.mul_out	( mul_out 		),
-	.tl_out		( tl_out 		),
-	.ks_out		( ks_out 		),
-	.ar_out		( ar_out 		),
-	.amsen_out	( amsen_out 	),
-	.d1r_out	( d1r_out 		),
-	.dt2_out	( dt2_out 		),
-	.d2r_out	( d2r_out 		),
-	.d1l_out	( d1l_out 		),
-	.rr_out		( rr_out 		),
-	.keyon_II	( keyon_II		),
+	.rl_I		( rl_I 		),
+	.fb_II		( fb_II 	),
+	.con_I		( con_I 	),
+	.kc_I		( kc_I 		),
+	.kf_I		( kf_I 		),
+	.pms_I		( pms_I 	),
+	.ams_VII	( ams_VII 	),
+	.dt1_II		( dt1_II 	),
+	.mul_VI	( mul_VI 	),
+	.tl_VII		( tl_VII 	),
+	.ks_III		( ks_III 	),
+	.arate_II	( arate_II 	),
+	.amsen_VII	( amsen_VII ),
+	.rate1_II	( rate1_II 	),
+	.dt2_I		( dt2_I 	),
+	.rate2_II	( rate2_II 	),
+	.d1l_I		( d1l_I 	),
+	.rrate_II	( rrate_II 	),
+	.keyon_II	( keyon_II	),
 
 	.cur_op		( cur_op		),
 	.zero		( zero			),

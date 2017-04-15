@@ -126,7 +126,7 @@ int main(int argc, char **argv, char **env) {
 				last_sample = sample;
 			}
 		}
-		main_time++;
+		main_time+=2;
 		if(trace) tfp->dump(main_time);
 		/*
 		int a = top->reg_a;

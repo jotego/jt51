@@ -47,7 +47,9 @@ module jt51_op(
 	
 	input 				m1_enters,
 	input 				c1_enters,
-	// input				zero,
+	`ifdef SIMULATION
+	input				zero,
+	`endif
 	// output data
 	output signed	[13:0]	op_XVII
 );
@@ -300,13 +302,12 @@ reg signed [13:0] op_XIII;
 wire signbit_XIII;
 
 always @(*) begin
-	// REGISTER CYCLE 13
 	op_XIII = ({ test_214, shifter_3 } ^ {14{signbit_XIII}}) + signbit_XIII;               
 end
 
-jt51_sh #( .width(14), .stages(5)) out_padding(
+jt51_sh #( .width(14), .stages(4)) out_padding(
 	.clk	( clk		),
-	.din	( op_XIII	),
+	.din	( op_XIII	), // note op_XIII was not latched, is a comb output
 	.drop	( op_XVII	)
 );
 
@@ -315,5 +316,19 @@ jt51_sh #( .width(1), .stages(3)) shsignbit(
 	.din	( signbit_X	),
 	.drop	( signbit_XIII	)
 );
+
+`ifdef SIMULATION
+/* verilator lint_off PINMISSING */
+wire [4:0] cnt;
+
+sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt));
+
+sep32 #(.width(14),.stg(17)) sep_op(
+	.clk	( clk			),
+	.mixed	( op_XVII		),
+	.cnt	( cnt			)
+	);
+/* verilator lint_on PINMISSING */
+`endif
 
 endmodule

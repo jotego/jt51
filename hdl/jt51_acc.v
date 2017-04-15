@@ -28,7 +28,7 @@ module jt51_acc(
 	input 					c1_enters,
 	input 					c2_enters,
 	input					op31_acc,
-	input			[1:0]	rl,
+	input			[1:0]	rl_I,
 	input			[2:0]	con_I,
 	input	signed	[13:0]	op_out,
 	input					ne,		// noise enable
@@ -39,7 +39,7 @@ module jt51_acc(
     output  reg signed	[15:0]	xright    
 );
 
-reg  [13:0] op_val;
+reg signed [13:0] op_val;
 
 always @(*) begin
 	if( ne && op31_acc ) // cambiar a OP 31
@@ -52,16 +52,16 @@ reg sum_en;
 
 always @(*) begin
 	case ( con_I )
-        default: 	sum_en = c2_enters;
-    	3'd4: 		sum_en = m2_enters | c2_enters;
-        3'd5,3'd6: 	sum_en = ~m1_enters;        
-        3'd7: 		sum_en = 1'b1;
-        default: 	sum_en = 1'bx;
+        3'd0,3'd1,3'd2,3'd3: 	sum_en = c2_enters;
+    	3'd4: 					sum_en = m2_enters | c2_enters;
+        3'd5,3'd6: 				sum_en = ~m1_enters;        
+        3'd7: 					sum_en = 1'b1;
+        default: 				sum_en = 1'bx;
     endcase
 end
 
-wire ren = rl[1];
-wire len = rl[0];
+wire ren = rl_I[1];
+wire len = rl_I[0];
 reg signed [15:0] pre_left, pre_right;
 wire signed [15:0] total;
 
@@ -91,14 +91,12 @@ always @(posedge clk) begin
     end
 end
 			
-reg  signed [13:0] next;
 reg  signed [15:0] opsum;
-wire signed [16:0] opsum10 = next+total;
+wire signed [16:0] opsum10 = op_val+total;
 
 always @(*) begin
-	next = sum_en ? op_val : 16'd0;
 	if( m2_enters )
-		opsum = next;
+		opsum = sum_en ? op_val : 16'd0;
 	else begin
 		if( sum_en )
 			if( opsum10[16]==opsum10[15] )
@@ -111,7 +109,7 @@ always @(*) begin
 	end
 end
 
-jt51_sh #(.width(16),.stages(6)) u_acc(
+jt51_sh #(.width(16),.stages(8)) u_acc(
 	.clk	( clk	),
 	.din	( opsum	),
 	.drop	( total	)

@@ -43,24 +43,26 @@ module jt51_reg(
 	input			overflow_A,
 
 	output			busy,
-	output	[1:0]	rl_out,
-	output	reg [2:0]	fb_II,
-	output	[2:0]	con_out,
-	output	[6:0]	kc_out,
-	output	[5:0]	kf_out,
-	output	[2:0]	pms_out,
-	output	[1:0]	ams_out,
-	output	[2:0]	dt1_out,
-	output	[3:0]	mul_out,
-	output	[6:0]	tl_out,
-	output	[1:0]	ks_out,
-	output	[4:0]	ar_out,
-	output			amsen_out,
-	output	[4:0]	d1r_out,
-	output	[1:0]	dt2_out,
-	output	[4:0]	d2r_out,
-	output	[3:0]	d1l_out,
-	output	[3:0]	rr_out,
+	output	[1:0]	rl_I,
+	output	[2:0]	fb_II,
+	output	[2:0]	con_I,
+	output	[6:0]	kc_I,
+	output	[5:0]	kf_I,
+	output	[2:0]	pms_I,
+	output	[1:0]	ams_VII,
+	output	[2:0]	dt1_II,
+	output	[3:0]	mul_VI,
+	output	[6:0]	tl_VII,
+	output	[1:0]	ks_III,
+	output			amsen_VII,
+
+	output	[4:0]	arate_II,
+	output	[4:0]	rate1_II,
+	output	[4:0]	rate2_II,
+	output	[3:0]	rrate_II,
+
+	output	[1:0]	dt2_I,
+	output	[3:0]	d1l_I,
 	output			keyon_II,
 
 	// Pipeline order
@@ -115,7 +117,7 @@ wire	[3:0]	rr_in	= d_in[3:0];
 wire up = 	up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
 			up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
 
-reg	[4:0]	cnt, next, cur;
+reg	[4:0]	cnt, cur;
 reg			last, last_kon;
 reg	[1:0]	cnt_kon;
 reg			busy_op;
@@ -124,24 +126,43 @@ assign busy = busy_op;
 
 assign cur_op = cur[4:3];
 
-always @(*) begin
-	next = cur +1'b1;
-end
+wire [4:0]	next    = cur + 5'd1;
+wire [4:0]	cur_III = cur + 5'd2;
+wire [4:0]	cur_IV  = cur + 5'd3;
+wire [4:0]	cur_V   = cur + 5'd4;
+wire [4:0]	cur_VI  = cur + 5'd5;
+wire [4:0]	cur_VII = cur + 5'd6;
 
-wire	[4:0] abs	= { op, ch };
-wire	update_op	= abs == cur;
-wire	update_ch	= ch  == cur[2:0];
 
-wire up_rl_ch	= up_rl		& update_ch;
-wire up_kc_ch	= up_kc		& update_ch;
-wire up_kf_ch	= up_kf		& update_ch;
-wire up_pms_ch	= up_pms	& update_ch;
-wire up_dt1_op	= up_dt1	& update_op;
-wire up_tl_op	= up_tl		& update_op;
-wire up_ks_op	= up_ks		& update_op;
-wire up_amsen_op= up_amsen	& update_op;
-wire up_dt2_op	= up_dt2	& update_op;
-wire up_d1l_op	= up_d1l	& update_op;
+wire	[4:0] abs		= { op, ch };
+wire	update_op_I		= abs == cur;
+wire	update_op_II	= abs == next;
+wire	update_op_III	= abs == cur_III;
+wire	update_op_IV	= abs == cur_IV;
+wire	update_op_V		= abs == cur_V;
+wire	update_op_VI	= abs == cur_VI;
+wire	update_op_VII	= abs == cur_VII;
+
+wire up_rl_ch	= up_rl		& update_op_I;
+wire up_fb_ch	= up_rl		& update_op_II;
+wire up_con_ch	= up_rl		& update_op_I;
+
+wire up_kc_ch	= up_kc		& update_op_I;
+wire up_kf_ch	= up_kf		& update_op_I;
+wire up_pms_ch	= up_pms	& update_op_I;
+wire up_ams_ch	= up_pms	& update_op_VII;
+
+wire up_dt1_op	= up_dt1	& update_op_II; // DT1, MUL
+wire up_tl_op	= up_tl		& update_op_VII;
+wire up_ks_op	= up_ks		& update_op_III; // KS, AR
+wire up_amsen_op= up_amsen	& update_op_VII; // AMS-EN, D1R
+wire up_dt2_op	= up_dt2	& update_op_I; // DT2, D2R
+wire up_d1l_op	= up_d1l	& update_op_I; // D1L, RR
+
+wire up_ar_op	= up_ks		& update_op_II; // KS, AR
+wire up_d1r_op  = up_amsen	& update_op_II; // AMS-EN, D1R
+wire up_d2r_op	= up_dt2	& update_op_II; // DT2, D2R
+wire up_rr_op	= up_d1l	& update_op_II; // D1L, RR
 
 reg  up_keyon_long;
 
@@ -189,7 +210,7 @@ jt51_kon i_jt51_kon (
 
 
 jt51_mod u_mod(
-	.alg_I		( con_out	),
+	.alg_I		( con_I	),
 	.m1_enters	( m1_enters ),
 	.m2_enters	( m2_enters ),
 	.c1_enters	( c1_enters ),
@@ -207,16 +228,21 @@ jt51_mod u_mod(
 reg  [41:0] reg_op[31:0];
 reg  [41:0] reg_out;
 
-assign { dt1_out, mul_out, tl_out, ks_out, ar_out, amsen_out, d1r_out, 
-	dt2_out, d2r_out, d1l_out, rr_out } = reg_out;
+assign { dt1_II, mul_VI, tl_VII, ks_III, arate_II, amsen_VII, rate1_II, 
+	dt2_I, rate2_II, d1l_I, rrate_II } = reg_out;
 
 wire [41:0] reg_in = { 	
-					up_dt1_op	? { dt1_in, mul_in}		: { dt1_out, mul_out },
-					up_tl_op	? tl_in					: tl_out,
-                    up_ks_op	? { ks_in, ar_in }		: { ks_out, ar_out },
-                    up_amsen_op	? { amsen_in, d1r_in }	: { amsen_out, d1r_out },
-                    up_dt2_op	? { dt2_in, d2r_in }	: { dt2_out, d2r_out },
-                    up_d1l_op	? { d1l_in, rr_in }		: { d1l_out, rr_out } };
+					up_dt1_op	? { dt1_in, mul_in}		: { dt1_II, mul_VI },
+					up_tl_op	? tl_in		: tl_VII,
+                    up_ks_op	? ks_in		: ks_III,
+                    up_amsen_op	? amsen_in	: amsen_VII,
+                    up_dt2_op	? dt2_in	: dt2_I,
+                    up_d1l_op	? d1l_in	: d1l_I,
+
+                    up_ar_op	? ar_in		: arate_II,
+                    up_d1r_op	? d1r_in	: rate1_II,
+                    up_d2r_op	? d2r_in	: rate2_II,
+                    up_rr_op	? rr_in		: rrate_II };
 
 wire opdata_wr = |{ up_dt1_op, up_tl_op, up_ks_op, up_amsen_op, up_dt2_op, up_d1l_op };
 
@@ -227,20 +253,18 @@ always @(posedge clk) begin
 end
 
 // memory for CH registers
-wire [2:0] fb_out;
-always @(posedge clk) begin
-	fb_II <= fb_out;
-end
-
 reg [25:0] reg_ch[7:0];
 reg [25:0] reg_ch_out;
 wire [25:0] reg_ch_in = {
-		up_rl_ch	? { rl_in, fb_in, con_in }	: { rl_out, fb_out, con_out },
-        up_kc_ch	? kc_in						: kc_out,
-        up_kf_ch	? kf_in						: kf_out,
-        up_pms_ch	? { pms_in, ams_in }		: { pms_out, ams_out } };
+		up_rl_ch	? rl_in		: rl_I,
+		up_fb_ch	? fb_in		: fb_II,
+		up_con_ch	? con_in	: con_I,
+        up_kc_ch	? kc_in		: kc_I,
+        up_kf_ch	? kf_in		: kf_I,
+        up_ams_ch	? ams_in	: ams_VII,
+        up_pms_ch	? pms_in	: pms_I 	};
         
-assign { rl_out, fb_out, con_out, kc_out, kf_out, pms_out, ams_out } = reg_ch_out;
+assign { rl_I, fb_II, con_I, kc_I, kf_I, pms_I, ams_VII } = reg_ch_out;
 
 wire [2:0] next_ch = next[2:0];
 wire chdata_wr = |{up_rl_ch, up_kc_ch, up_kf_ch, up_pms_ch };
@@ -250,5 +274,47 @@ always @(posedge clk) begin
     if( chdata_wr )
     	reg_ch[cur_ch]	<= reg_ch_in;
 end
+
+`ifdef SIMULATION
+/* verilator lint_off PINMISSING */
+wire [4:0] cnt_aux;
+
+sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt_aux));
+
+sep32 #(.width(7),.stg(1)) sep_tl(
+	.clk	( clk			),
+	.mixed	( tl_VII		),
+	.cnt	( cnt_aux		)
+	);
+
+sep32 #(.width(5),.stg(1)) sep_ar(
+	.clk	( clk			),
+	.mixed	( arate_II		),
+	.cnt	( cnt_aux		)
+	);
+
+
+sep32 #(.width(4),.stg(1)) sep_d1l(
+	.clk	( clk			),
+	.mixed	( d1l_I			),
+	.cnt	( cnt_aux		)
+	);
+
+
+sep32 #(.width(4),.stg(1)) sep_rr(
+	.clk	( clk			),
+	.mixed	( rrate_II		),
+	.cnt	( cnt_aux		)
+	);
+
+sep32 #(.width(1),.stg(1)) sep_amsen(
+	.clk	( clk			),
+	.mixed	( amsen_VII		),
+	.cnt	( cnt_aux		)
+	);
+
+/* verilator lint_on PINMISSING */
+`endif
+
 
 endmodule

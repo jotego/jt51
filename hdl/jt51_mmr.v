@@ -63,24 +63,24 @@ module jt51_mmr(
 	output	reg		test_op0,
 	`endif
 	// REG
-	output	[1:0]	rl_out,
+	output	[1:0]	rl_I,
 	output	[2:0]	fb_II,
-	output	[2:0]	con_out,
-	output	[6:0]	kc_out,
-	output	[5:0]	kf_out,
-	output	[2:0]	pms_out,
-	output	[1:0]	ams_out,
-	output	[2:0]	dt1_out,
-	output	[3:0]	mul_out,
-	output	[6:0]	tl_out,
-	output	[1:0]	ks_out,
-	output	[4:0]	ar_out,
-	output			amsen_out,
-	output	[4:0]	d1r_out,
-	output	[1:0]	dt2_out,
-	output	[4:0]	d2r_out,
-	output	[3:0]	d1l_out,
-	output	[3:0]	rr_out,
+	output	[2:0]	con_I,
+	output	[6:0]	kc_I,
+	output	[5:0]	kf_I,
+	output	[2:0]	pms_I,
+	output	[1:0]	ams_VII,
+	output	[2:0]	dt1_II,
+	output	[3:0]	mul_VI,
+	output	[6:0]	tl_VII,
+	output	[1:0]	ks_III,
+	output	[4:0]	arate_II,
+	output			amsen_VII,
+	output	[4:0]	rate1_II,
+	output	[1:0]	dt2_I,
+	output	[4:0]	rate2_II,
+	output	[3:0]	d1l_I,
+	output	[3:0]	rrate_II,
 	output			keyon_II,
 
 	output	[1:0]	cur_op,
@@ -107,6 +107,10 @@ reg		up_rl,	up_kc,	up_kf,	up_pms,
 
 wire			busy_reg;		
 
+`ifdef SIMULATION
+reg mmr_dump;
+`endif
+
 parameter 	REG_TEST	=	8'h01,
 			REG_TEST2	=	8'h02,
 			REG_KON		=	8'h08,
@@ -117,7 +121,8 @@ parameter 	REG_TEST	=	8'h01,
 			REG_TIMER	=	8'h14,
 			REG_LFRQ	=	8'h18,
 			REG_PMDAMD	=	8'h19,
-			REG_CTW		=	8'h1b;
+			REG_CTW		=	8'h1b,
+			REG_DUMP	=	8'h1f;
 
 reg	csm;
 
@@ -144,7 +149,10 @@ always @(posedge clk) begin : memory_mapped_registers
 		{ ct2, ct1 }	<= 2'd0;
 		csm				<= 1'b0;
 		din_latch		<= 8'd0;
-	end else begin
+		`ifdef SIMULATION
+		mmr_dump <= 1'b0;
+		`endif
+		end else begin
 		// WRITE IN REGISTERS
 		if( write && !busy ) begin
 			busy <= 1'b1;
@@ -186,6 +194,10 @@ always @(posedge clk) begin : memory_mapped_registers
 						{ ct2, ct1 } <= d_in[7:6];
 						lfo_w 		 <= d_in[1:0];
 						end
+					`ifdef SIMULATION
+					REG_DUMP:
+						mmr_dump <= 1'b1;
+					`endif
 					endcase
 				end else
 				// channel registers
@@ -212,6 +224,9 @@ always @(posedge clk) begin : memory_mapped_registers
 			end
 		end
 		else begin /* clear once-only bits */
+			`ifdef SIMULATION
+			mmr_dump <= 1'b0;
+			`endif
 			csm 	<= 1'b0;
 			lfo_rst <= 1'b0;
 			{ clr_flag_B, clr_flag_A, load_B, load_A } <= 4'd0;
@@ -259,25 +274,28 @@ jt51_reg u_reg(
 	.overflow_A	( overflow_A),
 
 	.busy		( busy_reg 	),
-	.rl_out		( rl_out 	),
+	.rl_I		( rl_I 		),
 	.fb_II		( fb_II 	),
-	.con_out	( con_out 	),
-	.kc_out		( kc_out 	),
-	.kf_out		( kf_out 	),
-	.pms_out	( pms_out 	),
-	.ams_out	( ams_out 	),
-	.dt1_out	( dt1_out 	),
-	.mul_out	( mul_out 	),
-	.tl_out		( tl_out 	),
-	.ks_out		( ks_out 	),
-	.ar_out		( ar_out 	),
-	.amsen_out	( amsen_out ),
-	.d1r_out	( d1r_out 	),
-	.dt2_out	( dt2_out 	),
-	.d2r_out	( d2r_out 	),
-	.d1l_out	( d1l_out 	),
-	.rr_out		( rr_out 	),
-	.keyon_II	(keyon_II	),
+	.con_I		( con_I 	),
+
+	.kc_I		( kc_I	 	),
+	.kf_I		( kf_I	 	),
+	.pms_I		( pms_I 	),
+	.ams_VII	( ams_VII 	),
+
+	.dt1_II		( dt1_II 	),
+	.dt2_I		( dt2_I 	),
+	.mul_VI		( mul_VI 	),
+	.tl_VII		( tl_VII 	),
+	.ks_III		( ks_III 	),
+
+	.arate_II	( arate_II 	),
+	.amsen_VII	( amsen_VII ),
+	.rate1_II	( rate1_II 	),
+	.rate2_II	( rate2_II 	),
+	.rrate_II	( rrate_II 	),
+	.d1l_I		( d1l_I 	),
+	.keyon_II	( keyon_II	),
 
 	.cur_op		(cur_op		),
 	.zero		(zero		),
@@ -292,5 +310,34 @@ jt51_reg u_reg(
 	.use_prev2		( use_prev2			),
 	.use_prev1		( use_prev1			)
 );
+
+`ifdef SIMULATION
+/* verilator lint_off PINMISSING */
+wire [4:0] cnt_aux;
+
+sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt_aux));
+
+sep32 #(.width(2),.stg(1)) sep_rl (.clk(clk),.cnt(cnt_aux),.mixed( rl_I	 	));
+sep32 #(.width(3),.stg(2)) sep_fb (.clk(clk),.cnt(cnt_aux),.mixed( fb_II 	));
+sep32 #(.width(3),.stg(1)) sep_con(.clk(clk),.cnt(cnt_aux),.mixed( con_I	));
+
+sep32 #(.width(7),.stg(1)) sep_kc (.clk(clk),.cnt(cnt_aux),.mixed( kc_I		));
+sep32 #(.width(6),.stg(1)) sep_kf (.clk(clk),.cnt(cnt_aux),.mixed( kf_I		));
+sep32 #(.width(3),.stg(1)) sep_pms(.clk(clk),.cnt(cnt_aux),.mixed( pms_I	));
+sep32 #(.width(2),.stg(7)) sep_ams(.clk(clk),.cnt(cnt_aux),.mixed( ams_VII	));
+
+sep32 #(.width(3),.stg(2)) sep_dt1(.clk(clk),.cnt(cnt_aux),.mixed( dt1_II	));
+sep32 #(.width(2),.stg(1)) sep_dt2(.clk(clk),.cnt(cnt_aux),.mixed( dt2_I	));
+sep32 #(.width(4),.stg(6)) sep_mul(.clk(clk),.cnt(cnt_aux),.mixed( mul_VI	));
+sep32 #(.width(7),.stg(7)) sep_tl (.clk(clk),.cnt(cnt_aux),.mixed( tl_VII	));
+sep32 #(.width(2),.stg(3)) sep_ks (.clk(clk),.cnt(cnt_aux),.mixed( ks_III	));
+
+sep32 #(.width(5),.stg(2)) sep_ar (.clk(clk),.cnt(cnt_aux),.mixed( arate_II	));
+sep32 #(.width(1),.stg(7)) sep_ame(.clk(clk),.cnt(cnt_aux),.mixed( amsen_VII));
+sep32 #(.width(5),.stg(2)) sep_dr1(.clk(clk),.cnt(cnt_aux),.mixed( rate1_II	));
+sep32 #(.width(5),.stg(2)) sep_dr2(.clk(clk),.cnt(cnt_aux),.mixed( rate2_II	));
+sep32 #(.width(4),.stg(2)) sep_rr (.clk(clk),.cnt(cnt_aux),.mixed( rrate_II	));
+sep32 #(.width(4),.stg(1)) sep_d1l(.clk(clk),.cnt(cnt_aux),.mixed( d1l_I	));
+`endif
 
 endmodule

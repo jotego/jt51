@@ -21,9 +21,9 @@
 `timescale 1ns / 1ps
 
 module jt51_pm(
-	input	[6:0]	kc,
-    input	[5:0]	kf,
-    input	[8:0]	mod,
+	input	[6:0]	kc_I,
+    input	[5:0]	kf_I,
+    input	[8:0]	mod_I,
     input			add,
     output	reg [12:0] kcex
 );
@@ -36,11 +36,11 @@ reg [6:0] kcin;
 reg carry;
 
 always @(*) begin: kc_input_cleaner
-	{ carry, kcin } = kc[1:0]==2'd3 ? { 1'b0, kc } + 8'd1 : {1'b0,kc};
+	{ carry, kcin } = kc_I[1:0]==2'd3 ? { 1'b0, kc_I } + 8'd1 : {1'b0,kc_I};
 end
 
 always @(*) begin : addition
-	lim = { 1'd0, mod } +  { 4'd0, kf };
+	lim = { 1'd0, mod_I } +  { 4'd0, kf_I };
     case( kcin[3:0] )
 		default:
         	if( lim>=10'd448 ) extra = 2'd2;
@@ -56,7 +56,7 @@ always @(*) begin : addition
             else if( lim>=10'd128 ) extra = 2'd1;
             else extra = 2'd0;            
     endcase
-    kcex0 = {1'b0,kcin,kf} + { 4'd0, extra, 6'd0 } + { 1'd0, mod };
+    kcex0 = {1'b0,kcin,kf_I} + { 4'd0, extra, 6'd0 } + { 1'd0, mod_I };
     kcex1 = kcex0[7:6]==2'd3 ? kcex0 + 14'd64 : kcex0;    
 end
 
@@ -65,7 +65,7 @@ reg [1:0] sextra;
 reg [13:0] skcex0, skcex1;
 
 always @(*) begin : subtraction
-	slim = { 1'd0, mod } - { 4'd0, kf };
+	slim = { 1'd0, mod_I } - { 4'd0, kf_I };
     case( kcin[3:0] )
 		default:
         	if( slim>=10'sd449 ) sextra = 2'd3;
@@ -81,7 +81,7 @@ always @(*) begin : subtraction
             else if( slim>=10'sd193 ) sextra = 2'd1;
             else sextra = 2'd0;            
     endcase
-    skcex0 = {1'b0,kcin,kf} - { 4'd0, sextra, 6'd0 } - { 1'd0, mod };
+    skcex0 = {1'b0,kcin,kf_I} - { 4'd0, sextra, 6'd0 } - { 1'd0, mod_I };
     skcex1 = skcex0[7:6]==2'd3 ? skcex0 - 14'd64 : skcex0;
 end
 

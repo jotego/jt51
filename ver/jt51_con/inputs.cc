@@ -35,6 +35,7 @@ int main( int argc, char *argv[] ) {
 	int mul=1;
 	bool egtest = false, op0test=false;
 	int seed=0;
+	bool rand_fill=true;
 
 	srand(seed);
 
@@ -47,6 +48,7 @@ int main( int argc, char *argv[] ) {
 		if( p=="OPMASK" ) stringstream( argv[++k] ) >> opmask;
 		if( p=="FL" ) stringstream( argv[++k] ) >> fl;
 		if( p=="TL" ) stringstream( argv[++k] ) >> tl;
+		if( p=="--norand" ) { cerr << "Using 0's as fill value\n"; rand_fill = false; }
         /*
 		if( p=="AR" ) stringstream( argv[++k] ) >> ar;
 		if( p=="KS" ) stringstream( argv[++k] ) >> ks;
@@ -69,9 +71,9 @@ int main( int argc, char *argv[] ) {
 	p( 2, (egtest?1:0)|(op0test?2:0), "Enable EG test mode" );	
 	// Random values for all registers
     for( int k=0x20; k<0xff; k++ ) {
-    	int val = rand()%256;
+    	int val = rand_fill ? (rand()%256) : 0;
     	if( (k&0xf8)==0x20 ) val &= 0x3f; // output RL disabled channels
-    	p( k, val, "random value" );
+    	p( k, val, "fill value" );
     }
     // Now program the channel we want
 	p( 0x28+ch, 0x19, "Key code" );
@@ -84,17 +86,22 @@ int main( int argc, char *argv[] ) {
     /**
     for( int op=0; op<32; op++ ) {
     	p( 0xe0+op, 0xf, "Release rate" );
-    }*/    
-	for( int ch_k=0; ch_k<8; ch_k++ ) {
-		p( 8, (0xf<<3)|ch_k, "key on, to force key off next" );
-		p( 8, ch_k, "key off" );
+    }*/  
+    for( int kcycle=2; kcycle>0; kcycle-- ) {
+		for( int ch_k=0; ch_k<8; ch_k++ ) {
+			p( 8, (0xf<<3)|ch_k, "key on, to force key off next" );
+			p( 8, ch_k, "key off" );
+		}
+		for( int k=0; k<96; k++ )
+		 	p( 1,1, "Gives time so keyoff works");
 	}
-	for( int k=0; k<96; k++ )
-	 	p( 1,1, "Gives time so keyoff works");	
 	for( int op=0; op<4; op++ ) {
-		p( 0x40+op*8+ch, mul, "MUL" );
-		p( 0x60+op*8+ch, tl, "TL" );
-		p( 0xc0+op*8+ch, 0x0, "DT2" );
+		if( ((opmask>>op)&1) ) {
+			p( 0x40+op*8+ch, mul, "MUL" );
+			p( 0x60+op*8+ch, tl, "TL" );
+			p( 0xa0+op*8+ch, 0, "AMS-EN/D1R" );
+			p( 0xc0+op*8+ch, 0x0, "DT2" );
+		}
 	}
 	p( 0x20+ch, 0xc0 | (fl<<3) | con, "connection" );
 	p( 0x8, (opmask<<3) | ch, "key on" );
