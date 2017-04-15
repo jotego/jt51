@@ -34,8 +34,7 @@ module jt51_op(
 	input             	clk,          	// P1
 	input		[9:0] 	pg_phase_X,
 	input		[2:0]	con_I,
-	input		[1:0]	cur_op_I,
-	input		[2:0]	fb_I,
+	input		[2:0]	fb_II,
 	// volume
 	input		[9:0]	eg_atten_XI,
 	// modulation
@@ -48,7 +47,7 @@ module jt51_op(
 	
 	input 				m1_enters,
 	input 				c1_enters,
-	input				zero,
+	// input				zero,
 	// output data
 	output signed	[13:0]	op_XVII
 );
@@ -60,48 +59,7 @@ module jt51_op(
 	S4		m2
 */
 
-reg	[ 9:0]	phase;
-reg [ 4:0]	log_msb, log_msb2;
-reg [12:0]	pre; // preattenuation value
-reg [3:0]	sign;
-reg	[12:0]	out_abs;
-reg signed [13:0] op_VIII;
-
-reg 	[7:0]	phase_addr;
-wire 	[11:0]	log_val;	// sine mantisa, in 2's complement
-
-jt51_sintable u_sintable(
-	.phase   ( phase_addr	),
-	.log_val ( log_val   	)
-);
-
-
-reg 	[7:0]	pow_addr;
-wire 	[12:0]	pow_val;
-
-jt51_exptable u_exptable(
-	.pow_addr( pow_addr	),
-	.pow_val ( pow_val 	)
-);
-
-reg	[9:0]	eg_II, eg_III;
-`ifdef TEST_SUPPORT
-reg	[9:0]	eg_IV, eg_V, eg_VI;
-`endif
-reg	signed	[19:0]	modulation;
-wire	[2:0]	con_VII;
-wire	[1:0]	cur_op_VII; //, cur_op_I;
-// wire	[2:0]	con_I, fb_I;
-
-
-
-jt51_sh2 #( .width(14), .stages(8) ) u_mod7sh(
-	.clk	( clk	),
-	.en		( mod7_en ),
-	.ld		( 1'b1	),
-	.din	( mod3	),
-    .drop	( mod7	)
-);
+wire signed [13:0] prev1, prevprev1, prev2;
 
 jt51_sh #( .width(14), .stages(8)) prev1_buffer(
 	.clk	( clk	),
@@ -167,13 +125,14 @@ always @(*) begin
 			3'd5: phasemod_II = pm_preshift_II[14:5];
 			3'd6: phasemod_II = pm_preshift_II[13:4];
 			3'd7: phasemod_II = pm_preshift_II[12:3];
+			default: phasemod_II = 10'dx;
 		endcase
 end
 
 // REGISTER/CYCLE 2-9
-jt12_sh #( .width(10), .stages(8)) phasemod_sh(
-	.clk	( clk	),
-	.din	( phasemod_II ),
+jt51_sh #( .width(10), .stages(8)) phasemod_sh(
+	.clk	( clk			),
+	.din	( phasemod_II	),
 	.drop	( phasemod_X	)
 );
 
@@ -186,16 +145,16 @@ reg [ 9:0]	phase;
 // is below the maximum.
 
 reg [ 7:0]	phaselo_XI, aux_X;
+reg	signbit_X;
 
 always @(*) begin
 	phase	= phasemod_X + pg_phase_X;
 	aux_X	= phase[7:0] ^ {8{~phase[8]}};
+	signbit_X = phase[9];
 end
 
 always @(posedge clk) begin    
 	phaselo_XI <= aux_X;
-	signbit_XI <= phase[9];     
-
 end
 
 wire [45:0] sta_XI;
@@ -213,6 +172,7 @@ reg [18:0]	stb;
 reg [10:0]	stf, stg;
 reg [11:0]	logsin;
 reg [10:0]	subtresult;
+reg [11:0]	atten_internal_XI;
 
 always @(*) begin
 	//sta_XI = sinetable[ phaselo_XI[5:1] ];
@@ -225,12 +185,13 @@ always @(*) begin
 		2'b10: stb = { 2'b0, sta_XI[43], sta_XI[41], 2'b0, sta_XI[36],
         	sta_XI[33], 2'b0, sta_XI[27], sta_XI[23], 1'b0, sta_XI[20],
             sta_XI[16], sta_XI[12], sta_XI[9], sta_XI[5], sta_XI[1] };
-		default: stb = {
+		2'b11: stb = {
 			  sta_XI[45], sta_XI[44], sta_XI[42], sta_XI[40]
 			, sta_XI[39], sta_XI[38], sta_XI[35], sta_XI[32]
 			, sta_XI[31], sta_XI[30], sta_XI[26], sta_XI[22]
 			, sta_XI[21], sta_XI[19], sta_XI[15], sta_XI[11]
 			, sta_XI[8], sta_XI[4], sta_XI[0] };
+		default: stb = 19'dx;
 	endcase
 	// Fixed value to sum
 	stf = { stb[18:15], stb[12:11], stb[8:7], stb[4:3], stb[0] };
@@ -254,11 +215,6 @@ always @(*) begin
 	atten_internal_XI = { subtresult[9:0], logsin[1:0] } | {12{subtresult[10]}};
 end
 
-jt51_exprom u_exprom(
-	.clk	( clk		),
-	.addr	( atten_internal_XI[5:1] ),
-	.exp	( exp_XII		)
-);
 
 // Register cycle 12
 // Exponential table
@@ -267,9 +223,14 @@ reg [11:0]	totalatten_XII;
 reg [12:0]	etb;
 reg [ 9:0]	etf, etg;
 
+jt51_exprom u_exprom(
+	.clk	( clk		),
+	.addr	( atten_internal_XI[5:1] ),
+	.exp	( exp_XII		)
+);
+
 always @(posedge clk) begin
 	totalatten_XII <= atten_internal_XI;
-	signbit_XII <= signbit_XI;    
 end
 
 //wire [1:0] et_sel  = totalatten_XII[7:6];
@@ -295,7 +256,10 @@ always @(*) begin
 				etf = { 2'b00, exp_XII[10:3]  };
 				etg = exp_XII[2:0];
 			end
-
+		default: begin
+				etf = 10'dx;
+				etg = 10'dx;
+			end
 	endcase	
 end
 
@@ -306,7 +270,6 @@ always @(posedge clk) begin
     //RESULT
 	mantissa_XIII <= etf + ( totalatten_XII[0] ? 3'd0 : etg ); //carry-out discarded
 	exponent_XIII <= totalatten_XII[11:8];
-	signbit_XIII <= signbit_X;     
 end
 
 // REGISTER/CYCLE 13
@@ -322,16 +285,19 @@ always @(*) begin
 		2'b01: shifter_2 = shifter;
 		2'b10: shifter_2 = { shifter[11:0], 1'b0 };
 		2'b11: shifter_2 = { shifter[10:0], 2'b0 };
+		default: shifter_2 = {12{1'bx}};
 	endcase
 	case( ~exponent_XIII[3:2] )
 		2'b00: shifter_3 = {12'b0, shifter_2[12]   };
 		2'b01: shifter_3 = { 8'b0, shifter_2[12:8] };
 		2'b10: shifter_3 = { 4'b0, shifter_2[12:4] };
 		2'b11: shifter_3 = shifter_2;
+		default: shifter_3 = {12{1'bx}};
 	endcase
 end
 
 reg signed [13:0] op_XIII;
+wire signbit_XIII;
 
 always @(*) begin
 	// REGISTER CYCLE 13
@@ -340,8 +306,14 @@ end
 
 jt51_sh #( .width(14), .stages(5)) out_padding(
 	.clk	( clk		),
-	.din	( op_XII	),
+	.din	( op_XIII	),
 	.drop	( op_XVII	)
+);
+
+jt51_sh #( .width(1), .stages(3)) shsignbit(
+	.clk	( clk		),
+	.din	( signbit_X	),
+	.drop	( signbit_XIII	)
 );
 
 endmodule

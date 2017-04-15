@@ -42,7 +42,7 @@ module jt51_phasegen(
 	// phase operation
 	input				pg_rst_III,
 	output  reg [ 4:0]  keycode_III,
-	output	reg	[19:0]	ph_IX
+	output	reg	[ 9:0]	ph_X
 );
 
 wire [19:0]	ph_VII;
@@ -229,9 +229,12 @@ always @(posedge clk) begin
 end
 
 // VIII
-always @(posedge clk) begin 
-	ph_IX <= ph_VIII;
-end
+reg [9:0] ph_IX;
+always @(posedge clk) 
+	ph_IX <= ph_VIII[19:0];
+
+always @(posedge clk) 
+	ph_X  <= ph_IX;
 
 jt51_sh #( .width(4), .stages(5) ) u_mulsh(
 	.clk	( clk		),

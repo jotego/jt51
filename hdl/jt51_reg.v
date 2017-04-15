@@ -44,7 +44,7 @@ module jt51_reg(
 
 	output			busy,
 	output	[1:0]	rl_out,
-	output	[2:0]	fb_out,
+	output	reg [2:0]	fb_II,
 	output	[2:0]	con_out,
 	output	[6:0]	kc_out,
 	output	[5:0]	kf_out,
@@ -63,9 +63,20 @@ module jt51_reg(
 	output	[3:0]	rr_out,
 	output			keyon_II,
 
-	output	[1:0]	cur_op,
+	// Pipeline order
+	output	reg		zero,
+	output	reg		m1_enters,
+	output	reg		m2_enters,
+	output	reg		c1_enters,
+	output	reg		c2_enters,
+	// Operator
+	output 			use_prevprev1,
+	output 			use_internal_x,
+	output 			use_internal_y,	
+	output 			use_prev2,
+	output 			use_prev1,
 
-	output	reg		zero
+	output	[1:0]	cur_op
 );
 
 reg		kon, koff;
@@ -74,6 +85,13 @@ reg	[4:0] csm_cnt;
 
 wire csm_kon  = csm_state[0];
 wire csm_koff = csm_state[1];
+
+always @(*) begin
+	m1_enters = cur_op == 2'b00;
+	m2_enters = cur_op == 2'b01;
+	c1_enters = cur_op == 2'b10;
+	c2_enters = cur_op == 2'b11;
+end
 
 wire	[1:0]	rl_in	= d_in[7:6];
 wire	[2:0]	fb_in	= d_in[5:3];
@@ -170,6 +188,20 @@ jt51_kon i_jt51_kon (
 );
 
 
+jt51_mod u_mod(
+	.alg_I		( con_out	),
+	.m1_enters	( m1_enters ),
+	.m2_enters	( m2_enters ),
+	.c1_enters	( c1_enters ),
+	.c2_enters	( c2_enters ),
+	
+	.use_prevprev1 ( use_prevprev1  ),
+	.use_internal_x( use_internal_x ),
+	.use_internal_y( use_internal_y ),	
+	.use_prev2	 ( use_prev2	  ),
+	.use_prev1	 ( use_prev1	  )
+);
+
 // memory for OP registers
 
 reg  [41:0] reg_op[31:0];
@@ -195,6 +227,10 @@ always @(posedge clk) begin
 end
 
 // memory for CH registers
+wire [2:0] fb_out;
+always @(posedge clk) begin
+	fb_II <= fb_out;
+end
 
 reg [25:0] reg_ch[7:0];
 reg [25:0] reg_ch_out;

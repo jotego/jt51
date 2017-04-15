@@ -49,7 +49,7 @@ module jt51_envelope(
 	input		[6:0]	am,
 	input		[1:0]	ams,
 	input				amsen,
-	output	reg	[9:0]	eg_IX
+	output		[9:0]	eg_XI
 );
 
  // eg[9:6] -> direct attenuation (divide by 2)
@@ -346,10 +346,11 @@ always @(posedge clk) begin
 	eg_VIII <= sum_eg_tl[11:10] > 2'b0 ? {10{1'b1}} : sum_eg_tl[9:0];
 end
 
-	// VIII
-always @(posedge clk) begin
-	eg_IX <= eg_VIII;
-end
+jt51_sh #( .width(10), .stages(3) ) u_egpadding (
+	.clk	( clk		),
+	.din	( eg_VIII	),
+	.drop	( eg_XI		)
+);
 
 
 // Shift registers

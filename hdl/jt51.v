@@ -101,7 +101,7 @@ jt51_timers timers(
 `define YM_TIMER_CTRL 8'h14
 
 wire	[1:0]	rl_out;
-wire	[2:0]	fb_out;
+wire	[2:0]	fb_II;
 wire	[2:0]	con_out;
 wire	[6:0]	kc_out;
 wire	[5:0]	kf_out;
@@ -131,21 +131,24 @@ wire	[6:0]	am;
 wire	[7:0]	pm;
 wire	[6:0]	amd, pmd;
 
+wire m1_enters, m2_enters, c1_enters, c2_enters;
+wire use_prevprev1,use_internal_x,use_internal_y, use_prev2,use_prev1;
+
 jt51_lfo u_lfo(
-	.rst	( rst_p1),
-	.clk	( clk	),
-	.zero	( zero	),
-	.lfo_rst( lfo_rst ),
-	.lfo_freq(lfo_freq),
-	.lfo_w	( lfo_w	),
-	.lfo_amd( amd	),
-	.lfo_pmd( pmd	),
-	.am		( am	),
-	.pm_u	( pm	)
+	.rst		( rst_p1	),
+	.clk		( clk		),
+	.zero		( zero		),
+	.lfo_rst	( lfo_rst 	),
+	.lfo_freq	( lfo_freq	),
+	.lfo_w		( lfo_w		),
+	.lfo_amd	( amd		),
+	.lfo_pmd	( pmd		),
+	.am			( am		),
+	.pm_u		( pm		)
 );
 
 wire	[ 4:0]	keycode_III;
-wire	[19:0]	ph_IX;
+wire	[ 9:0]	ph_X;
 wire			pg_rst_III;
 
 jt51_phasegen u_pg(
@@ -164,13 +167,13 @@ jt51_phasegen u_pg(
 	// phase operation
 	.pg_rst_III	( pg_rst_III 	),
 	.keycode_III( keycode_III	),
-	.ph_IX		( ph_IX		)
+	.ph_X		( ph_X		)
 );
 
 `ifdef TEST_SUPPORT
 wire		test_eg, test_op0;
 `endif
-wire [9:0]	eg_IX;
+wire [9:0]	eg_XI;
 
 jt51_envelope u_eg(
 	`ifdef TEST_SUPPORT
@@ -195,7 +198,7 @@ jt51_envelope u_eg(
 	.am			( am 		),
 	.ams		( ams_out	),
 	.amsen		( amsen_out	),
-	.eg_IX		( eg_IX	)
+	.eg_XI		( eg_XI	)
 );
 
 wire signed [13:0] op_out;
@@ -206,14 +209,24 @@ jt51_op u_op(
 	.test_op0	( test_op0	),	
 	`endif	
 	.clk		( p1		),
+	.pg_phase_X	( ph_X		),
 	.con_I		( con_out	),
-	.fb_I		( fb_out	),
-	.phase_cnt	( ph_IX		),
-	.cur_op_I	( cur_op	),
+	.fb_II		( fb_II		),
 	// volume
-	.eg			( eg_IX		),
+	.eg_atten_XI( eg_XI		),
+	// modulation
+	.m1_enters	( m1_enters		),
+	.c1_enters	( c1_enters		),
+	// Operator
+	.use_prevprev1	( use_prevprev1		),
+	.use_internal_x	( use_internal_x	),
+	.use_internal_y	( use_internal_y	),
+	.use_prev2		( use_prev2			),
+	.use_prev1		( use_prev1			),	
+	.test_214		( 1'b0				),
+	// .zero			( zero				),
 	// output data
-	.op_IX		( op_out	)
+	.op_XVII		( op_out			)
 );
 
 wire	[4:0] nfrq;
@@ -226,23 +239,28 @@ jt51_noise u_noise(
 	.zero	( zero		),
 	.ne		( ne		),
 	.nfrq	( nfrq		),
-	.eg		( eg_IX	),
+	.eg		( eg_XI		),
 	.out	( noise_out	),
 	.op31_acc(op31_acc	)
 );
 
 jt51_acc u_acc(
-	.clk	( p1		),
-	.zero	( zero		),
-	.ne		( ne		),
-	.noise	( noise_out	),
-	.op31_acc(op31_acc	),
-	.rl		( rl_out	),
-	.op_out ( op_out	),
-	.left	( left		),
-	.right	( right		),
-	.xleft	( xleft		),
-	.xright	( xright	)
+	.rst		( rst_p1		),
+	.clk		( p1			),
+	.m1_enters	( m1_enters		),
+	.m2_enters	( m2_enters		),
+	.c1_enters	( c1_enters		),
+	.c2_enters	( c2_enters		),
+	.op31_acc	( op31_acc		),
+	.rl			( rl_out		),
+	.con_I		( con_out		),
+	.op_out 	( op_out		),
+	.ne			( ne			),
+	.noise		( noise_out		),
+	.left		( left			),
+	.right		( right			),
+	.xleft		( xleft			),
+	.xright		( xright		)
 );
 
 reg		busy;
@@ -292,22 +310,22 @@ always @(posedge p1 )
 
 
 jt51_mmr u_mmr(
-	.clk	( p1		),
-	.rst	( rst_p1	),
-	.a0		( a0_s		),
-	.write	( write_s	),
-	.d_in	( d_in_s	),
-	.busy	( busy_mmr	),
+	.clk		( p1			),
+	.rst		( rst_p1		),
+	.a0			( a0_s			),
+	.write		( write_s		),
+	.d_in		( d_in_s		),
+	.busy		( busy_mmr		),
 
 	// CT
-	.ct1	( ct1		),
-	.ct2	( ct2		),
+	.ct1		( ct1			),
+	.ct2		( ct2			),
 	// LFO
-	.lfo_freq(lfo_freq),
-	.lfo_w	( lfo_w	),
-	.lfo_amd( amd	),
-	.lfo_pmd( pmd	),
-	.lfo_rst( lfo_rst ),
+	.lfo_freq	( lfo_freq		),
+	.lfo_w		( lfo_w			),
+	.lfo_amd	( amd			),
+	.lfo_pmd	( pmd			),
+	.lfo_rst	( lfo_rst 		),
 	
 	// Noise
 	.ne			( ne			),
@@ -333,28 +351,38 @@ jt51_mmr u_mmr(
 	.test_op0	( test_op0		),
 	`endif
 	// REG
-	.rl_out( rl_out ),
-	.fb_out( fb_out ),
-	.con_out( con_out ),
-	.kc_out( kc_out ),
-	.kf_out( kf_out ),
-	.pms_out( pms_out ),
-	.ams_out( ams_out ),
-	.dt1_out( dt1_out ),
-	.mul_out( mul_out ),
-	.tl_out( tl_out ),
-	.ks_out( ks_out ),
-	.ar_out( ar_out ),
-	.amsen_out( amsen_out ),
-	.d1r_out( d1r_out ),
-	.dt2_out( dt2_out ),
-	.d2r_out( d2r_out ),
-	.d1l_out( d1l_out ),
-	.rr_out( rr_out ),
-	.keyon_II(keyon_II),
+	.rl_out		( rl_out 		),
+	.fb_II		( fb_II 		),
+	.con_out	( con_out 		),
+	.kc_out		( kc_out 		),
+	.kf_out		( kf_out 		),
+	.pms_out	( pms_out 		),
+	.ams_out	( ams_out 		),
+	.dt1_out	( dt1_out 		),
+	.mul_out	( mul_out 		),
+	.tl_out		( tl_out 		),
+	.ks_out		( ks_out 		),
+	.ar_out		( ar_out 		),
+	.amsen_out	( amsen_out 	),
+	.d1r_out	( d1r_out 		),
+	.dt2_out	( dt2_out 		),
+	.d2r_out	( d2r_out 		),
+	.d1l_out	( d1l_out 		),
+	.rr_out		( rr_out 		),
+	.keyon_II	( keyon_II		),
 
-	.cur_op(cur_op),
-	.zero(zero)
+	.cur_op		( cur_op		),
+	.zero		( zero			),
+	.m1_enters	( m1_enters		),
+	.m2_enters	( m2_enters		),
+	.c1_enters	( c1_enters		),
+	.c2_enters	( c2_enters		),
+	// Operator
+	.use_prevprev1	( use_prevprev1		),
+	.use_internal_x	( use_internal_x	),
+	.use_internal_y	( use_internal_y	),
+	.use_prev2		( use_prev2			),
+	.use_prev1		( use_prev1			)
 );
 
 endmodule

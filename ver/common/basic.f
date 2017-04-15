@@ -1,6 +1,6 @@
 ../../hdl/jt51_phinc_rom.v
-../../hdl/jt51_sintable.v
-../../hdl/jt51_exptable.v
+../../hdl/jt51_exprom.v
+../../hdl/jt51_phrom.v
 ../../hdl/jt51_lin2exp.v
 ../../hdl/jt51_exp2lin.v
 ../../hdl/jt51_mmr.v
@@ -20,3 +20,4 @@
 ../../hdl/jt51_noise.v
 ../../hdl/jt51_noise_lfsr.v
 ../../hdl/jt51_kon.v
+../../hdl/jt51_mod.v

@@ -64,7 +64,7 @@ module jt51_mmr(
 	`endif
 	// REG
 	output	[1:0]	rl_out,
-	output	[2:0]	fb_out,
+	output	[2:0]	fb_II,
 	output	[2:0]	con_out,
 	output	[6:0]	kc_out,
 	output	[5:0]	kf_out,
@@ -85,7 +85,17 @@ module jt51_mmr(
 
 	output	[1:0]	cur_op,
 
-	output			zero	
+	output			zero,
+	output			m1_enters,
+	output			m2_enters,
+	output			c1_enters,
+	output			c2_enters,
+	// Operator
+	output 			use_prevprev1,
+	output 			use_internal_x,
+	output 			use_internal_y,	
+	output 			use_prev2,
+	output 			use_prev1
 );
 
 reg [7:0] selected_register, din_latch;
@@ -250,7 +260,7 @@ jt51_reg u_reg(
 
 	.busy		( busy_reg 	),
 	.rl_out		( rl_out 	),
-	.fb_out		( fb_out 	),
+	.fb_II		( fb_II 	),
 	.con_out	( con_out 	),
 	.kc_out		( kc_out 	),
 	.kf_out		( kf_out 	),
@@ -270,7 +280,17 @@ jt51_reg u_reg(
 	.keyon_II	(keyon_II	),
 
 	.cur_op		(cur_op		),
-	.zero		(zero		)
+	.zero		(zero		),
+	.m1_enters	( m1_enters	),
+	.m2_enters	( m2_enters	),
+	.c1_enters	( c1_enters	),
+	.c2_enters	( c2_enters	),
+	// Operator
+	.use_prevprev1	( use_prevprev1		),
+	.use_internal_x	( use_internal_x	),
+	.use_internal_y	( use_internal_y	),
+	.use_prev2		( use_prev2			),
+	.use_prev1		( use_prev1			)
 );
 
 endmodule
