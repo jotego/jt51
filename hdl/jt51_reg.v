@@ -120,9 +120,7 @@ wire up = 	up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
 reg	[4:0]	cnt, cur;
 reg			last, last_kon;
 reg	[1:0]	cnt_kon;
-reg			busy_op;
-
-assign busy = busy_op;
+reg			busy;
 
 assign cur_op = cur[4:3];
 
@@ -175,7 +173,7 @@ always @(posedge clk) begin : up_counter
 		cur		<= 5'h0;
 		last	<= 1'b0;
 		zero	<= 1'b0;
-        busy_op	<= 1'b0;
+        busy	<= 1'b0;
         up_keyon_long <= 1'b0;
 	end
 	else begin
@@ -184,11 +182,11 @@ always @(posedge clk) begin : up_counter
 		last	<= up;
 		if( up && !last ) begin
 			cnt		<= cur;
-			busy_op	<= 1'b1;
+			busy	<= 1'b1;
 			up_keyon_long <= up_keyon;
 		end
 		else if( cnt == cur ) begin
-				busy_op <= 1'b0;
+				busy <= 1'b0;
 				up_keyon_long <= 1'b0;
 			end
 	end

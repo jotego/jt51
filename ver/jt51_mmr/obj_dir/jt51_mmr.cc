@@ -214,14 +214,14 @@ int main(int argc, char **argv, char **env) {
 	string jtname="verilator.jt";
 	int reps=0;
 	for( int k=0; k<argc; k++ ) {
-		if( string(argv[k])=="--trace" ) trace=true;
-		if( string(argv[k])=="--jtname" ) { jtname = argv[++k];}
+		if( string(argv[k])=="--trace" ) { trace=true; continue; }
+		if( string(argv[k])=="--jtname" ) { jtname = argv[++k]; continue; }
 	}
 	VerilatedVcdC* tfp = new VerilatedVcdC;
 	if( trace ) {
 		Verilated::traceEverOn(true);
 		top->trace(tfp,99);
-		tfp->open("jt51_con.vcd");
+		tfp->open("jt51_mmr.vcd");	
 	}
 
 	cout << "JT51 MMR testbench\n";
@@ -245,7 +245,7 @@ int main(int argc, char **argv, char **env) {
 	enum { WRITE_REG, WRITE_VAL, WAIT_FINISH } state;
 	state = WRITE_REG;
 	const int half_period=140;
-	int clk_time = half_period;
+	vluint64_t clk_time = half_period;
 	bool wait_nonzero=true;
 	const int check_step = 200;
 	int next_check=check_step;
@@ -267,7 +267,10 @@ int main(int argc, char **argv, char **env) {
 						bool b = ref_mmr.check(top);
 						reps += check_step;
 						next_check = check_step;
-						cout << reps << " unchecked " << ref_mmr.checked() << endl;
+						cout << "#" << main_time << "\t" << reps;
+						int unchecked = ref_mmr.checked();
+						if (unchecked) cout << " unchecked " << unchecked;
+						cout << endl;
 						if ( /*--reps==0 ||*/ !b ) goto finish;						
 					}
 					top->cs_n = 0;
@@ -299,8 +302,7 @@ int main(int argc, char **argv, char **env) {
 			if( clk==0 && (dout&0x80==0x80)) top->cs_n = 1;
 		}
 		main_time+=2;
-		//if( main_time > 10*1000*1000 ) break;
-		if(trace) tfp->dump(main_time);
+		if(trace && (main_time%140==0)) { tfp->dump(main_time); }
 	}
 finish:
 	cout << "$finish: #" << dec << main_time << '\n';

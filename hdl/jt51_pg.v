@@ -256,7 +256,7 @@ jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
 wire [4:0] cnt;
 
 sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt));
-
+/*
 wire zero_VIII;
 
 jt51_sh #(.width(1),.stages(7)) u_sep_aux(
@@ -270,7 +270,7 @@ sep32 #(.width(1),.stg(8)) sep_ref(
 	.mixed	( zero_VIII		),
 	.cnt	( cnt			)
 	);
-
+*/
 sep32 #(.width(10),.stg(10)) sep_ph(
 	.clk	( clk			),
 	.mixed	( pg_phase_X	),
