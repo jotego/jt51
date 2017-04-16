@@ -1,0 +1,75 @@
+#!/bin/bash
+
+DUMPSIGNALS=DONTDUMP
+VERBOSE=1
+OTHER=
+
+if (which verilator &> /dev/null); then
+	SIMULATOR=verilator
+else if (which iverilog &> /dev/null ); then
+	SIMULATOR=iverilog
+else
+	SIMULATOR=ncverilog
+fi
+fi
+
+while [ $# -gt 0 ]; do
+	if [ $1 = "-w" ]; then
+		echo "Signal dump enabled"
+		DUMPSIGNALS=DUMPSIGNALS
+		shift
+		continue
+	fi
+	if [ $1 = "-q" ]; then VERBOSE=0; shift; continue; fi
+    if [ $1 = "-sim" ]; then 
+    	shift; 
+    	SIMULATOR=$1; 
+    	if [[ $SIMULATOR != iverilog && $SIMULATOR != verilator && $SIMULATOR != ncverilog ]]; then
+    		echo "Unsupported simulator: " $SIMULATOR
+    		exit 1
+    	fi
+    	shift
+    	continue
+    	fi
+	if [ ${1:0:1} = "-" ]; then OTHER="$OTHER $1"; shift; continue; fi
+	echo "Unsupported parameter " $1
+	exit 1
+done
+
+if [ $VERBOSE -eq 1 ]; then
+	echo Additional commands to "'verilator'" = $OTHER
+fi
+
+INCDIR2=../../hdl
+TOP=jt51_test
+
+echo Simulating using $SIMULATOR
+
+case $SIMULATOR in
+verilator)
+	VERILATOR_SIM="../common/sep32.v ../common/sep32_cnt.v -DSIMULATION"
+	if [ $DUMPSIGNALS = DUMPSIGNALS ]; then
+		VERILATOR_TRACE=--trace
+	else
+		VERILATOR_TRACE=
+	fi
+	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe jt51_mmr.cc \
+		--cc --top-module jt51 --trace $VERILATOR_SIM \
+		&& cd obj_dir \
+		&& make -f Vjt51.mk && Vjt51 $VERILATOR_TRACE $OTHER
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+	cd ..
+	;;
+iverilog)
+	echo "This simulation can only be run in Verilator"
+	exit 1
+	;;
+ncverilog)
+	echo "This simulation can only be run in Verilator"
+	exit 1
+	;;
+esac
+
+exit 0

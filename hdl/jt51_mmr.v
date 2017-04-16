@@ -105,7 +105,7 @@ reg		up_rl,	up_kc,	up_kf,	up_pms,
 		up_dt1,	up_tl,	up_ks,	up_dt2,
 		up_d1l,	up_keyon,	up_amsen;
 
-wire			busy_reg;		
+wire	busy_reg;
 
 `ifdef SIMULATION
 reg mmr_dump;
@@ -137,7 +137,7 @@ always @(posedge clk) begin : memory_mapped_registers
 		`endif
 		// timers
 		{ value_A, value_B } <= 18'd0;
-		{ clr_flag_B, clr_flag_A, 
+		{ clr_flag_B, clr_flag_A,
 		enable_irq_B, enable_irq_A, load_B, load_A } <= 6'd0;
 		{ clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'b1100;
 		up_clr <= 1'b0;
@@ -175,7 +175,7 @@ always @(posedge clk) begin : memory_mapped_registers
 					REG_CLKB:	value_B		<= d_in;
 					REG_TIMER: begin
 						csm	<= d_in[7];
-						{ clr_flag_B, clr_flag_A, 
+						{ clr_flag_B, clr_flag_A,
 						  enable_irq_B, enable_irq_A,
 						  load_B, load_A } <= d_in[5:0];
 						  clr_run_A <= ~d_in[0];
@@ -185,7 +185,7 @@ always @(posedge clk) begin : memory_mapped_registers
 						end
 					REG_LFRQ:	lfo_freq <= d_in;
 					REG_PMDAMD: begin
-						if( !d_in[7] ) 
+						if( !d_in[7] )
 							lfo_amd <= d_in[6:0];
 						else
 							lfo_pmd <= d_in[6:0];						
@@ -209,7 +209,7 @@ always @(posedge clk) begin : memory_mapped_registers
 						2'h3: up_pms<= 1'b1;
 					endcase
 				end
-				else 
+				else
 				// operator registers
 				begin
 					case( selected_register[7:5] )

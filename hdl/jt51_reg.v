@@ -126,22 +126,22 @@ assign busy = busy_op;
 
 assign cur_op = cur[4:3];
 
-wire [4:0]	next    = cur + 5'd1;
-wire [4:0]	cur_III = cur + 5'd2;
-wire [4:0]	cur_IV  = cur + 5'd3;
-wire [4:0]	cur_V   = cur + 5'd4;
-wire [4:0]	cur_VI  = cur + 5'd5;
-wire [4:0]	cur_VII = cur + 5'd6;
+wire [4:0] req_I   = { op, ch };
+wire [4:0] req_II  = req_I   + 5'd1;
+wire [4:0] req_III = req_II  + 5'd1;
+wire [4:0] req_IV  = req_III + 5'd1;
+wire [4:0] req_V   = req_IV  + 5'd1;
+wire [4:0] req_VI  = req_V   + 5'd1;
+wire [4:0] req_VII = req_VI  + 5'd1;
 
 
-wire	[4:0] abs		= { op, ch };
-wire	update_op_I		= abs == cur;
-wire	update_op_II	= abs == next;
-wire	update_op_III	= abs == cur_III;
-wire	update_op_IV	= abs == cur_IV;
-wire	update_op_V		= abs == cur_V;
-wire	update_op_VI	= abs == cur_VI;
-wire	update_op_VII	= abs == cur_VII;
+wire	update_op_I		= cur == req_I;
+wire	update_op_II	= cur == req_II;
+wire	update_op_III	= cur == req_III;
+wire	update_op_IV	= cur == req_IV;
+wire	update_op_V		= cur == req_V;
+wire	update_op_VI	= cur == req_VI;
+wire	update_op_VII	= cur == req_VII;
 
 wire up_rl_ch	= up_rl		& update_op_I;
 wire up_fb_ch	= up_rl		& update_op_II;
@@ -165,6 +165,8 @@ wire up_d2r_op	= up_dt2	& update_op_II; // DT2, D2R
 wire up_rr_op	= up_d1l	& update_op_II; // D1L, RR
 
 reg  up_keyon_long;
+
+wire [4:0] next = cur+5'd1;
 
 always @(posedge clk) begin : up_counter
 	if( rst ) begin
@@ -256,7 +258,7 @@ end
 reg [25:0] reg_ch[7:0];
 reg [25:0] reg_ch_out;
 wire [25:0] reg_ch_in = {
-		up_rl_ch	? rl_in		: rl_I,
+		up_rl_ch	? /*rl_in*/2'b0		: rl_I,
 		up_fb_ch	? fb_in		: fb_II,
 		up_con_ch	? con_in	: con_I,
         up_kc_ch	? kc_in		: kc_I,
