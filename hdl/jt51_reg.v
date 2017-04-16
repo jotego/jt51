@@ -153,6 +153,7 @@ wire up_pms_ch	= up_pms	& update_op_I;
 wire up_ams_ch	= up_pms	& update_op_VII;
 
 wire up_dt1_op	= up_dt1	& update_op_II; // DT1, MUL
+wire up_mul_op	= up_dt1	& update_op_VI; // DT1, MUL
 wire up_tl_op	= up_tl		& update_op_VII;
 wire up_ks_op	= up_ks		& update_op_III; // KS, AR
 wire up_amsen_op= up_amsen	& update_op_VII; // AMS-EN, D1R
@@ -226,39 +227,42 @@ jt51_mod u_mod(
 );
 
 // memory for OP registers
+localparam opreg_w = 42;
+reg  [opreg_w-1:0] reg_op[31:0];
+reg  [opreg_w-1:0] reg_out;
 
-reg  [41:0] reg_op[31:0];
-reg  [41:0] reg_out;
+assign { dt1_II, mul_VI, tl_VII, ks_III, amsen_VII, 
+	dt2_I, d1l_I, arate_II, rate1_II, rate2_II, rrate_II  } = reg_out;
 
-assign { dt1_II, mul_VI, tl_VII, ks_III, arate_II, amsen_VII, rate1_II, 
-	dt2_I, rate2_II, d1l_I, rrate_II } = reg_out;
+wire [opreg_w-1:0] reg_in = { 	
+					up_dt1_op	? dt1_in	: dt1_II,		// 3
+					up_mul_op	? mul_in	: mul_VI,		// 4
+					up_tl_op	? tl_in		: tl_VII,		// 7
+                    up_ks_op	? ks_in		: ks_III,		// 2
+                    up_amsen_op	? amsen_in	: amsen_VII,	// 1
+                    up_dt2_op	? dt2_in	: dt2_I,		// 2
+                    up_d1l_op	? d1l_in	: d1l_I,		// 4
 
-wire [41:0] reg_in = { 	
-					up_dt1_op	? { dt1_in, mul_in}		: { dt1_II, mul_VI },
-					up_tl_op	? tl_in		: tl_VII,
-                    up_ks_op	? ks_in		: ks_III,
-                    up_amsen_op	? amsen_in	: amsen_VII,
-                    up_dt2_op	? dt2_in	: dt2_I,
-                    up_d1l_op	? d1l_in	: d1l_I,
+                    up_ar_op	? ar_in		: arate_II,		// 5
+                    up_d1r_op	? d1r_in	: rate1_II,		// 5
+                    up_d2r_op	? d2r_in	: rate2_II,		// 5
+                    up_rr_op	? rr_in		: rrate_II };	// 4
 
-                    up_ar_op	? ar_in		: arate_II,
-                    up_d1r_op	? d1r_in	: rate1_II,
-                    up_d2r_op	? d2r_in	: rate2_II,
-                    up_rr_op	? rr_in		: rrate_II };
-
-wire opdata_wr = |{ up_dt1_op, up_tl_op, up_ks_op, up_amsen_op, up_dt2_op, up_d1l_op };
+// wire opdata_wr = |{ up_dt1_op, up_mul_op, up_tl_op, up_ks_op, up_amsen_op, 
+// 	up_dt2_op, up_d1l_op, up_ar_op	, up_d1r_op, up_d2r_op, up_rr_op	 };
 
 always @(posedge clk) begin
 	reg_out		<= reg_op[next];
-    if( opdata_wr )
-    	reg_op[cur]	<= reg_in;
+    //if( opdata_wr )
+    reg_op[cur]	<= reg_in;
 end
 
 // memory for CH registers
-reg [25:0] reg_ch[7:0];
-reg [25:0] reg_ch_out;
-wire [25:0] reg_ch_in = {
-		up_rl_ch	? /*rl_in*/2'b0		: rl_I,
+localparam chreg_w = 26;
+reg  [chreg_w-1:0] reg_ch[7:0];
+reg  [chreg_w-1:0] reg_ch_out;
+wire [chreg_w-1:0] reg_ch_in = {
+		up_rl_ch	? rl_in		: rl_I,
 		up_fb_ch	? fb_in		: fb_II,
 		up_con_ch	? con_in	: con_I,
         up_kc_ch	? kc_in		: kc_I,
@@ -266,15 +270,15 @@ wire [25:0] reg_ch_in = {
         up_ams_ch	? ams_in	: ams_VII,
         up_pms_ch	? pms_in	: pms_I 	};
         
-assign { rl_I, fb_II, con_I, kc_I, kf_I, pms_I, ams_VII } = reg_ch_out;
+assign { rl_I, fb_II, con_I, kc_I, kf_I, ams_VII, pms_I  } = reg_ch_out;
 
 wire [2:0] next_ch = next[2:0];
-wire chdata_wr = |{up_rl_ch, up_kc_ch, up_kf_ch, up_pms_ch };
+// wire chdata_wr = |{ up_rl_ch, up_fb_ch, up_con_ch, up_kc_ch, up_kf_ch, up_ams_ch, up_pms_ch };
 
 always @(posedge clk) begin
 	reg_ch_out		<= reg_ch[next_ch];
-    if( chdata_wr )
-    	reg_ch[cur_ch]	<= reg_ch_in;
+//    if( chdata_wr )
+    reg_ch[cur_ch]	<= reg_ch_in;
 end
 
 `ifdef SIMULATION

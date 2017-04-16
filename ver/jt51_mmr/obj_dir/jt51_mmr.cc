@@ -5,10 +5,26 @@
 #include "verilated_vcd_c.h"
 #include "verilated.h"
 // sep32 verilog instances
-#include "Vjt51_sep32__W7_S7.h"
+#include "Vjt51_sep32__W1_S1.h"
+#include "Vjt51_sep32__W1_S7.h"
+#include "Vjt51_sep32__W1_S8.h"
 #include "Vjt51_sep32__W2_S1.h"
+#include "Vjt51_sep32__W2_S2.h"
 #include "Vjt51_sep32__W2_S3.h"
-
+#include "Vjt51_sep32__W2_S7.h"
+#include "Vjt51_sep32__W3_S1.h"
+#include "Vjt51_sep32__W3_S2.h"
+#include "Vjt51_sep32__W4_S1.h"
+#include "Vjt51_sep32__W4_S2.h"
+#include "Vjt51_sep32__W4_S6.h"
+#include "Vjt51_sep32__W5_S1.h"
+#include "Vjt51_sep32__W5_S2.h"
+#include "Vjt51_sep32__W5_S6.h"
+#include "Vjt51_sep32__W6_S1.h"
+#include "Vjt51_sep32__W7_S1.h"
+#include "Vjt51_sep32__W7_S7.h"
+#include "Vjt51_sep32__W9_S7.h"
+#include "Vjt51_sep32__We_S11.h"
 
 #include <iostream>
 #include <iomanip>
@@ -46,106 +62,21 @@ public:
 };
 
 unsigned random_reg() {
-	unsigned v = rand()%224;
-	return v+0x20;
-}
-
-unsigned getSlot( int slot, int stg, Vjt51_sep32__W7_S7*sep ) {
-	unsigned v;
-	slot = (slot+stg-1)&0x1f;
-	// cout << "TL Slot=" << slot << '\n';
-	switch(slot) { // octal constants!
-		case 000: v = sep->slot_00; break; 
-		case 001: v = sep->slot_01; break; 
-		case 002: v = sep->slot_02; break; 
-		case 003: v = sep->slot_03; break; 
-		case 004: v = sep->slot_04; break; 
-		case 005: v = sep->slot_05; break; 
-		case 006: v = sep->slot_06; break; 
-		case 007: v = sep->slot_07; break; 
-
-		case 010: v = sep->slot_10; break; 
-		case 011: v = sep->slot_11; break; 
-		case 012: v = sep->slot_12; break; 
-		case 013: v = sep->slot_13; break; 
-		case 014: v = sep->slot_14; break; 
-		case 015: v = sep->slot_15; break; 
-		case 016: v = sep->slot_16; break; 
-		case 017: v = sep->slot_17; break; 
-
-		case 020: v = sep->slot_20; break; 
-		case 021: v = sep->slot_21; break; 
-		case 022: v = sep->slot_22; break; 
-		case 023: v = sep->slot_23; break; 
-		case 024: v = sep->slot_24; break; 
-		case 025: v = sep->slot_25; break; 
-		case 026: v = sep->slot_26; break; 
-		case 027: v = sep->slot_27; break; 
-
-		case 030: v = sep->slot_30; break; 
-		case 031: v = sep->slot_31; break; 
-		case 032: v = sep->slot_32; break; 
-		case 033: v = sep->slot_33; break; 
-		case 034: v = sep->slot_34; break; 
-		case 035: v = sep->slot_35; break; 
-		case 036: v = sep->slot_36; break; 
-		case 037: v = sep->slot_37; break; 
-	}	
-}
-
-unsigned getSlot( int slot, int stg, Vjt51_sep32__W2_S1*sep ) {
-	unsigned v;
-	slot = (slot+stg-1)&0x1f;
-	// cout << "RL Slot=" << slot << '\n';
-	switch(slot) { // octal constants!
-		case 000: v = sep->slot_00; break; 
-		case 001: v = sep->slot_01; break; 
-		case 002: v = sep->slot_02; break; 
-		case 003: v = sep->slot_03; break; 
-		case 004: v = sep->slot_04; break; 
-		case 005: v = sep->slot_05; break; 
-		case 006: v = sep->slot_06; break; 
-		case 007: v = sep->slot_07; break; 
-
-		case 010: v = sep->slot_10; break; 
-		case 011: v = sep->slot_11; break; 
-		case 012: v = sep->slot_12; break; 
-		case 013: v = sep->slot_13; break; 
-		case 014: v = sep->slot_14; break; 
-		case 015: v = sep->slot_15; break; 
-		case 016: v = sep->slot_16; break; 
-		case 017: v = sep->slot_17; break; 
-
-		case 020: v = sep->slot_20; break; 
-		case 021: v = sep->slot_21; break; 
-		case 022: v = sep->slot_22; break; 
-		case 023: v = sep->slot_23; break; 
-		case 024: v = sep->slot_24; break; 
-		case 025: v = sep->slot_25; break; 
-		case 026: v = sep->slot_26; break; 
-		case 027: v = sep->slot_27; break; 
-
-		case 030: v = sep->slot_30; break; 
-		case 031: v = sep->slot_31; break; 
-		case 032: v = sep->slot_32; break; 
-		case 033: v = sep->slot_33; break; 
-		case 034: v = sep->slot_34; break; 
-		case 035: v = sep->slot_35; break; 
-		case 036: v = sep->slot_36; break; 
-		case 037: v = sep->slot_37; break; 
-	}	
+	unsigned v = 0;
+	while( !(v>=0x20 && v<=0xff ) ) v = rand()%256;
+	return v;
 }
 
 unsigned random_val() { return rand()%255; }
 
 class JT51_REG {
 	unsignedX 	dt1[OPCOUNT],	dt2[OPCOUNT],	mul[OPCOUNT],	tl[OPCOUNT],	ks[OPCOUNT],	
-				ar[OPCOUNT],	am[OPCOUNT],	dr[OPCOUNT],	sr[OPCOUNT],	sl[OPCOUNT],
+				ar[OPCOUNT],	ame[OPCOUNT],	dr1[OPCOUNT],	dr2[OPCOUNT],	d1l[OPCOUNT],
 				rr[OPCOUNT];
 
 	unsignedX 	kc[CHCOUNT], kf[CHCOUNT],	fb[CHCOUNT], con[CHCOUNT],
 				rl[CHCOUNT], ams[CHCOUNT],	pms[CHCOUNT];
-	
+	/*
 	void printall_tl(Vjt51_sep32__W7_S7*sep) {
 		for( int slot=0; slot<040; slot++ ) {
 			unsigned v = getSlot(slot,1,sep);
@@ -156,42 +87,68 @@ class JT51_REG {
 			cout << '\n';
 		}
 	}
-/*
-	bool check_any( int slot, Vjt51_sep32__W7_S7*sep ) {
-		unsigned v = getSlot( slot, 1, sep );
-		bool b = tl[slot] == v;
-		if( !b ) printall_tl(sep);
-		return b;
-	}
 */
-	bool check_tl( int slot, Vjt51_sep32__W7_S7*sep ) {
-		unsigned v = getSlot( slot, 1, sep );
-		bool b = tl[slot] == v;
-		if( !b ) printall_tl(sep);
-		return b; //check_any( tl[slot], v, "TL" );
-	}
-
-	bool check_rl( int slot, Vjt51_sep32__W2_S1*sep ) {
-		unsigned v = getSlot( slot, 1, sep );
-		bool b = rl[slot] == v;
-		if( !b ) cout << "Error RL\n";
+	bool check( string name, unsignedX* ref, CData* sim, int slot ) {
+		unsigned s = sim[slot];
+		bool b = ref[slot] == s;
+		if( !b )
+			cout 	<< name << " #0" << oct << slot << " -> " 
+					<< hex << ref[slot] << " =? " << s << "\n";
 		return b;
 	}
-/*
-	bool check_ks( int slot, Vjt51_sep32__W2_S3*sep ) {
-		unsigned v = getSlot( slot, 1, sep );
-		bool b = rl[slot] == v;
-		if( !b ) cout << "Error RL\n";
-		return b;
-	}
-*/
 	public:
+
+	int checked() {
+		int c=0;
+		for( int k=0; k<32; k++ ) {
+			c += dt1[k].assigned ? 0 : 1;
+			c += dt2[k].assigned ? 0 : 1;
+			c += mul[k].assigned ? 0 : 1;
+			c +=  tl[k].assigned ? 0 : 1;
+			c +=  ks[k].assigned ? 0 : 1;
+			c +=  ar[k].assigned ? 0 : 1;
+			c += ame[k].assigned ? 0 : 1;
+			c += dr1[k].assigned ? 0 : 1;
+			c += dr2[k].assigned ? 0 : 1;
+			c += d1l[k].assigned ? 0 : 1;
+			c +=  rr[k].assigned ? 0 : 1;
+		}
+		for( int k=0; k<8; k++ ) {
+			c +=  kc[k].assigned ? 0 : 1;
+			c +=  kf[k].assigned ? 0 : 1;
+			c +=  fb[k].assigned ? 0 : 1;
+			c += con[k].assigned ? 0 : 1;
+			c +=  rl[k].assigned ? 0 : 1;
+			c += ams[k].assigned ? 0 : 1;
+			c += pms[k].assigned ? 0 : 1;
+		}
+		return c;
+	}
 
 	bool check(Vjt51* t) {
 		bool e=true;
 		for( int slot=0; slot<=037; slot++ ) {
-			e = e && check_tl(slot,t->jt51->u_mmr->sep_tl);
-			// e = e && check_rl(slot,t->jt51->u_mmr->sep_rl);
+			e = e && check( "dt1", dt1, t->jt51->u_mmr->sep_dt1->slots, slot );
+			e = e && check( "dt2", dt2, t->jt51->u_mmr->sep_dt2->slots, slot );
+			e = e && check( "mul", mul, t->jt51->u_mmr->sep_mul->slots, slot );
+			e = e && check( " tl",  tl, t->jt51->u_mmr->sep_tl->slots,  slot );
+			e = e && check( " ks",  ks, t->jt51->u_mmr->sep_ks->slots,  slot );
+			e = e && check( " ar",  ar, t->jt51->u_mmr->sep_ar->slots,  slot );
+			e = e && check( "ame", ame, t->jt51->u_mmr->sep_ame->slots, slot );
+			e = e && check( "ame", ame, t->jt51->u_mmr->sep_ame->slots, slot );
+			e = e && check( "dr1", dr1, t->jt51->u_mmr->sep_dr1->slots, slot );
+			e = e && check( "dr2", dr2, t->jt51->u_mmr->sep_dr2->slots, slot );
+			e = e && check( " rr",  rr, t->jt51->u_mmr->sep_rr->slots,  slot );
+			e = e && check( "d1l", d1l, t->jt51->u_mmr->sep_d1l->slots, slot );
+		}
+		for( int ch=0; ch<8; ch++ ) {
+			e = e && check( " rl",  rl, t->jt51->u_mmr->sep_rl->slots,  ch );
+			e = e && check( " fb",  fb, t->jt51->u_mmr->sep_fb->slots,  ch );
+			e = e && check( "con", con, t->jt51->u_mmr->sep_con->slots, ch );
+			e = e && check( " kc",  kc, t->jt51->u_mmr->sep_kc->slots,  ch );
+			e = e && check( " kf",  kf, t->jt51->u_mmr->sep_kf->slots,  ch );
+			e = e && check( "pms", pms, t->jt51->u_mmr->sep_pms->slots, ch );
+			e = e && check( "ams", ams, t->jt51->u_mmr->sep_ams->slots, ch );
 		}
 		return e;
 	}
@@ -201,11 +158,11 @@ class JT51_REG {
 		int slot = reg & 0x1f;
 		//cout << "MMR[0x" << hex << reg << "] = 0x" << val << "\n";
 		if( reg>=0x20 && reg<0x40 ) {
-			switch(reg) {
+			switch(reg>>3) {
 			// Channel registers
 			case (0x20>>3):
 				rl[ch]	= (val>>6) & 3;
-				fb[ch]	= (val>>3) & 3;
+				fb[ch]	= (val>>3) & 7;
 				con[ch]	= val&7;
 				break;
 			case (0x28>>3):
@@ -234,15 +191,15 @@ class JT51_REG {
 					ar[slot] = val&0x1f;
 					break;
 				case (0xa0>>5):
-					am[slot] = (val>>7)&1;
-					dr[slot] = val&0x1f;
+					ame[slot] = (val>>7)&1;
+					dr1[slot] = val&0x1f;
 					break;
 				case (0xc0>>5):
 					dt2[slot] = (val>>6)&3;
-					sr[slot] = val&0x1f;
+					dr2[slot] = val&0x1f;
 					break;
 				case (0xe0>>5):
-					sl[slot] = (val>>4)&0xf;
+					d1l[slot] = (val>>4)&0xf;
 					rr[slot] = val&0xf;
 					break;
 			}
@@ -255,7 +212,7 @@ int main(int argc, char **argv, char **env) {
 	top = new Vjt51;
 	bool trace=false;
 	string jtname="verilator.jt";
-	int reps=64;
+	int reps=0;
 	for( int k=0; k<argc; k++ ) {
 		if( string(argv[k])=="--trace" ) trace=true;
 		if( string(argv[k])=="--jtname" ) { jtname = argv[++k];}
@@ -290,7 +247,8 @@ int main(int argc, char **argv, char **env) {
 	const int half_period=140;
 	int clk_time = half_period;
 	bool wait_nonzero=true;
-	int next_check=32;
+	const int check_step = 200;
+	int next_check=check_step;
 	JT51_REG ref_mmr;
 	int reg, val;
 
@@ -307,9 +265,10 @@ int main(int argc, char **argv, char **env) {
 				if( (dout&0x80)==0 && (--wait<=0)) {
 					if( next_check==0 ) { 
 						bool b = ref_mmr.check(top);
-						cout << reps << '\t';
-						next_check = 32;
-						if ( --reps==0 || !b ) goto finish;						
+						reps += check_step;
+						next_check = check_step;
+						cout << reps << " unchecked " << ref_mmr.checked() << endl;
+						if ( /*--reps==0 ||*/ !b ) goto finish;						
 					}
 					top->cs_n = 0;
 					// cout << "#" << main_time;
@@ -319,6 +278,7 @@ int main(int argc, char **argv, char **env) {
 						case WRITE_REG: 
 							top->a0 = 0;
 							reg = random_reg();
+							// cout << "Wr to " << reg << " ";
 							top->d_in = reg;
 							state = WRITE_VAL; 
 							wait=2;							
