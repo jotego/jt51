@@ -50,15 +50,11 @@ end
 
 reg sum_en;
 
-wire acc_m1 = c1_enters;
-wire acc_m2 = c2_enters;
-wire acc_c2 = m2_enters;
-
 always @(*) begin
 	case ( con_I )
-        3'd0,3'd1,3'd2,3'd3: 	sum_en = acc_c2;
-    	3'd4: 					sum_en = acc_m1 | acc_c2;
-        3'd5,3'd6: 				sum_en = ~acc_m1;        
+        3'd0,3'd1,3'd2,3'd3: 	sum_en = m2_enters;
+    	3'd4: 					sum_en = m1_enters | m2_enters;
+        3'd5,3'd6: 				sum_en = ~c1_enters;        
         3'd7: 					sum_en = 1'b1;
         default: 				sum_en = 1'bx;
     endcase
@@ -71,7 +67,7 @@ wire signed [15:0] total;
 
 reg sum_all;
 
-wire rst_sum = acc_m2;
+wire rst_sum = c2_enters;
 //wire rst_sum = c1_enters;
 //wire rst_sum = m1_enters;
 //wire rst_sum = m2_enters;
