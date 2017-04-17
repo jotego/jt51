@@ -50,16 +50,17 @@ always @(*) begin
 		3'd5: alg_hot = 8'h20; // D5
 		3'd6: alg_hot = 8'h40; // D6
 		3'd7: alg_hot = 8'h80; // D7
+		default: alg_hot = 8'hx;
 	endcase
 end
 
 always @(*) begin
-	use_prevprev1 	= m1_enters | (c1_enters&alg_hot[5]);
-	use_prev2 		= (c1_enters&(|alg_hot[2:0])) | (c2_enters&alg_hot[3]);
+	use_prevprev1 	= m1_enters | (m2_enters&alg_hot[5]);
+	use_prev2 		= (m2_enters&(|alg_hot[2:0])) | (c2_enters&alg_hot[3]);
 	use_internal_x 	= c2_enters & alg_hot[2];
 	use_internal_y 	= c2_enters & (|{alg_hot[4:3],alg_hot[1:0]});
-	use_prev1 		= m1_enters | (c1_enters&alg_hot[1]) |
-		(m2_enters&(|{alg_hot[6:3],alg_hot[0]}) )|
+	use_prev1 		= m1_enters | (m2_enters&alg_hot[1]) |
+		(c1_enters&(|{alg_hot[6:3],alg_hot[0]}) )|
 		(c2_enters&(|{alg_hot[5],alg_hot[2]}));
 end
 

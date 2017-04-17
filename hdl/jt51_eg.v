@@ -70,7 +70,6 @@ reg		[11:0]	sum_eg_tl_VII;
 
 reg 	step_V, step_VI;
 reg		sum_up;
-reg		keyon_III, keyon_IV, keyon_V, keyon_VI;
 reg 	[5:0]	rate_V;
 reg		[5:1]	rate_VI;
 
@@ -186,29 +185,29 @@ always @(posedge clk) begin
 				ATTACK: begin
 					if( eg_II==10'd0 ) begin
 						state_in_III <= DECAY1;
-						cfg_III			 <= rate1_II;
+						cfg_III		 <= rate1_II;
 					end
 					else begin
 						state_in_III <= state_II; // attack
-						cfg_III			 <= arate_II;
+						cfg_III		 <= arate_II;
 					end
 				end
 				DECAY1: begin
 					if( eg_II[9:5] >= d1level_II ) begin
-						cfg_III <= rate2_II;
+						cfg_III 	 <= rate2_II;
 						state_in_III <= DECAY2;
 					end
 					else begin
-						cfg_III	<=	rate1_II;
+						cfg_III		 <=	rate1_II;
 						state_in_III <= state_II;	// decay1				
 					end
 				end
 				DECAY2: begin
-						cfg_III	<=	rate2_II;
+						cfg_III		 <=	rate2_II;
 						state_in_III <= state_II;	// decay2				
 					end
 				RELEASE: begin
-						cfg_III	<=	{ rrate_II, 1'b1 };
+						cfg_III		 <=	{ rrate_II, 1'b1 };
 						state_in_III <= state_II;	// release				
 					end
 			endcase
@@ -293,7 +292,7 @@ always @(posedge clk) begin
 	else
 	if( state_in_VI == ATTACK ) begin
 		if( sum_up && eg_VI != 10'd0 )
-			if( rate_VI[5:1]==5'd31 ) 
+			if( rate_VI[5:1]==4'hf ) 
 				eg_VII <= 10'd0; 
 			else
 				eg_VII <= ar_result_VI;
