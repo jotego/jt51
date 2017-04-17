@@ -231,7 +231,6 @@ always @(posedge clk) begin : memory_mapped_registers
 			lfo_rst <= 1'b0;
 			{ clr_flag_B, clr_flag_A, load_B, load_A } <= 4'd0;
 			{ clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'd0;
-			up_keyon <= 1'b0;
 			if( |{ up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
 				up_ks, up_amsen, up_dt2, up_d1l, up_keyon } == 1'b0 )
 				busy	<= busy_reg;
@@ -244,17 +243,18 @@ always @(posedge clk) begin : memory_mapped_registers
 			else begin
 				up_clr <= 1'b0;
 				if( up_clr	)
-				{ up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
-					up_ks, up_amsen, up_dt2, up_d1l } <= 10'd0;
+				{ 	up_rl,	up_kc,		up_kf,	up_pms,	up_dt1,	
+					up_tl,	up_ks,	up_amsen,	up_dt2,	up_d1l,
+					up_keyon } <= 11'd0;
 			end
 		end
 	end
 end
 
 jt51_reg u_reg(
-	.rst	( rst		),
-	.clk	( clk		),				// P1
-	.d_in	( din_latch	),
+	.rst		( rst		),
+	.clk		( clk		),		// P1
+	.d_in		( din_latch	),
 
 	.up_rl		( up_rl 	),
 	.up_kc		( up_kc 	),
@@ -297,8 +297,8 @@ jt51_reg u_reg(
 	.d1l_I		( d1l_I 	),
 	.keyon_II	( keyon_II	),
 
-	.cur_op		(cur_op		),
-	.zero		(zero		),
+	.cur_op		( cur_op	),
+	.zero		( zero		),
 	.m1_enters	( m1_enters	),
 	.m2_enters	( m2_enters	),
 	.c1_enters	( c1_enters	),

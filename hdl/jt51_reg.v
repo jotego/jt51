@@ -117,9 +117,7 @@ wire	[3:0]	rr_in	= d_in[3:0];
 wire up = 	up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
 			up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
 
-reg	[4:0]	cnt, cur;
-reg			last, last_kon;
-reg	[1:0]	cnt_kon;
+reg	[4:0]	cur;
 reg			busy;
 
 assign cur_op = cur[4:3];
@@ -163,32 +161,18 @@ wire up_d1r_op  = up_amsen	& update_op_II; // AMS-EN, D1R
 wire up_d2r_op	= up_dt2	& update_op_II; // DT2, D2R
 wire up_rr_op	= up_d1l	& update_op_II; // D1L, RR
 
-reg  up_keyon_long;
-
 wire [4:0] next = cur+5'd1;
 
 always @(posedge clk) begin : up_counter
 	if( rst ) begin
-		cnt		<= 5'h0;
 		cur		<= 5'h0;
-		last	<= 1'b0;
 		zero	<= 1'b0;
         busy	<= 1'b0;
-        up_keyon_long <= 1'b0;
 	end
 	else begin
 		cur		<= next;
 		zero 	<= next== 5'd0;
-		last	<= up;
-		if( up && !last ) begin
-			cnt		<= cur;
-			busy	<= 1'b1;
-			up_keyon_long <= up_keyon;
-		end
-		else if( cnt == cur ) begin
-				busy <= 1'b0;
-				up_keyon_long <= 1'b0;
-			end
+		if( &cur ) busy <= up && !busy;
 	end
 end
 
@@ -203,7 +187,7 @@ jt51_kon u_kon (
 	.keyon_ch  (keyon_ch  ),
 	.cur_op    (cur_op    ),
 	.cur_ch    (cur_ch    ),
-	.up_keyon  (up_keyon_long	  ),
+	.up_keyon  (up_keyon && busy ),
 	.csm       (csm       ),
 	.overflow_A(overflow_A),
 	.keyon_II  (keyon_II  )
@@ -251,8 +235,8 @@ wire [opreg_w-1:0] reg_in = {
 
 always @(posedge clk) begin
 	reg_out		<= reg_op[next];
-    //if( opdata_wr )
-    reg_op[cur]	<= reg_in;
+    if( busy )
+    	reg_op[cur]	<= reg_in;
 end
 
 // memory for CH registers
@@ -275,8 +259,8 @@ wire [2:0] next_ch = next[2:0];
 
 always @(posedge clk) begin
 	reg_ch_out		<= reg_ch[next_ch];
-//    if( chdata_wr )
-    reg_ch[cur_ch]	<= reg_ch_in;
+	if( busy )
+    	reg_ch[cur_ch]	<= reg_ch_in;
 end
 
 `ifdef SIMULATION
