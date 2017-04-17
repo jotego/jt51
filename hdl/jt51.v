@@ -31,7 +31,7 @@ module jt51(
 	output 				ct1,
 	output 				ct2,
 	output 				irq_n,	// I do not synchronize this signal
-	output		 		p1,
+	output	reg	 		p1,
 	// Low resolution output (same as real chip)
 	output				sample,	// marks new output sample
 	output	signed	[15:0] left,
@@ -44,7 +44,6 @@ module jt51(
 	output	[15:0] dacright
 );
 
-reg p1 /*verilator clocker*/;
 reg rst_p1, rst_p1_aux;
 
 assign dacleft  = { ~xleft [15],  xleft[14:0] };

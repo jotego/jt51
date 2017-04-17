@@ -42,7 +42,7 @@ module jt51_reg(
 	input			csm,
 	input			overflow_A,
 
-	output			busy,
+	output	reg		busy,
 	output	[1:0]	rl_I,
 	output	[2:0]	fb_II,
 	output	[2:0]	con_I,
@@ -118,7 +118,6 @@ wire up = 	up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
 			up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
 
 reg	[4:0]	cur;
-reg			busy;
 
 assign cur_op = cur[4:3];
 

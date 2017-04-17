@@ -231,7 +231,8 @@ bus_manager #(RAM_MSB) bus_mng(
 	);
 
 `ifndef NOCPU
-wire cpu_firq_n = 1'b1;
+wire cpu_firq_n = sw_sel[0] ? jt_irq_n : 1'b1;
+
 
 mc6809i cpu_good(
     .D		( cpu_data_in	),

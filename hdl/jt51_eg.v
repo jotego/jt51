@@ -61,10 +61,8 @@ parameter ATTACK=2'd0, DECAY1=2'd1, DECAY2=2'd2, RELEASE=2'd3;
 reg		[4:0]	d1level_II;
 reg		[2:0]	cnt_V;
 reg		[5:0]	rate_IV;
-wire	[6:0]	tl_VII;
-wire	[1:0]	ams_VII;
-wire			amsen_VII;
-reg		[9:0]	eg_VI, eg_VII, eg_VIII;
+wire	[9:0]	eg_VI;
+reg		[9:0]	eg_VII, eg_VIII;
 wire	[9:0]	eg_II;
 reg		[11:0]	sum_eg_tl_VII;
 
@@ -102,7 +100,6 @@ wire			cnt_out; // = all_cnt_last[3*31-1:3*30];
 
 reg		[6:0]	pre_rate_III;
 reg		[4:0]	cfg_III;
-wire	[1:0]	ks_III;
 
 always @(*) begin : pre_rate_calc
 	if( cfg_III == 5'd0 )
