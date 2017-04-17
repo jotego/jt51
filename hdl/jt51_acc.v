@@ -67,12 +67,14 @@ wire signed [15:0] total;
 
 reg sum_all;
 
+wire rst_sum = c2_enters;
+
 always @(posedge clk) begin
 	if( rst ) begin
 		sum_all <= 1'b0;
 	end
     else begin
-		if( m2_enters )  begin
+		if( rst_sum )  begin
     		sum_all <= 1'b1;
 	        if( !sum_all ) begin
 				pre_right <= ren ? total : 16'd0;
@@ -95,7 +97,7 @@ reg  signed [15:0] opsum;
 wire signed [16:0] opsum10 = op_val+total;
 
 always @(*) begin
-	if( m2_enters )
+	if( rst_sum )
 		opsum = sum_en ? { {2{op_val[13]}}, op_val } : 16'd0;
 	else begin
 		if( sum_en )

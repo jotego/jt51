@@ -120,12 +120,11 @@ myfile=${basename}.jt
 
 case $SIMULATOR in
 verilator)
+	VERILATOR_SIM="../common/sep32.v ../common/sep32_cnt.v -DSIMULATION"
 	if [ $DUMPSIGNALS = DUMPSIGNALS ]; then
 		VERILATOR_TRACE=--trace
-		VERILATOR_SIM="../common/sep32.v ../common/sep32_cnt.v -DSIMULATION"
 	else
 		VERILATOR_TRACE=
-		VERILATOR_SIM=
 	fi
 	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe jt51_con.cc \
 		--cc --top-module jt51 --trace $VERILATOR_SIM \

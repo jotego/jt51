@@ -17,6 +17,31 @@ double sc_time_stamp () {       // Called by $time in Verilog
                                // what SystemC does
 }
 
+class Stim {
+	unsigned char reg, val;
+	ifstream of;
+public:
+	Stim() {		
+		of.open("stimuli", ifstream::binary);
+		if( of.fail() ) {
+			cerr << "Cannot open stimuli file\n";
+			throw 1;
+		}
+		Next();
+	}
+	unsigned Reg() { return reg; }
+	unsigned Val() { return val; }
+	bool Next() {
+		if( !of.eof() ) {
+			of.read( (char*)&reg, 1);
+			of.read( (char*)&val, 1);
+			//cout << "Reg = " << hex << (unsigned)reg << " Val = " << (unsigned)val << '\n';
+			return true;
+		}
+		else return false;
+	}
+};
+
 int main(int argc, char **argv, char **env) {
 	Verilated::commandArgs(argc, argv);
 	top = new Vjt51;
@@ -32,10 +57,8 @@ int main(int argc, char **argv, char **env) {
 		top->trace(tfp,99);
 		tfp->open("jt51_con.vcd");
 	}
-
-	int reg[65536], val[65535];
+	Stim stim;
 	ofstream of(jtname.c_str());
-	#include "inputs.h"
 	cout << "JT51 Connection testbench\n";
 	// Reset
 	top->clk = 0;
@@ -53,7 +76,6 @@ int main(int argc, char **argv, char **env) {
 	top->rst = 0;
 	int last_a=0, ticks=0;
 	int wait=10;
-	int cmd_cnt=0;
 	enum { WRITE_REG, WRITE_VAL, WAIT_FINISH } state;
 	state = WRITE_REG;
 	int last_sample = 0;
@@ -75,14 +97,11 @@ int main(int argc, char **argv, char **env) {
 					wait--;
 				else if( (dout&0x80)==0 ) {
 					top->cs_n = 0;
-					// cout << "#" << main_time;
-					// cout << "\tstate= " << state << " cmd_cnt = " << cmd_cnt;
-					// cout << " reg=" << reg[cmd_cnt] << '\n';
 					switch( state) {
 						case WRITE_REG: 
 							top->a0 = 0;
-							top->d_in = reg[cmd_cnt];
-							switch( reg[cmd_cnt] ) {
+							top->d_in = stim.Reg();
+							switch( stim.Reg() ) {
 								case 0: 
 									cout << "Done!\n"; 
 									if(trace)
@@ -92,19 +111,20 @@ int main(int argc, char **argv, char **env) {
 									state = WAIT_FINISH;
 									break;
 								case 1: 
-									wait=val[cmd_cnt]<<8; 
+									wait=stim.Val()<<8; 
 									//cout << "Wait for " << wait << " clock ticks\n";
 									top->cs_n = 1;
-									cmd_cnt++;
+									stim.Next();
 									break;
 								default: state = WRITE_VAL; wait=2;
 							}
 							break;
 						case WRITE_VAL:
 							top->a0 = 1;
-							top->d_in = val[cmd_cnt++];
+							top->d_in = stim.Val();
 							state = WRITE_REG;
 							wait=2;
+							stim.Next();
 							break;
 						case WAIT_FINISH:
 							if( main_time>=finish_time ) goto finish;

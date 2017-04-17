@@ -8,13 +8,15 @@ using namespace std;
 ofstream verilator;
 
 
-void pverilator( int k, int adr, int val, string comment ) {
+void pverilator( int k, unsigned char adr, unsigned char val, string comment ) {
 	// verilator input
+	/*
 	if( comment.size() > 0 )
 		verilator << " // " << comment << '\n';
 	verilator << "reg[" << dec << k << "] = 0x" << hex << adr << "; \t";
 	verilator<< "val[" << dec << k << "] = 0x" << hex << val << ";";
-	verilator<< '\n';
+	verilator<< '\n';*/
+	verilator << adr << val;
 }
 
 
@@ -47,7 +49,7 @@ int main( int argc, char *argv[] ) {
 
 	srand(seed);
 
-	verilator.open("obj_dir/inputs.h");
+	verilator.open("obj_dir/stimuli", ofstream::binary);
 
 	for(int k=1; k<argc-1; k++ ) {
 		string p( argv[k] );
