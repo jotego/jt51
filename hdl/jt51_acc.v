@@ -96,7 +96,7 @@ wire signed [16:0] opsum10 = op_val+total;
 
 always @(*) begin
 	if( m2_enters )
-		opsum = sum_en ? op_val : 16'd0;
+		opsum = sum_en ? { {2{op_val[13]}}, op_val } : 16'd0;
 	else begin
 		if( sum_en )
 			if( opsum10[16]==opsum10[15] )

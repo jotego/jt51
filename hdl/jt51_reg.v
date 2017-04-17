@@ -196,7 +196,7 @@ wire [2:0]  cur_ch =  cur[2:0];
 wire [3:0] keyon_op = d_in[6:3];
 wire [2:0] keyon_ch = d_in[2:0];
 
-jt51_kon i_jt51_kon (
+jt51_kon u_kon (
 	.rst       (rst       ),
 	.clk       (clk       ),
 	.keyon_op  (keyon_op  ),

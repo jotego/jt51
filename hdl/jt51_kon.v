@@ -49,10 +49,10 @@ always @(posedge clk)
 
 always @(*) begin
 	case( cur_op )
-		2'd0: cur_op_hot = 4'b0001; // S1
-		2'd1: cur_op_hot = 4'b0100; // S3
-		2'd2: cur_op_hot = 4'b0010; // S2
-		2'd3: cur_op_hot = 4'b1000; // S4
+		2'd0: cur_op_hot = 4'b0001; // S1 / M1
+		2'd1: cur_op_hot = 4'b0100; // S3 / C1
+		2'd2: cur_op_hot = 4'b0010; // S2 / M2
+		2'd3: cur_op_hot = 4'b1000; // S4 / C2
 	endcase
 	din = keyon_ch==cur_ch && up_keyon ? |(keyon_op&cur_op_hot) : drop;
 end

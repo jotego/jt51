@@ -127,7 +127,7 @@ int main(int argc, char **argv, char **env) {
 			}
 		}
 		main_time+=2;
-		if(trace) tfp->dump(main_time);
+		if(trace && (main_time%half_period==0)) { tfp->dump(main_time); }
 		/*
 		int a = top->reg_a;
 		if( a!= last_a) {

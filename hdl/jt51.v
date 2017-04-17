@@ -43,7 +43,7 @@ module jt51(
 	output	[15:0] dacleft,
 	output	[15:0] dacright
 );
-/*verilator tracing_off*/
+
 reg p1 /*verilator clocker*/;
 reg rst_p1, rst_p1_aux;
 

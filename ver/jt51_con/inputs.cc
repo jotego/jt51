@@ -28,6 +28,14 @@ void p( int adr, int val, string comment ="" ) {
 	cout << '\n';
 }
 
+bool op_in_mask( int op, int opmask ) {
+	if( op==0 && (opmask&1) ) return true;
+	if( op==1 && (opmask&4) ) return true;
+	if( op==2 && (opmask&2) ) return true;
+	if( op==3 && (opmask&8) ) return true;
+	return false;
+}
+
 int main( int argc, char *argv[] ) {
 	int con=7, tl=0, opmask=1, ch=7, fl=0;
     //int d1r=1, d2r=1, rr=15, d1l=15, ar=31, ks=3;
@@ -96,7 +104,7 @@ int main( int argc, char *argv[] ) {
 		 	p( 1,1, "Gives time so keyoff works");
 	}
 	for( int op=0; op<4; op++ ) {
-		if( ((opmask>>op)&1) ) {
+		if( op_in_mask( op, opmask ) ) {
 			p( 0x40+op*8+ch, mul, "MUL" );
 			p( 0x60+op*8+ch, tl, "TL" );
 			p( 0xa0+op*8+ch, 0, "AMS-EN/D1R" );
