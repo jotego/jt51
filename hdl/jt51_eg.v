@@ -64,7 +64,7 @@ reg		[5:0]	rate_IV;
 wire	[6:0]	tl_VII;
 wire	[1:0]	ams_VII;
 wire			amsen_VII;
-reg		[9:0]	eg_VII, eg_out_III, eg_out_IV, eg_out_V, eg_VI, eg_VIII;
+reg		[9:0]	eg_VI, eg_VII, eg_VIII;
 wire	[9:0]	eg_II;
 reg		[11:0]	sum_eg_tl_VII;
 
@@ -152,8 +152,6 @@ end
 
 
 wire	ar_off_VI;
-reg		ar_off_III;
-
 
 always @(posedge clk) begin
 	// I
@@ -216,13 +214,11 @@ always @(posedge clk) begin
 			endcase
 		end
 	end
-	eg_out_III <= eg_II;
 end
 
 	// III		
 always @(posedge clk) begin
 	state_in_IV <= state_in_III;
-	eg_out_IV <= eg_out_III;
 	rate_IV <= pre_rate_III[6] ? 6'd63 : pre_rate_III[5:0];
 end
 
@@ -230,7 +226,6 @@ end
 always @(posedge clk) begin	
 	state_in_V	<= state_in_IV;
 	rate_V <= rate_IV;
-	eg_out_V <= eg_out_IV;
     if( state_in_IV == ATTACK )
 	    casex( rate_IV[5:2] )
 		    4'h0: cnt_V <= eg_cnt[13:11]; 
@@ -268,7 +263,6 @@ end
 always @(posedge clk) begin
 	state_in_VI <= state_in_V;	
 	rate_VI <= rate_V[5:1];
-	eg_VI <= eg_out_V;
 	sum_up <= cnt_V[0] != cnt_out;
 	step_VI <= step_V;
 end
@@ -353,10 +347,16 @@ jt51_sh #( .width(10), .stages(3) ) u_egpadding (
 
 // Shift registers
 
-jt51_sh #( .width(10), .stages(32-11+2) ) u_egsh(
+jt51_sh #( .width(10), .stages(32-7+2) ) u_eg1sh(
 	.clk	( clk		),
-	.din	( eg_XI		),
+	.din	( eg_VII	),
 	.drop	( eg_II		)
+);
+
+jt51_sh #( .width(10), .stages(4) ) u_eg2sh(
+	.clk	( clk		),
+	.din	( eg_II		),
+	.drop	( eg_VI		)
 );
 
 jt51_sh #( .width(1), .stages(4) ) u_aroffsh(
