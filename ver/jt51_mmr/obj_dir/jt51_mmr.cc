@@ -7,7 +7,7 @@
 // sep32 verilog instances
 #include "Vjt51_sep32__W1_S1.h"
 #include "Vjt51_sep32__W1_S7.h"
-#include "Vjt51_sep32__W1_S8.h"
+//#include "Vjt51_sep32__W1_S8.h"
 #include "Vjt51_sep32__W2_S1.h"
 #include "Vjt51_sep32__W2_S2.h"
 #include "Vjt51_sep32__W2_S3.h"
