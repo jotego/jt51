@@ -251,6 +251,7 @@ int main(int argc, char **argv, char **env) {
 	int next_check=check_step;
 	JT51_REG ref_mmr;
 	int reg, val;
+	bool fail=true;
 
 	while( true ) {
 		top->eval();
@@ -271,7 +272,8 @@ int main(int argc, char **argv, char **env) {
 						int unchecked = ref_mmr.checked();
 						if (unchecked) cout << " unchecked " << unchecked;
 						cout << endl;
-						if ( /*--reps==0 ||*/ !b ) goto finish;						
+						if ( /*--reps==0 ||*/ !b ) { fail=true; goto finish; }
+						if ( reps>50000 ) { fail=false; goto finish; }
 					}
 					top->cs_n = 0;
 					// cout << "#" << main_time;
@@ -284,14 +286,14 @@ int main(int argc, char **argv, char **env) {
 							// cout << "Wr to " << reg << " ";
 							top->d_in = reg;
 							state = WRITE_VAL; 
-							wait=2;							
+							wait=rand()%8;							
 							break;
 						case WRITE_VAL:
 							top->a0 = 1;
 							val = random_val();
 							top->d_in = val;
 							state = WRITE_REG;
-							wait=64;
+							wait=64+(rand()%256);
 							ref_mmr.write( reg, val );
 							next_check--;
 							break;
@@ -306,7 +308,14 @@ int main(int argc, char **argv, char **env) {
 	}
 finish:
 	cout << "$finish: #" << dec << main_time << '\n';
-	if(trace) tfp->close();
+	if(trace) tfp->close();	
 	delete top;
-	return 0;
+	if( fail ) {
+		cout << "Test FAIL\n";
+		return 1;
+	}
+	else {
+		cout << "Test PASS\n";
+		return 0;
+	}
 }
