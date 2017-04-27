@@ -49,9 +49,9 @@ NET "uart_speed" LOC = T9;
 NET "uart_speed" IOSTANDARD = LVCMOS33;
 
 # RS232
-NET "uart_rx" LOC = F16;
+NET "uart_rx" LOC = E16;
 NET "uart_rx" IOSTANDARD = LVCMOS33;
-NET "uart_tx" LOC = E15;
+NET "uart_tx" LOC = F15;
 NET "uart_tx" IOSTANDARD = LVCMOS33;
 NET "uart_tx" DRIVE = 8;
 NET "uart_tx" SLEW = SLOW;
@@ -60,103 +60,47 @@ NET "uart_rx" OFFSET = IN 10 ns VALID 20 ns BEFORE "clk50" RISING;
 
 # YM pins lateral board
 # outputs from YM2151
-NET "ym_ct1" LOC = D20;
-NET "ym_ct1" IOSTANDARD = LVCMOS33;
-NET "ym_ct1" DRIVE = 8;
-NET "ym_ct1" SLEW = SLOW;
-NET "ym_ct2" LOC = D21;
-NET "ym_ct2" IOSTANDARD = LVCMOS33;
-NET "ym_ct2" DRIVE = 8;
-NET "ym_ct2" SLEW = SLOW;
-NET "ym_p1" CLOCK_DEDICATED_ROUTE = FALSE;
-NET "ym_p1" LOC = D18;
-NET "ym_p1" IOSTANDARD = LVCMOS33;
-NET "ym_p1" DRIVE = 8;
-NET "ym_p1" SLEW = SLOW;
-NET "ym_sh2" LOC = D22;
-NET "ym_sh2" IOSTANDARD = LVCMOS33;
-NET "ym_sh2" DRIVE = 8;
-NET "ym_sh2" SLEW = SLOW;
-NET "ym_sh1" LOC = E22;
-NET "ym_sh1" IOSTANDARD = LVCMOS33;
-NET "ym_sh1" DRIVE = 8;
-NET "ym_sh1" SLEW = SLOW;
-NET "ym_so" LOC = F18;
-NET "ym_so" IOSTANDARD = LVCMOS33;
-NET "ym_so" DRIVE = 8;
-NET "ym_so" SLEW = SLOW;
-NET "ym_irq_n" LOC = E17;
-NET "ym_irq_n" IOSTANDARD = LVCMOS33;
-NET "ym_irq_n" DRIVE = 8;
-NET "ym_irq_n" SLEW = SLOW;
+NET "ym_ct1"   LOC = B6   | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_ct2"   LOC = B4   | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_p1"    LOC = AB3  | CLOCK_DEDICATED_ROUTE = FALSE | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_sh2"   LOC = AB6  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_sh1"   LOC = AB7  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_so"    LOC = AB8  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_irq_n" LOC = AB10 | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
 #Created by Constraints Editor (xc3s700a-fg484-4) - 2015/01/04
 NET "ym_p1" TNM_NET = "ym_p1";
 TIMESPEC TS_ym_p1 = PERIOD "ym_p1" 560 ns HIGH 50% INPUT_JITTER 15 ns;
 
-NET "dir" LOC = K17;
-NET "dir" IOSTANDARD = LVCMOS33;
-NET "dir" DRIVE = 8;
-NET "dir" SLEW = SLOW;
+NET "dir" LOC = A12 | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
 
 # YM2151 data bus 
-NET "ym_d[7]" LOC = K20;
-NET "ym_d[7]" IOSTANDARD = LVCMOS33;
-NET "ym_d[7]" DRIVE = 8;
-NET "ym_d[7]" SLEW = SLOW;
-NET "ym_d[6]" LOC = L19;
-NET "ym_d[6]" IOSTANDARD = LVCMOS33;
-NET "ym_d[6]" DRIVE = 8;
-NET "ym_d[6]" SLEW = SLOW;
-NET "ym_d[5]" LOC = L18;
-NET "ym_d[5]" IOSTANDARD = LVCMOS33;
-NET "ym_d[5]" DRIVE = 8;
-NET "ym_d[5]" SLEW = SLOW;
-NET "ym_d[4]" LOC = M20;
-NET "ym_d[4]" IOSTANDARD = LVCMOS33;
-NET "ym_d[4]" DRIVE = 8;
-NET "ym_d[4]" SLEW = SLOW;
-NET "ym_d[3]" LOC = M18;
-NET "ym_d[3]" IOSTANDARD = LVCMOS33;
-NET "ym_d[3]" DRIVE = 8;
-NET "ym_d[3]" SLEW = SLOW;
-NET "ym_d[2]" LOC = L20;
-NET "ym_d[2]" IOSTANDARD = LVCMOS33;
-NET "ym_d[2]" DRIVE = 8;
-NET "ym_d[2]" SLEW = SLOW;
-NET "ym_d[1]" LOC = P20;
-NET "ym_d[1]" IOSTANDARD = LVCMOS33;
-NET "ym_d[1]" DRIVE = 8;
-NET "ym_d[1]" SLEW = SLOW;
-NET "ym_d[0]" LOC = L22;
-NET "ym_d[0]" IOSTANDARD = LVCMOS33;
-NET "ym_d[0]" DRIVE = 8;
-NET "ym_d[0]" SLEW = SLOW;
+NET "ym_d[7]" LOC = A4  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_d[6]" LOC = A5  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_d[5]" LOC = A6  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_d[4]" LOC = A7  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_d[3]" LOC = A8  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_d[2]" LOC = A9  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_d[1]" LOC = A10 | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_d[0]" LOC = A11 | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
 
 # inputs to YM2151
-NET "ym_ic_n" LOC = C18;
-NET "ym_ic_n" IOSTANDARD = LVCMOS33;
-NET "ym_ic_n" DRIVE = 8;
-NET "ym_ic_n" SLEW = SLOW;
-NET "ym_a0" LOC = A19;
-NET "ym_a0" IOSTANDARD = LVCMOS33;
-NET "ym_a0" DRIVE = 8;
-NET "ym_a0" SLEW = SLOW;
-NET "ym_wr_n" LOC = B19;
-NET "ym_wr_n" IOSTANDARD = LVCMOS33;
-NET "ym_wr_n" DRIVE = 8;
-NET "ym_wr_n" SLEW = SLOW;
-NET "ym_rd_n" LOC = A20;
-NET "ym_rd_n" IOSTANDARD = LVCMOS33;
-NET "ym_rd_n" DRIVE = 8;
-NET "ym_rd_n" SLEW = SLOW;
-NET "ym_pm" LOC = B20;
-NET "ym_pm" IOSTANDARD = LVCMOS33;
-NET "ym_pm" DRIVE = 8;
-NET "ym_pm" SLEW = SLOW;
-NET "ym_cs_n" LOC = C19;
-NET "ym_cs_n" IOSTANDARD = LVCMOS33;
-NET "ym_cs_n" DRIVE = 8;
-NET "ym_cs_n" SLEW = SLOW;
+NET "ym_ic_n" LOC = AA10 | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_a0"   LOC = AA8  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_wr_n" LOC = AA6  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_rd_n" LOC = AA4  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_pm"   LOC = AA3  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+NET "ym_cs_n" LOC = AB2  | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW;
+
+
+# Pins on headerJ2 and J15
+# B4    B6
+# A4 A5 A6 A7 A8 A9 A10 A11 A12
+#                   C10
+# 
+#     AA3 AA4 AA6     AA8 AA10
+# AB2 AB3     AB6 AB7 AB8 AB10
+# Y7                
+
 
 
 # PlanAhead Generated IO constraints 
