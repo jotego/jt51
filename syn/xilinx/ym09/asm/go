@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ $(hostname) == jtejada-lx01.adbvdesign.analog.com ]; then
+  PATH=$PATH:/nobackup/jtejada/ym09/trunk/bin
+fi
+
+for i in *asm; do
+	filename=$(basename $i .asm)
+	echo $filename
+	# rm -f out/${filename}.*
+	as9 "$i" -bin l | tee ${filename}.log
+	if grep -q ERROR ${filename}.log; then
+		echo ERROR
+		exit 1
+	fi
+	hexdump  -v -e '/1 "%02X\n"' ${filename}.bin > ${filename}.hex
+done
+
+mv *{bin,hex,log,lst} out
