@@ -79,8 +79,8 @@ module jt51_reg(
 	output 			use_prev1,
 
 	output	[1:0]	cur_op,
-	output			op31_no,
-	output			op31_acc
+	output	reg		op31_no,
+	output	reg		op31_acc
 );
 
 reg		kon, koff;

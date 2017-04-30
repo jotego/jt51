@@ -1,0 +1,160 @@
+#!/bin/bash
+
+CH=7
+CON=7
+OPMASK=8
+TL=0
+FL=0
+AR=31
+KS=0
+D1R=0
+D2R=0
+RR=15
+D1L=0
+OCT=2
+NOTE=9
+MUL=1
+DT1=0
+DT2=0
+KF=0
+NFREQ=31
+
+DUMPSIGNALS=DONTDUMP
+RANDEXT=
+VERBOSE=1
+INCDIR="."
+INCCMD=
+WAIT0=DONTWAITFOR0
+BORRADIR=0
+KEEP=0
+OTHER=
+
+if (which verilator &> /dev/null); then
+	SIMULATOR=verilator
+else if (which iverilog &> /dev/null ); then
+	SIMULATOR=iverilog
+else
+	SIMULATOR=ncverilog
+fi
+fi
+
+while [ $# -gt 0 ]; do
+	if [ $1 = "-w" ]; then
+		echo "Signal dump enabled"
+		DUMPSIGNALS=DUMPSIGNALS
+		shift
+		continue
+	fi
+	if [ $1 = "-r" ]; then
+		RANDEXT=_${RANDOM}${RANDOM}
+		INCDIR=inc${RANDEXT}
+		INCCMD=" -I "$INCDIR" "
+		BORRADIR=1
+		mkdir $INCDIR
+		rm -f inputs.vh
+		shift
+		continue
+	fi
+	if [ $1 = "-k" ]; then
+		KEEP=1
+		shift
+		continue
+	fi
+	if [ $1 = "-q" ]; then VERBOSE=0; shift; continue; fi
+	if [ $1 = "-0" ]; then WAIT0=WAITFOR0; shift; continue;  fi
+
+	if [ $1 = "AR"  ]; then shift; AR=$1;  shift; continue; fi
+	if [ $1 = "KS"  ]; then shift; KS=$1;  shift; continue; fi
+	if [ $1 = "D1R" ]; then shift; D1R=$1; shift; continue; fi
+	if [ $1 = "D2R" ]; then shift; D2R=$1; shift; continue; fi
+	if [ $1 = "D1L" ]; then shift; D1L=$1; shift; continue; fi
+	if [ $1 = "RR"  ]; then shift; RR=$1;  shift; continue; fi
+	if [ $1 = "TL"  ]; then shift; TL=$1;  shift; continue; fi
+	if [ $1 = "OCT"  ]; then shift; OCT=$1;  shift; continue; fi
+	if [ $1 = "NOTE"  ]; then shift; NOTE=$1;  shift; continue; fi
+    if [ $1 = "CH"  ]; then shift; CH=$1;  shift; continue; fi
+    if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  shift; continue; fi
+    if [ $1 = "CON"  ]; then shift; CON=$1;  shift; continue; fi
+    if [ $1 = "FL"  ]; then shift; FL=$1;  shift; continue; fi	
+    if [ $1 = "MUL"  ]; then shift; MUL=$1;  shift; continue; fi	
+    if [ $1 = "NFREQ"  ]; then shift; NFREQ=$1;  shift; continue; fi	
+    if [ $1 = "-sim" ]; then 
+    	shift; 
+    	SIMULATOR=$1; 
+    	if [[ $SIMULATOR != iverilog && $SIMULATOR != verilator && $SIMULATOR != ncverilog ]]; then
+    		echo "Unsupported simulator: " $SIMULATOR
+    		exit 1
+    	fi
+    	shift
+    	continue
+    	fi
+	if [ ${1:0:1} = "-" ]; then OTHER="$OTHER $1"; shift; continue; fi
+	echo "Unsupported parameter " $1
+	exit 1
+done
+
+if [ $VERBOSE -eq 1 ]; then
+	echo Channel=$CH Connection=$CON OPMASK=$OPMASK TL=$TL FL=$FL
+	echo KS=$KS AR=$AR D1R=$D1R D2R=$D2R RR=$RR D1L=$D1L
+	echo OCT=$OCT NOTE=$NOTE MUL=$MUL
+	echo NFREQ=$NFREQ
+	echo $WAIT0 $RANDEXT
+	echo Additional commands to "'inputs'" = $OTHER
+fi
+
+rm -f inputs.vh
+make --quiet && inputs $OTHER CH $CH CON $CON OPMASK $OPMASK FL $FL TL $TL \
+	AR $AR KS $KS D1R $D1R D2R $D2R RR $RR D1L $D1L \
+	OCT $OCT NOTE $NOTE MUL $MUL DT1 $DT1 DT2 $DT2 KF $KF \
+	NFREQ $NFREQ > $INCDIR/inputs.vh
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
+INCDIR2=../../hdl
+TOP=jt51_test
+
+echo Simulating using $SIMULATOR
+
+myfile=${basename}.jt
+
+case $SIMULATOR in
+verilator)
+	VERILATOR_SIM="../common/sep32.v ../common/sep32_cnt.v -DSIMULATION"
+	if [ $DUMPSIGNALS = DUMPSIGNALS ]; then
+		VERILATOR_TRACE=--trace
+	else
+		VERILATOR_TRACE=
+	fi
+	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe ../jt51_noise.cc \
+		--cc --top-module jt51 --trace $VERILATOR_SIM \
+		&& cd obj_dir \
+		&& make -f Vjt51.mk && Vjt51 $VERILATOR_TRACE --jtname ../$myfile
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+	cd ..
+	;;
+iverilog)
+  iverilog jt51_test.v ../common/sep32_cnt.v ../common/sep32.v -f ../common/basic.f -s $TOP \
+  	-I $INCDIR2 -I $INCDIR -DIVERILOG -DDUMP_SND_TOP -DSIMULATION \
+  	-D$DUMPSIGNALS -D$WAIT0 -DDUMPLEFT -DTEST_SUPPORT -o basic$RANDEXT && basic$RANDEXT -lxt > s$RANDEXT
+  if [ $? -ne 0 ]; then
+  	if [ -e s$RANDEXT ]; then cat s$RANDEXT; fi
+  	rm -f s$RANDEXT
+  	exit 1
+  fi
+  rm basic$RANDEXT
+  ;;
+ncverilog)
+  ncverilog jt51_test.v -f ../common/basic.f +incdir+$INCDIR+$INCDIR2 +access+rc +nctop+$TOP +define+NCVERILOG+DUMP_SND_TOP+DUMPLEFT+$DUMPSIGNALS+TEST_SUPPORT+$WAIT0 > s$RANDEXT
+  if [ $? -ne 0 ]; then
+  	if [ -e s$RANDEXT ]; then cat s$RANDEXT; fi
+  	rm -f s$RANDEXT
+  	exit 1
+  fi
+  ;;
+esac
+
+exit 0
+
