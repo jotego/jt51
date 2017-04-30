@@ -233,18 +233,16 @@ jt51_op u_op(
 );
 
 wire	[4:0] nfrq;
-wire	[9:0] noise_out;
-wire		  ne, op31_acc;
+wire	[10:0] noise_out;
+wire		  ne, op31_acc, op31_no;
 
 jt51_noise u_noise(
 	.rst	( rst_p1	),
 	.clk	( p1		),
-	.zero	( zero		),
-	.ne		( ne		),
-	.nfrq	( nfrq		),
+	.nfrq	( nfrq		),	
 	.eg		( eg_XI		),
 	.out	( noise_out	),
-	.op31_acc(op31_acc	)
+	.op31_no( op31_no	)
 );
 
 jt51_acc u_acc(
@@ -375,6 +373,8 @@ jt51_mmr u_mmr(
 	.keyon_II	( keyon_II	),
 
 	.cur_op		( cur_op		),
+	.op31_no	( op31_no		),
+	.op31_acc	( op31_acc		),
 	.zero		( zero			),
 	.m1_enters	( m1_enters		),
 	.m2_enters	( m2_enters		),

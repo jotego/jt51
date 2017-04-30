@@ -84,6 +84,8 @@ module jt51_mmr(
 	output			keyon_II,
 
 	output	[1:0]	cur_op,
+	output			op31_no,
+	output			op31_acc,
 
 	output			zero,
 	output			m1_enters,
@@ -298,6 +300,8 @@ jt51_reg u_reg(
 	.keyon_II	( keyon_II	),
 
 	.cur_op		( cur_op	),
+	.op31_no	( op31_no	),
+	.op31_acc	( op31_acc	),
 	.zero		( zero		),
 	.m1_enters	( m1_enters	),
 	.m2_enters	( m2_enters	),

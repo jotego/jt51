@@ -78,7 +78,9 @@ module jt51_reg(
 	output 			use_prev2,
 	output 			use_prev1,
 
-	output	[1:0]	cur_op
+	output	[1:0]	cur_op,
+	output			op31_no,
+	output			op31_acc
 );
 
 reg		kon, koff;
@@ -118,6 +120,11 @@ wire up = 	up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
 			up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
 
 reg	[4:0]	cur;
+
+always @(posedge clk) begin
+	op31_no  <= cur == 5'o10;
+	op31_acc <= cur == 5'o16;
+end
 
 assign cur_op = cur[4:3];
 
@@ -175,7 +182,7 @@ always @(posedge clk) begin : up_counter
 	end
 end
 
-wire [2:0]  cur_ch =  cur[2:0];
+wire [2:0] cur_ch =  cur[2:0];
 wire [3:0] keyon_op = d_in[6:3];
 wire [2:0] keyon_ch = d_in[2:0];
 

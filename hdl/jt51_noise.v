@@ -44,83 +44,49 @@
 */
 
 module jt51_noise(
-	input	rst,
-	input	clk,
-	input	zero,
-	input	ne,
-	input	[4:0] nfrq,
+	input			rst,
+	input			clk,
+	input	[4:0]	nfrq,
 	input	[9:0]	eg,
-	output	[9:0]	out,
-	output			op31_acc
+	input			op31_no,
+	output	reg [10:0]	out
 );
-
-reg [9:0] limit;
-wire zero_out;
-
-always @(posedge clk) 
-	if( ne ) begin
-		if( zero_out )
-			casex ( ~eg )
-				10'b1xxxxxxxxx:	limit <= 10'h3FF;
-				10'b01xxxxxxxx:	limit <= 10'h1FF;
-				10'b001xxxxxxx:	limit <= 10'h0FF;
-				10'b0001xxxxxx:	limit <= 10'h07F;
-				10'b00001xxxxx:	limit <= 10'h03F;
-				10'b000001xxxx:	limit <= 10'h01F;
-				10'b0000001xxx:	limit <= 10'h00F;
-				10'b00000001xx:	limit <= 10'h007;
-				10'b000000001x:	limit <= 10'h003;
-				10'b0000000001:	limit <= 10'h001;		
-			endcase
-	end
-	else limit <= 10'd0;
 
 
 reg 		base;
-reg [4:0]	cnt;
+reg [3:0]	cnt;
 
 always @(posedge clk)
 	if( rst ) begin
-		base <= 1'b0;
-		cnt  <= 5'b1;
+		cnt  <= 5'b0;
 	end
 	else begin
-		if( zero_out ) begin
-			if ( cnt==nfrq && nfrq!=5'd0 ) begin
-				base <= ~base;
-				cnt  <= 5'b1;
+		if( op31_no ) begin
+			if ( &cnt ) begin				
+				cnt  <= nfrq[4:1]; // we do not need to use nfrq[0]
+				// because I run it off P1, YM2151 probably ran off PM
+				// but the result is the same, as for NFREQ=31 the YM2151
+				// trips the noise output at each output sample, and for
+				// NFREQ=0 (or 1), the output trips every 16 samples
+				// so NFREQ[0] does not really add resolution
 			end
 			else cnt <= cnt + 1'b1;
+			base <= &cnt;
 		end
+		else base <= 1'b0;
 	end
 
-wire [9:0] pre;
+wire rnd_sign;
 
-assign	out = pre & limit;
+always @(posedge clk)
+	if( op31_no )
+		out <= { rnd_sign, {10{~rnd_sign}}^eg };
 
-genvar aux;
-generate
-for( aux=0; aux<10; aux=aux+1) begin : noise_lfsr
-	jt51_noise_lfsr #(.init(aux*29+97*aux*aux*aux)) u_lfsr (
-		.rst	( rst ),
-		.clk	( clk ),
-		.base	( base ),
-		.out	( pre[aux] )
-	);
-end
-endgenerate
-
-// shift ZERO to make it match the output of OP31 from EG
-jt51_sh #( .width(1), .stages(5) ) u_zerosh(
-	.clk	( clk		),
-	.din	( zero		),
-    .drop	( zero_out	)
-);
-
-jt51_sh #( .width(1), .stages(7) ) u_op31sh(
-	.clk	( clk		),
-	.din	( zero_out	),
-    .drop	( op31_acc	)
+jt51_noise_lfsr #(.init(90)) u_lfsr (
+	.rst	( rst ),
+	.clk	( clk ),
+	.base	( base ),
+	.out	( rnd_sign )
 );
 
 endmodule
