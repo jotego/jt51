@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if [ $(hostname) == jtejada-lx01.adbvdesign.analog.com ]; then
-  PATH=$PATH:/nobackup/jtejada/ym09/trunk/bin
-fi
-
 for i in *asm; do
 	filename=$(basename $i .asm)
 	echo $filename

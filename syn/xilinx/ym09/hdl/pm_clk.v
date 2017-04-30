@@ -6,6 +6,7 @@ module pm_clk_real(
 	input             real_speed,
 	input             rst_counter,
 	input             irq_n,			// the pm counter does not count when irq_n is low
+	input 			  uart_speed,
 	output reg        ym_pm,
 	output reg [31:0] pm_counter
 );
@@ -23,8 +24,13 @@ always @(posedge clk or posedge rst) begin : speed_mux
 			cambio1 <= 5'd4;
 		end
 		else begin // con 8/16 he visto fallar el STATUS del YM una vez
-			cambio0 <= 5'd7;
-			cambio1 <= 5'd15;
+			if( uart_speed ) begin
+				cambio0 <= 5'd4;
+				cambio1 <= 5'd8;
+			end else begin
+				cambio0 <= 5'd7;
+				cambio1 <= 5'd15;
+			end
 		end
 	end
 end

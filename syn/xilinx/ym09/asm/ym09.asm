@@ -31,7 +31,7 @@ LEDS_ALT    EQU	$811
 UART_DATA   EQU $800
 RX_STATUS   EQU $801
 TX_STATUS   EQU $802
-VERSION     EQU $820
+VERSION     EQU $830
 
 YMCTRL      EQU $A00
 ; cs_n, 0,0,0, // 0,0, rd_n, wr_n
@@ -318,7 +318,7 @@ CMDKOS2_FIN:
 RUN_CMD_DIRECT:
 			LBSR WAIT_EXTRA_DATA
 			STA  <SEND_LIMIT
-			CLR  YMSPEED			; baja la velocidad del YM para que de tiempo
+			;CLR  YMSPEED			; baja la velocidad del YM para que de tiempo
 
 			CLR  <SENT_COUNT
 			CLR  <SENT_COUNT+1
@@ -436,6 +436,18 @@ OTRO0CROSS:
 ;*****************************************************************
 RUN_CMD_RST_CNT:
 			CLR  YMCNT_CLR
+			RTS
+
+RUN_CMD_TEST_D:
+			LBSR WAIT_EXTRA_DATA
+			STA  YMDATA
+			STA  LEDS			
+			RTS
+
+RUN_CMD_TEST_CTRL:
+			LBSR WAIT_EXTRA_DATA
+			STA  YMCTRL
+			STA  LEDS
 			RTS
 
 RUN_CMD_WR_ICN:
@@ -672,49 +684,52 @@ CMD_TABLE EQU $FF00
 			FILL $FF, CMD_TABLE-*
 			ORG  CMD_TABLE	; vectores de rutina
 
-			FDB  	RUN_CMD_NOP     ; $00
-			FDB 	RUN_CMD_SIGNALS ; $01	 enviar señales
-			FDB   RUN_CMD_VERSION ; $02  Lee la version del verilog
-			FDB   RUN_CMD_WR_LED  ; $03  Escribe en el LED - 1 dato
-			FDB   RUN_CMD_RD_SO   ; $04  Lee 256x2 muestras
-			FDB   RUN_CMD_RST_CNT ; $05  Borra la cuenta del PM
-			FDB   RUN_CMD_WR_ICN  ; $06  Controla la línea de reset del YM - 1 dato
-			FDB   RUN_CMD_WAIT_ST ; $07  Lee el estado del YM hasta que esté libre
-			FDB   RUN_CMD_WR_REG  ; $08  Escribe con A0=0 - 1 dato
-			FDB   RUN_CMD_WR_DATA ; $09  Escribe con A0=1 - 1 dato
-			FDB   RUN_CMD_RD_DATA ; $0A  Lee el bus de datos del YM con A0=0
-			FDB   RUN_CMD_RD_CNT  ; $0B  Envía la cuenta del PM
-			FDB  	RUN_CMD_RD_ICN  ; $0C  Envia el estado del reset del YM
-			FDB  	RUN_CMD_WAITIRQ ; $0D	 Conmuta PM hasta que YM_IRQ baje.  volver a
+			FDB 	RUN_CMD_NOP     ; $00
+			FDB		RUN_CMD_SIGNALS ; $01	 enviar señales
+			FDB 	RUN_CMD_VERSION ; $02  Lee la version del verilog
+			FDB 	RUN_CMD_WR_LED  ; $03  Escribe en el LED - 1 dato
+			FDB 	RUN_CMD_RD_SO   ; $04  Lee 256x2 muestras
+			FDB 	RUN_CMD_RST_CNT ; $05  Borra la cuenta del PM
+			FDB 	RUN_CMD_WR_ICN  ; $06  Controla la línea de reset del YM - 1 dato
+			FDB 	RUN_CMD_WAIT_ST ; $07  Lee el estado del YM hasta que esté libre
+			FDB 	RUN_CMD_WR_REG  ; $08  Escribe con A0=0 - 1 dato
+			FDB 	RUN_CMD_WR_DATA ; $09  Escribe con A0=1 - 1 dato
+			FDB 	RUN_CMD_RD_DATA ; $0A  Lee el bus de datos del YM con A0=0
+			FDB 	RUN_CMD_RD_CNT  ; $0B  Envía la cuenta del PM
+			FDB 	RUN_CMD_RD_ICN  ; $0C  Envia el estado del reset del YM
+			FDB 	RUN_CMD_WAITIRQ ; $0D	 Conmuta PM hasta que YM_IRQ baje.  volver a
 														;      enviar para interrumpir la espera
-			FDB  	RUN_CMD_RX_TST  ; $0E  Recibe del 0 al FF por la UART. Si es
+			FDB 	RUN_CMD_RX_TST  ; $0E  Recibe del 0 al FF por la UART. Si es
 														;      correcto contesta 0 si no, 1
-			FDB  	RUN_CMD_UART_TST; $0F	 Envia del 0 al FF por la UART
-			FDB  	RUN_CMD_CONT_SO ; $10	 Habilita o inhabilita el envio continuo SO
-			FDB  	RUN_CMD_BUFSIZE ; $11	 El siguiente byte dice el numero de
+			FDB 	RUN_CMD_UART_TST; $0F	 Envia del 0 al FF por la UART
+			FDB 	RUN_CMD_CONT_SO ; $10	 Habilita o inhabilita el envio continuo SO
+			FDB 	RUN_CMD_BUFSIZE ; $11	 El siguiente byte dice el numero de
 														;      kilobytes que se usaran para el bufer de SO
-			FDB  	RUN_CMD_0CROSS  ; $12	 Mide el numero de muestras entre dos
+			FDB 	RUN_CMD_0CROSS  ; $12	 Mide el numero de muestras entre dos
 														;      cruces por cero
-			FDB  	RUN_CMD_DIRECT  ; $13	 Manda SO sin pasar por el bufer hasta
+			FDB 	RUN_CMD_DIRECT  ; $13	 Manda SO sin pasar por el bufer hasta
 														;      alcanzar 2^16*numero enviado
-			FDB  	RUN_CMD_KEYONSO ; $14	 Hace un KEY ON con el segundo byte recibido
+			FDB 	RUN_CMD_KEYONSO ; $14	 Hace un KEY ON con el segundo byte recibido
 			                      ;      y luego envia hasta n bloques, donde n
 			                      ;      es el tercer byte. Si se detectan
 			                      ;      x ceros seguidos deja de enviar
-			FDB  	RUN_CMD_SOMODE  ; $15	 Si se manda un 0 se lee SO lineal
+			FDB 	RUN_CMD_SOMODE  ; $15	 Si se manda un 0 se lee SO lineal
 														;			 si no, comprimido en mantisa+exp
-			FDB  	RUN_CMD_FASTKONSO;$16	 Hace un KEY ON con el segundo byte recibido
+			FDB 	RUN_CMD_FASTKONSO;$16	 Hace un KEY ON con el segundo byte recibido
 			                      ;      y luego envia hasta n palabras, donde n
 			                      ;      es el tercer byte.
-			FDB  	RUN_CMD_RDINT   ; $17	 Envía 4096 valores de M1. Hay que programar
+			FDB 	RUN_CMD_RDINT   ; $17	 Envía 4096 valores de M1. Hay que programar
 														;      el registro de TEST primero
-			FDB   	RUN_CMD_WR_PAIR ; $18  Escribe en la direccion del primer valor adicional
+			FDB  	RUN_CMD_WR_PAIR ; $18  Escribe en la direccion del primer valor adicional
 								  ;      recibido, el segundo valor. Cuenta las esperas
 								  ;      despues de escribir la direccion y despues de
 								  ;      escribir el valor
 			FDB		RUN_CMD_KEYOFFSO ; $19 como RUN_CMD_KEYONSO pero tras transmitir un
 									; bloque apaga el canal. Sirve para medir el
 									; release rate
+			FDB		RUN_CMD_TEST_D		; $1A Escribe el valor en D
+			FDB		RUN_CMD_TEST_CTRL	; $1B Escribe el valor en YMCTRL
+
 
 TopMem	EQU	$FFF8
 				FILL $FF,TopMem-*

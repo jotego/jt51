@@ -125,6 +125,7 @@ system_bus #(version_number) u_bus(
 	.tx_status      ( tx_status      ),
 	.rx_status_clear( rx_status_clear),
 	.tx_status_clear( tx_status_clear),
+	.uart_speed		( uart_speed	 ),
 	// YM2151 pins     
 	.ym_d          ( ym_d           ),
 	.ym_a0         ( ym_a0          ),

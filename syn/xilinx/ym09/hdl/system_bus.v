@@ -14,6 +14,7 @@ module system_bus(
 	input  wire [ 7:0] uart_rx_byte,
 	output reg         uart_transmit,
 	output reg  [ 7:0] uart_tx_byte,
+	input			   uart_speed,
 	// IRQ handling
 	output reg         rx_status_clear,
 	output reg         tx_status_clear,
@@ -105,7 +106,8 @@ pm_clk_real u_pm(
 	.irq_n      ( ym_irq_n_sync ),
 	.rst_counter( rst_counter   ),
 	.ym_pm      ( ym_pm         ),
-	.pm_counter ( pm_counter    )
+	.pm_counter ( pm_counter    ),
+	.uart_speed ( uart_speed 	)
 );
 
 ym_sync u_synchronizer(
