@@ -3,6 +3,7 @@
 DUMPSIGNALS=DONTDUMP
 VERBOSE=1
 OTHER=
+jt51=$(pwd)/../../
 
 if (which verilator &> /dev/null); then
 	SIMULATOR=verilator
@@ -56,7 +57,7 @@ verilator)
 	verilator $jt51/hdl/*.v -I$jt51/hdl config.vlt --exe jt51_mmr.cc \
 		--cc --top-module jt51 --trace $VERILATOR_SIM \
 		&& cd obj_dir \
-		&& make -f Vjt51.mk && Vjt51 $VERILATOR_TRACE $OTHER
+		&& make -j -f Vjt51.mk && Vjt51 $VERILATOR_TRACE $OTHER
 	if [ $? -ne 0 ]; then
 		exit 1
 	fi
