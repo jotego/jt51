@@ -2,6 +2,10 @@
 YM2151 clone in verilog. FPGA proven.
 (c) Jose Tejada 2016. Twitter: @topapate
 
+You can show your appreciation through
+* [Patreon](https://patreon.com/topapate), by supporting releases
+* [Paypal](https://paypal.me/topapate), with a donation
+
 Originally posted in opencores. The Github repository is now the main one.
 
 ## Folders
