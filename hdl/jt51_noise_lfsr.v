@@ -12,42 +12,37 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-	
-	Author: Jose Tejada Gomez. Twitter: @topapate
-	Version: 1.0
-	Date: 27-10-2016
-	*/
+    
+    Author: Jose Tejada Gomez. Twitter: @topapate
+    Version: 1.0
+    Date: 27-10-2016
+    */
 
 `timescale 1ns / 1ps
 
-/*
-
-	tab size 4
-	
-	See xapp052.pdf from Xilinx
-
-*/
+//  See xapp052.pdf from Xilinx
 
 module jt51_noise_lfsr #(parameter init=14220 )(
-	input	rst,
-	input	clk,
-	input	base,
-	output	out
+    input   rst,
+    input   clk,
+    input   cen,
+    input   base,
+    output  out
 );
 
 reg [16:0] bb;
 assign out = bb[16];
 
-always @(posedge clk) begin : base_counter
-	if( rst ) begin
-		bb			<= init[16:0];
-	end
-	else begin
-		if(  base ) begin	
-			bb[16:1] 	<= bb[15:0];
-			bb[0]		<= ~(bb[16]^bb[13]);
-		end
-	end
+always @(posedge clk, posedge rst) begin : base_counter
+    if( rst ) begin
+        bb          <= init[16:0];
+    end
+    else if(cen) begin
+        if(  base ) begin   
+            bb[16:1]    <= bb[15:0];
+            bb[0]       <= ~(bb[16]^bb[13]);
+        end
+    end
 end
 
 endmodule

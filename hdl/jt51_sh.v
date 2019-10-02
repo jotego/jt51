@@ -12,30 +12,30 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-	
-	Author: Jose Tejada Gomez. Twitter: @topapate
-	Version: 1.0
-	Date: 27-10-2016
-	*/
+    
+    Author: Jose Tejada Gomez. Twitter: @topapate
+    Version: 1.0
+    Date: 27-10-2016
+    */
 
 `timescale 1ns / 1ps
 
-module jt51_sh #(parameter width=5, stages=32 )
-(
-	input 							clk,
-	input		[width-1:0]			din,
-   	output		[width-1:0]			drop
+module jt51_sh #(parameter width=5, stages=32 ) (
+    input                           clk,
+    input                           cen,
+    input       [width-1:0]         din,
+    output      [width-1:0]         drop
 );
 
 reg [stages-1:0] bits[width-1:0];
 
 genvar i;
 generate
-	for (i=0; i < width; i=i+1) begin: bit_shifter
-		always @(posedge clk)
-			bits[i] <= {bits[i][stages-2:0], din[i]};
-		assign drop[i] = bits[i][stages-1];
-	end
+    for (i=0; i < width; i=i+1) begin: bit_shifter
+        always @(posedge clk) if(cen)
+            bits[i] <= {bits[i][stages-2:0], din[i]};
+        assign drop[i] = bits[i][stages-1];
+    end
 endgenerate
 
 endmodule

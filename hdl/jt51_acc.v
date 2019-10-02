@@ -12,51 +12,52 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-	
-	Author: Jose Tejada Gomez. Twitter: @topapate
-	Version: 1.1 Date: 14- 4-2017
-	Version: 1.0 Date: 27-10-2016
-	*/
+    
+    Author: Jose Tejada Gomez. Twitter: @topapate
+    Version: 1.1 Date: 14- 4-2017
+    Version: 1.0 Date: 27-10-2016
+    */
 
 `timescale 1ns / 1ps
 
 module jt51_acc(
-	input					rst,
-	input 					clk,
-	input 					m1_enters,
-	input 					m2_enters,
-	input 					c1_enters,
-	input 					c2_enters,
-	input					op31_acc,
-	input			[1:0]	rl_I,
-	input			[2:0]	con_I,
-	input	signed	[13:0]	op_out,
-	input					ne,		// noise enable
-	input	signed	[10:0]	noise,
-	output  signed	[15:0]	left,
-    output  signed	[15:0]	right,
-	output  reg signed	[15:0]	xleft,	// exact outputs
-    output  reg signed	[15:0]	xright    
+    input                   rst,
+    input                   clk,
+    input                   cen,
+    input                   m1_enters,
+    input                   m2_enters,
+    input                   c1_enters,
+    input                   c2_enters,
+    input                   op31_acc,
+    input           [1:0]   rl_I,
+    input           [2:0]   con_I,
+    input   signed  [13:0]  op_out,
+    input                   ne,     // noise enable
+    input   signed  [10:0]  noise,
+    output  signed  [15:0]  left,
+    output  signed  [15:0]  right,
+    output  reg signed  [15:0]  xleft,  // exact outputs
+    output  reg signed  [15:0]  xright    
 );
 
 reg signed [13:0] op_val;
 
 always @(*) begin
-	if( ne && op31_acc ) // cambiar a OP 31
-		op_val = { {2{noise[10]}}, noise, 1'd0 };
-	else
-		op_val = op_out;
+    if( ne && op31_acc ) // cambiar a OP 31
+        op_val = { {2{noise[10]}}, noise, 1'd0 };
+    else
+        op_val = op_out;
 end
 
 reg sum_en;
 
 always @(*) begin
-	case ( con_I )
-        3'd0,3'd1,3'd2,3'd3: 	sum_en = m2_enters;
-    	3'd4: 					sum_en = m1_enters | m2_enters;
-        3'd5,3'd6: 				sum_en = ~c1_enters;        
-        3'd7: 					sum_en = 1'b1;
-        default: 				sum_en = 1'bx;
+    case ( con_I )
+        3'd0,3'd1,3'd2,3'd3:    sum_en = m2_enters;
+        3'd4:                   sum_en = m1_enters | m2_enters;
+        3'd5,3'd6:              sum_en = ~c1_enters;        
+        3'd7:                   sum_en = 1'b1;
+        default:                sum_en = 1'bx;
     endcase
 end
 
@@ -73,51 +74,52 @@ wire rst_sum = c2_enters;
 //wire rst_sum = m2_enters;
 
 always @(posedge clk) begin
-	if( rst ) begin
-		sum_all <= 1'b0;
-	end
-    else begin
-		if( rst_sum )  begin
-    		sum_all <= 1'b1;
-	        if( !sum_all ) begin
-				pre_right <= ren ? total : 16'd0;
-    		    pre_left  <= len ? total : 16'd0;
-	        end
-        	else begin
-    	    	pre_right <= pre_right + (ren ? total : 16'd0);
-	            pre_left  <= pre_left  + (len ? total : 16'd0);
-        	end
-		end
+    if( rst ) begin
+        sum_all <= 1'b0;
+    end
+    else if(cen) begin
+        if( rst_sum )  begin
+            sum_all <= 1'b1;
+            if( !sum_all ) begin
+                pre_right <= ren ? total : 16'd0;
+                pre_left  <= len ? total : 16'd0;
+            end
+            else begin
+                pre_right <= pre_right + (ren ? total : 16'd0);
+                pre_left  <= pre_left  + (len ? total : 16'd0);
+            end
+        end
         if( c1_enters ) begin
-        	sum_all <= 1'b0;
-			xleft  <= pre_left;
-			xright <= pre_right;
+            sum_all <= 1'b0;
+            xleft  <= pre_left;
+            xright <= pre_right;
         end
     end
 end
-			
+            
 reg  signed [15:0] opsum;
 wire signed [16:0] opsum10 = op_val+total;
 
 always @(*) begin
-	if( rst_sum )
-		opsum = sum_en ? { {2{op_val[13]}}, op_val } : 16'd0;
-	else begin
-		if( sum_en )
-			if( opsum10[16]==opsum10[15] )
-				opsum = opsum10[15:0];
-			else begin
-				opsum = opsum10[16] ? 16'h8000 : 16'h7fff;
-			end
-		else
-			opsum = total;
-	end
+    if( rst_sum )
+        opsum = sum_en ? { {2{op_val[13]}}, op_val } : 16'd0;
+    else if(cen) begin
+        if( sum_en )
+            if( opsum10[16]==opsum10[15] )
+                opsum = opsum10[15:0];
+            else begin
+                opsum = opsum10[16] ? 16'h8000 : 16'h7fff;
+            end
+        else
+            opsum = total;
+    end
 end
 
 jt51_sh #(.width(16),.stages(8)) u_acc(
-	.clk	( clk	),
-	.din	( opsum	),
-	.drop	( total	)
+    .clk    ( clk   ),
+    .cen    ( cen   ),
+    .din    ( opsum ),
+    .drop   ( total )
 );
 
 
@@ -125,15 +127,15 @@ wire signed [9:0] left_man, right_man;
 wire [2:0] left_exp, right_exp;
 
 jt51_exp2lin left_reconstruct(
-	.lin( left		),
-	.man( left_man	),
-	.exp( left_exp	)
+    .lin( left      ),
+    .man( left_man  ),
+    .exp( left_exp  )
 );
 
 jt51_exp2lin right_reconstruct(
-	.lin( right		),
-	.man( right_man	),
-	.exp( right_exp	)
+    .lin( right     ),
+    .man( right_man ),
+    .exp( right_exp )
 );
 
 jt51_lin2exp left2exp(
@@ -155,10 +157,10 @@ wire signed [15:0] dump = left;
 initial skip=1;
 
 always @(posedge clk)
-	if( c1_enters && (!skip || dump) ) begin
-		$display("%d", dump );
-		skip <= 0;
-	end
+    if( c1_enters && (!skip || dump) ) begin
+        $display("%d", dump );
+        skip <= 0;
+    end
 
 `endif
 
