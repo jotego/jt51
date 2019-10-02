@@ -24,6 +24,7 @@ module jt51(
     input               rst,    // reset
     input               clk,    // main clock
     input               cen,    // clock enable
+    input               cen_p1, // clock enable at half the speed
     input               cs_n,   // chip select
     input               wr_n,   // write
     input               a0,
@@ -32,7 +33,6 @@ module jt51(
     output              ct1,
     output              ct2,
     output              irq_n,  // I do not synchronize this signal
-    output              p1, // unused
     // Low resolution output (same as real chip)
     output              sample, // marks new output sample
     output  signed  [15:0] left,
@@ -45,18 +45,8 @@ module jt51(
     output  [15:0] dacright
 );
 
-reg rst   , rst   _aux;
-
 assign dacleft  = { ~xleft [15],  xleft[14:0] };
 assign dacright = { ~xright[15], xright[14:0] };
-assign p1 = 1'b0;
-
-// Generate internal clock and synchronous reset for it.
-reg cen_p1=1'b0;
-
-always @(negedge clk )
-    if( cen ) cen_p1 <= ~cen_p1;
-
 
 // Timers
 wire [9:0]  value_A;
@@ -301,20 +291,15 @@ always @(posedge clk) begin : cpu_interface
     end
 end
 
-reg         write_s, a0_s;
-reg [7:0]   d_in_s;
-
-always @(posedge p1 )
-    { write_s, a0_s, d_in_s } <= { write_copy, a0_copy, d_in_copy };
 /*verilator tracing_on*/
 
 jt51_mmr u_mmr(
     .rst        ( rst           ),
     .clk        ( clk           ),
     .cen        ( cen_p1        ),
-    .a0         ( a0_s          ),
-    .write      ( write_s       ),
-    .d_in       ( d_in_s        ),
+    .a0         ( a0_copy       ),
+    .write      ( write_copy    ),
+    .d_in       ( d_in_copy     ),
     .busy       ( busy_mmr      ),
 
     // CT

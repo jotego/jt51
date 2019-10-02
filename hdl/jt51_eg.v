@@ -20,12 +20,6 @@
 
 `timescale 1ns / 1ps
 
-/*
-
-    tab size 4
-
-*/
-
 module jt51_eg(
     `ifdef TEST_SUPPORT
     input               test_eg,
@@ -387,6 +381,7 @@ jt51_sh #( .width(2), .stages(32-3+2) ) u_statesh(
     .drop   ( state_II )
 );
 
+`ifndef JT51_NODEBUG
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt;
@@ -424,6 +419,7 @@ sep32 #(.width(9),.stg(7)) sep_amfinal(
     );
 
 /* verilator lint_on PINMISSING */
+`endif
 `endif
 
 endmodule

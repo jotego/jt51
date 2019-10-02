@@ -87,7 +87,7 @@ end
 jt51_noise_lfsr #(.init(90)) u_lfsr (
     .rst    ( rst      ),
     .clk    ( clk      ),
-    .cen    ( cen      )
+    .cen    ( cen      ),
     .base   ( base     ),
     .out    ( rnd_sign )
 );

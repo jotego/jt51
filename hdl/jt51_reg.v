@@ -271,6 +271,8 @@ always @(posedge clk) if(cen) begin
         reg_ch[cur_ch]  <= reg_ch_in;
 end
 
+//////////////////// Debug
+`ifndef JT51_NODEBUG
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt_aux;
@@ -311,6 +313,6 @@ sep32 #(.width(1),.stg(1)) sep_amsen(
 
 /* verilator lint_on PINMISSING */
 `endif
-
+`endif
 
 endmodule

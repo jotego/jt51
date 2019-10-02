@@ -163,7 +163,6 @@ wire [45:0] sta_XI;
 
 jt51_phrom u_phrom(
     .clk    ( clk       ),
-    .cen    ( cen       ),
     .addr   ( aux_X[5:1]),
     .ph     ( sta_XI    )
 );
@@ -320,6 +319,8 @@ jt51_sh #( .width(1), .stages(3)) shsignbit(
     .drop   ( signbit_XIII  )
 );
 
+/////////////////// Debug
+`ifndef JT51_NODEBUG
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt;
@@ -332,6 +333,7 @@ sep32 #(.width(14),.stg(17)) sep_op(
     .cnt    ( cnt           )
     );
 /* verilator lint_on PINMISSING */
+`endif
 `endif
 
 endmodule

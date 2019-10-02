@@ -123,7 +123,7 @@ wire signed [7:0] pmd_min = (~{1'b0, lfo_pmd[6:0]})+8'b1;
 
 reg lfo_clk, last_base, am_up, pm_up;
 
-always @(posedge clk, posedge rst) begin : modulator
+always @(posedge clk, posedge rst) 
     if( rst ) begin
         last_base   <= 1'd0;
         lfo_clk     <= 1'b0;

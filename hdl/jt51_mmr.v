@@ -317,6 +317,7 @@ jt51_reg u_reg(
     .use_prev1      ( use_prev1         )
 );
 
+`ifndef JT51_NODEBUG
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt_aux;
@@ -344,6 +345,7 @@ sep32 #(.width(5),.stg(2)) sep_dr1(.clk(clk),.cnt(cnt_aux),.mixed( rate1_II ));
 sep32 #(.width(5),.stg(2)) sep_dr2(.clk(clk),.cnt(cnt_aux),.mixed( rate2_II ));
 sep32 #(.width(4),.stg(2)) sep_rr (.clk(clk),.cnt(cnt_aux),.mixed( rrate_II ));
 sep32 #(.width(4),.stg(1)) sep_d1l(.clk(clk),.cnt(cnt_aux),.mixed( d1l_I    ));
+`endif
 `endif
 
 endmodule
