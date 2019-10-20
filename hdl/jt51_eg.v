@@ -330,6 +330,7 @@ always @(posedge clk) if(cen) begin
 end
 
 jt51_sh #( .width(10), .stages(3) ) u_egpadding (
+    .rst    ( rst       ),    
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( eg_VIII   ),
@@ -340,6 +341,7 @@ jt51_sh #( .width(10), .stages(3) ) u_egpadding (
 // Shift registers
 
 jt51_sh #( .width(10), .stages(32-7+2) ) u_eg1sh(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( eg_VII    ),
@@ -347,6 +349,7 @@ jt51_sh #( .width(10), .stages(32-7+2) ) u_eg1sh(
 );
 
 jt51_sh #( .width(10), .stages(4) ) u_eg2sh(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( eg_II     ),
@@ -354,6 +357,7 @@ jt51_sh #( .width(10), .stages(4) ) u_eg2sh(
 );
 
 jt51_sh #( .width(1), .stages(4) ) u_aroffsh(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( ar_off_II ),
@@ -361,6 +365,7 @@ jt51_sh #( .width(1), .stages(4) ) u_aroffsh(
 );
 
 jt51_sh #( .width(1), .stages(32) ) u_konsh(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .din    ( keyon_II  ),
     .cen    ( cen       ),
@@ -368,6 +373,7 @@ jt51_sh #( .width(1), .stages(32) ) u_konsh(
 );
 
 jt51_sh #( .width(1), .stages(32) ) u_cntsh(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( cnt_V[0]  ),
@@ -375,6 +381,7 @@ jt51_sh #( .width(1), .stages(32) ) u_cntsh(
 );
 
 jt51_sh #( .width(2), .stages(32-3+2) ) u_statesh(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( state_in_III  ),

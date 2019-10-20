@@ -21,6 +21,7 @@
 `timescale 1ns / 1ps
 
 module jt51_pg(
+    input               rst,
     input               clk,
     input               cen,
     input               zero,
@@ -236,6 +237,7 @@ always @(posedge clk) if(cen) begin
 end
 
 jt51_sh #( .width(20), .stages(32-3) ) u_phsh(
+    .rst    ( rst       ),    
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( ph_X      ),
@@ -243,6 +245,7 @@ jt51_sh #( .width(20), .stages(32-3) ) u_phsh(
 );
 
 jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( pg_rst_III),

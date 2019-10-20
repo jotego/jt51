@@ -135,6 +135,7 @@ wire    [ 9:0]  ph_X;
 wire            pg_rst_III;
 
 jt51_pg u_pg(
+    .rst        ( rst       ),
     .clk        ( clk       ),              // P1
     .cen        ( cen_p1    ),
     .zero       ( zero      ),
@@ -193,7 +194,8 @@ jt51_op u_op(
     `ifdef TEST_SUPPORT
     .test_eg        ( test_eg           ),
     .test_op0       ( test_op0          ),  
-    `endif  
+    `endif
+    .rst            ( rst               ),
     .clk            ( clk               ),
     .cen            ( cen_p1            ),
     .pg_phase_X     ( ph_X              ),

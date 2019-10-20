@@ -59,6 +59,7 @@ always @(*) begin
 end
 
 jt51_sh #(.width(1),.stages(32)) u_konch(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( din       ),

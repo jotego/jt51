@@ -247,6 +247,15 @@ always @(posedge clk) if(cen) begin
         reg_op[cur] <= reg_in;
 end
 
+// jt51_sh #( .width(opreg_w), .stages(8)) u_regop(
+//     .rst    ( rst     ),
+//     .clk    ( clk     ),
+//     .cen    ( cen     ),
+//     .din    ( reg_in  ),
+//     .drop   ( reg_out )
+// );
+// 
+
 // memory for CH registers
 localparam chreg_w = 26;
 reg  [chreg_w-1:0] reg_ch[7:0];

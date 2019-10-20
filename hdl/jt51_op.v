@@ -27,6 +27,7 @@ module jt51_op(
     input               test_eg,
     input               test_op0,
     `endif
+    input               rst,
     input               clk,
     input               cen,            // P1
     input       [9:0]   pg_phase_X,
@@ -61,6 +62,7 @@ module jt51_op(
 wire signed [13:0] prev1, prevprev1, prev2;
 
 jt51_sh #( .width(14), .stages(8)) prev1_buffer(
+    .rst    ( rst   ),
     .clk    ( clk   ),
     .cen    ( cen   ),
     .din    ( c1_enters ? op_XVII : prev1 ),
@@ -68,6 +70,7 @@ jt51_sh #( .width(14), .stages(8)) prev1_buffer(
 );
 
 jt51_sh #( .width(14), .stages(8)) prevprev1_buffer(
+    .rst    ( rst   ),
     .clk    ( clk   ),
     .cen    ( cen   ),
     .din    ( c1_enters ? prev1 : prevprev1 ),
@@ -75,6 +78,7 @@ jt51_sh #( .width(14), .stages(8)) prevprev1_buffer(
 );
 
 jt51_sh #( .width(14), .stages(8)) prev2_buffer(
+    .rst    ( rst   ),
     .clk    ( clk   ),
     .cen    ( cen   ),
     .din    ( m1_enters ? op_XVII : prev2 ),
@@ -132,6 +136,7 @@ end
 
 // REGISTER/CYCLE 2-9
 jt51_sh #( .width(10), .stages(8)) phasemod_sh(
+    .rst    ( rst           ),
     .clk    ( clk           ),
     .cen    ( cen           ),
     .din    ( phasemod_II   ),
@@ -306,6 +311,7 @@ always @(*) begin
 end
 
 jt51_sh #( .width(14), .stages(4)) out_padding(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( op_XIII   ), // note op_XIII was not latched, is a comb output
@@ -313,6 +319,7 @@ jt51_sh #( .width(14), .stages(4)) out_padding(
 );
 
 jt51_sh #( .width(1), .stages(3)) shsignbit(
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( signbit_X ),

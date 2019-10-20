@@ -21,6 +21,7 @@
 `timescale 1ns / 1ps
 
 module jt51_sh #(parameter width=5, stages=32 ) (
+    input                           rst,
     input                           clk,
     input                           cen,
     input       [width-1:0]         din,
@@ -32,8 +33,12 @@ reg [stages-1:0] bits[width-1:0];
 genvar i;
 generate
     for (i=0; i < width; i=i+1) begin: bit_shifter
-        always @(posedge clk) if(cen)
-            bits[i] <= {bits[i][stages-2:0], din[i]};
+        always @(posedge clk, posedge rst) begin
+            if(rst)
+                bits[i] <= {stages{1'b0}};
+            else if(cen)
+                bits[i] <= {bits[i][stages-2:0], din[i]};
+        end
         assign drop[i] = bits[i][stages-1];
     end
 endgenerate
