@@ -116,10 +116,11 @@ always @(*) begin
 end
 
 jt51_sh #(.width(16),.stages(8)) u_acc(
-    .clk    ( clk   ),
-    .cen    ( cen   ),
-    .din    ( opsum ),
-    .drop   ( total )
+    .rst    ( rst       ),
+    .clk    ( clk       ),
+    .cen    ( cen       ),
+    .din    ( opsum     ),
+    .drop   ( total     )
 );
 
 

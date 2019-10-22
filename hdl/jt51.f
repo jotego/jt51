@@ -19,3 +19,5 @@ jt51_reg.v
 jt51_sh.v
 jt51_timers.v
 jt51.v
+../ver/common/sep32.v
+../ver/common/sep32_cnt.v
