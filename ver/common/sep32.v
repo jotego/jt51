@@ -31,38 +31,38 @@ module sep32 #(parameter width=10, parameter stg=5'd0)
     input [width-1:0] mixed,
     input [4:0] cnt,    
     
-    output reg [width-1:0] slot_00, /*verilator public*/
-    output reg [width-1:0] slot_01, /*verilator public*/
-    output reg [width-1:0] slot_02, /*verilator public*/
-    output reg [width-1:0] slot_03, /*verilator public*/
-    output reg [width-1:0] slot_04, /*verilator public*/
-    output reg [width-1:0] slot_05, /*verilator public*/
-    output reg [width-1:0] slot_06, /*verilator public*/
-    output reg [width-1:0] slot_07, /*verilator public*/
-    output reg [width-1:0] slot_10, /*verilator public*/
-    output reg [width-1:0] slot_11, /*verilator public*/
-    output reg [width-1:0] slot_12, /*verilator public*/
-    output reg [width-1:0] slot_13, /*verilator public*/
-    output reg [width-1:0] slot_14, /*verilator public*/
-    output reg [width-1:0] slot_15, /*verilator public*/
-    output reg [width-1:0] slot_16, /*verilator public*/
-    output reg [width-1:0] slot_17, /*verilator public*/
-    output reg [width-1:0] slot_20, /*verilator public*/
-    output reg [width-1:0] slot_21, /*verilator public*/
-    output reg [width-1:0] slot_22, /*verilator public*/
-    output reg [width-1:0] slot_23, /*verilator public*/
-    output reg [width-1:0] slot_24, /*verilator public*/
-    output reg [width-1:0] slot_25, /*verilator public*/
-    output reg [width-1:0] slot_26, /*verilator public*/
-    output reg [width-1:0] slot_27, /*verilator public*/
-    output reg [width-1:0] slot_30, /*verilator public*/
-    output reg [width-1:0] slot_31, /*verilator public*/
-    output reg [width-1:0] slot_32, /*verilator public*/
-    output reg [width-1:0] slot_33, /*verilator public*/
-    output reg [width-1:0] slot_34, /*verilator public*/
-    output reg [width-1:0] slot_35, /*verilator public*/
-    output reg [width-1:0] slot_36, /*verilator public*/
-    output reg [width-1:0] slot_37 /*verilator public*/
+    output reg [width-1:0]  slot_00,
+    output reg [width-1:0]  slot_01,
+    output reg [width-1:0]  slot_02,
+    output reg [width-1:0]  slot_03,
+    output reg [width-1:0]  slot_04,
+    output reg [width-1:0]  slot_05,
+    output reg [width-1:0]  slot_06,
+    output reg [width-1:0]  slot_07,
+    output reg [width-1:0]  slot_10,
+    output reg [width-1:0]  slot_11,
+    output reg [width-1:0]  slot_12,
+    output reg [width-1:0]  slot_13,
+    output reg [width-1:0]  slot_14,
+    output reg [width-1:0]  slot_15,
+    output reg [width-1:0]  slot_16,
+    output reg [width-1:0]  slot_17,
+    output reg [width-1:0]  slot_20,
+    output reg [width-1:0]  slot_21,
+    output reg [width-1:0]  slot_22,
+    output reg [width-1:0]  slot_23,
+    output reg [width-1:0]  slot_24,
+    output reg [width-1:0]  slot_25,
+    output reg [width-1:0]  slot_26,
+    output reg [width-1:0]  slot_27,
+    output reg [width-1:0]  slot_30,
+    output reg [width-1:0]  slot_31,
+    output reg [width-1:0]  slot_32,
+    output reg [width-1:0]  slot_33,
+    output reg [width-1:0]  slot_34,
+    output reg [width-1:0]  slot_35,
+    output reg [width-1:0]  slot_36,
+    output reg [width-1:0]  slot_37 
 );
 
 reg [4:0] cntadj;
@@ -74,6 +74,7 @@ localparam pos0 = 33-stg;
 /* verilator lint_off WIDTH */
 always @(*)
     cntadj = (cnt+pos0)%32;
+/* verilator lint_on WIDTH */
 
 always @(posedge clk) begin
     slots[cntadj] <= mixed;

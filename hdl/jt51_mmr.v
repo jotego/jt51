@@ -12,7 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2016
@@ -24,15 +24,15 @@ module jt51_mmr(
     input           rst,
     input           clk,
     input           cen,        // P1
-    input   [7:0]   d_in,
+    input   [7:0]   din,
     input           write,
     input           a0,
     output  reg     busy,
-    
+
     // CT
     output  reg     ct1,
     output  reg     ct2,
-    
+
     // Noise
     output  reg         ne,
     output  reg [4:0]   nfrq,
@@ -40,7 +40,7 @@ module jt51_mmr(
     // LFO
     output  reg [7:0]   lfo_freq,
     output  reg [1:0]   lfo_w,
-    output  reg [6:0]   lfo_amd,    
+    output  reg [6:0]   lfo_amd,
     output  reg [6:0]   lfo_pmd,
     output  reg         lfo_rst,
     // Timers
@@ -58,7 +58,7 @@ module jt51_mmr(
     output  reg         set_run_B,
     input               overflow_A,
 
-    `ifdef TEST_SUPPORT     
+    `ifdef TEST_SUPPORT
     // Test
     output  reg     test_eg,
     output  reg     test_op0,
@@ -96,17 +96,18 @@ module jt51_mmr(
     // Operator
     output          use_prevprev1,
     output          use_internal_x,
-    output          use_internal_y, 
+    output          use_internal_y,
     output          use_prev2,
     output          use_prev1
 );
 
-reg [7:0] selected_register, din_latch;
+reg [7:0] selected_register, din_copy ;
 
-reg     up_clr;
-reg     up_rl,  up_kc,  up_kf,  up_pms,
-        up_dt1, up_tl,  up_ks,  up_dt2,
-        up_d1l, up_keyon,   up_amsen;
+reg       up_rl,  up_kc,  up_kf,  up_pms,
+          up_dt1, up_tl,  up_ks,  up_dt2,
+          up_d1l, up_keyon,   up_amsen;
+reg [1:0] up_op;
+reg [2:0] up_ch;
 
 wire    busy_reg;
 
@@ -132,9 +133,8 @@ reg csm;
 always @(posedge clk, posedge rst) begin : memory_mapped_registers
     if( rst ) begin
         selected_register   <= 8'h0;
-        busy                <= 1'b0;
         { up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
-                up_ks, up_amsen, up_dt2, up_d1l, up_keyon } <= 11'd0;       
+                up_ks, up_amsen, up_dt2, up_d1l, up_keyon } <= 11'd0;
         `ifdef TEST_SUPPORT
         { test_eg, test_op0 } <= 2'd0;
         `endif
@@ -143,7 +143,6 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         { clr_flag_B, clr_flag_A,
         enable_irq_B, enable_irq_A, load_B, load_A } <= 6'd0;
         { clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'b1100;
-        up_clr <= 1'b0;
         // LFO
         { lfo_amd, lfo_pmd }    <= 14'h0;
         lfo_freq        <= 8'd0;
@@ -151,51 +150,62 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         lfo_rst         <= 1'b0;
         { ct2, ct1 }    <= 2'd0;
         csm             <= 1'b0;
-        din_latch       <= 8'd0;
+        din_copy        <= 8'd0;
         `ifdef SIMULATION
         mmr_dump <= 1'b0;
         `endif
-    end else if(cen) begin
+    end else begin
         // WRITE IN REGISTERS
-        if( write && !busy ) begin
-            busy <= 1'b1;
+        if( write ) begin
             if( !a0 )
-                selected_register <= d_in;
+                selected_register <= din;
             else begin
-                din_latch <= d_in;
+                din_copy <= din;
+                up_op    <= selected_register[4:3]; // operator to update
+                up_ch    <= selected_register[2:0]; // channel to update
+                up_rl    <= 1'b0;
+                up_kc    <= 1'b0;
+                up_kf    <= 1'b0;
+                up_pms   <= 1'b0;
+                up_dt1   <= 1'b0;
+                up_tl    <= 1'b0;
+                up_ks    <= 1'b0;
+                up_amsen <= 1'b0;
+                up_dt2   <= 1'b0;
+                up_d1l   <= 1'b0;
                 // Global registers
                 if( selected_register < 8'h20 ) begin
                     case( selected_register)
                     // registros especiales
-                    REG_TEST:   lfo_rst <= 1'b1; // regardless of d_in
+                    REG_TEST:   lfo_rst <= 1'b1; // regardless of din
                     `ifdef TEST_SUPPORT
-                    REG_TEST2:  { test_op0, test_eg } <= d_in[1:0];
+                    REG_TEST2:  { test_op0, test_eg } <= din[1:0];
                     `endif
-                    REG_KON:    up_keyon        <= 1'b1;
-                    REG_NOISE:  { ne, nfrq } <= { d_in[7], d_in[4:0] };
-                    REG_CLKA1:  value_A[9:2]<= d_in;
-                    REG_CLKA2:  value_A[1:0]<= d_in[1:0];
-                    REG_CLKB:   value_B     <= d_in;
+                    REG_KON:    up_keyon     <= 1'b1;
+                    REG_NOISE:  { ne, nfrq } <= { din[7], din[4:0] };
+                    REG_CLKA1:  value_A[9:2] <= din;
+                    REG_CLKA2:  value_A[1:0] <= din[1:0];
+                    REG_CLKB:   value_B      <= din;
                     REG_TIMER: begin
-                        csm <= d_in[7];
+                        csm <= din[7];
                         { clr_flag_B, clr_flag_A,
                           enable_irq_B, enable_irq_A,
-                          load_B, load_A } <= d_in[5:0];
-                          clr_run_A <= ~d_in[0];
-                          set_run_A <=  d_in[0];
-                          clr_run_B <= ~d_in[1];
-                          set_run_B <=  d_in[1];
+                          load_B, load_A } <= din[5:0];
+                          clr_run_A <= ~din[0];
+                          set_run_A <=  din[0];
+                          clr_run_B <= ~din[1];
+                          set_run_B <=  din[1];
                         end
-                    REG_LFRQ:   lfo_freq <= d_in;
+                    REG_LFRQ:   lfo_freq <= din;
                     REG_PMDAMD: begin
-                        if( !d_in[7] )
-                            lfo_amd <= d_in[6:0];
+                        if( !din[7] )
+                            lfo_amd <= din[6:0];
                         else
-                            lfo_pmd <= d_in[6:0];                       
+                            lfo_pmd <= din[6:0];
                         end
                     REG_CTW: begin
-                        { ct2, ct1 } <= d_in[7:6];
-                        lfo_w        <= d_in[1:0];
+                        { ct2, ct1 } <= din[7:6];
+                        lfo_w        <= din[1:0];
                         end
                     `ifdef SIMULATION
                     REG_DUMP:
@@ -236,31 +246,35 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
             lfo_rst <= 1'b0;
             { clr_flag_B, clr_flag_A, load_B, load_A } <= 4'd0;
             { clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'd0;
-            if( |{ up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
-                up_ks, up_amsen, up_dt2, up_d1l, up_keyon } == 1'b0 )
-                busy    <= busy_reg;
-            else
-                busy    <= 1'b1;
-                
-            if( busy_reg ) begin
-                up_clr <= 1'b1;
-            end
-            else begin
-                up_clr <= 1'b0;
-                if( up_clr  )
-                {   up_rl,  up_kc,      up_kf,  up_pms, up_dt1, 
-                    up_tl,  up_ks,  up_amsen,   up_dt2, up_d1l,
-                    up_keyon } <= 11'd0;
-            end
         end
     end
 end
+
+reg [4:0] busy_cnt; // busy lasts for 32 synth clock cycles
+reg       old_write;
+
+always @(posedge clk)
+    if( rst ) begin
+        busy <= 1'b0;
+        busy_cnt <= 5'd0;
+    end
+    else begin
+        old_write <= write;        
+        if (!old_write && write && a0 ) begin // only set for data writes
+            busy <= 1'b1;
+            busy_cnt <= 5'd0;
+        end
+        else if(cen) begin
+            if( busy_cnt == 5'd31 ) busy <= 1'b0;
+            busy_cnt <= busy_cnt+5'd1;
+        end
+    end
 
 jt51_reg u_reg(
     .rst        ( rst       ),
     .clk        ( clk       ),      // P1
     .cen        ( cen       ),      // P1
-    .d_in       ( din_latch ),
+    .din        ( din_copy  ),
 
     .up_rl      ( up_rl     ),
     .up_kc      ( up_kc     ),
@@ -273,9 +287,9 @@ jt51_reg u_reg(
     .up_dt2     ( up_dt2    ),
     .up_d1l     ( up_d1l    ),
     .up_keyon   ( up_keyon  ),
-    .op( selected_register[4:3] ),      // operator to update
-    .ch( selected_register[2:0] ),      // channel to update
-    
+    .op         ( up_op     ),      // operator to update
+    .ch         ( up_ch     ),      // channel to update
+
     .csm        ( csm       ),
     .overflow_A ( overflow_A),
 

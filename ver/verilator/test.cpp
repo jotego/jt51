@@ -17,21 +17,32 @@ class SimTime {
     vluint64_t main_time, time_limit, fast_forward;
     vluint64_t main_next;
     int verbose_ticks;
-    bool toggle;
+    int toggle_cnt, toggle_step;
     int PERIOD, SEMIPERIOD, CLKSTEP;
+    class Vjt51 *top;
 public:
     void set_period( int _period ) {
         PERIOD =_period;
         PERIOD += PERIOD%2; // make it even
         SEMIPERIOD = PERIOD>>1;
-        // CLKSTEP = SEMIPERIOD>>1;
-        CLKSTEP = SEMIPERIOD;
+        CLKSTEP = SEMIPERIOD>>2;
+        toggle_cnt = toggle_step = 4;
+        //CLKSTEP = SEMIPERIOD;
     }
     int period() { return PERIOD; }
-    SimTime() {
-        main_time=0; fast_forward=0; time_limit=0; toggle=false;
+    SimTime(Vjt51 *_top) {
+        top = _top;
+        main_time=0; fast_forward=0; time_limit=0; toggle_cnt=2;
         verbose_ticks = 48000*24/2;
         set_period(132*6);
+    }
+    void advance_clock() {
+        int clk = top->clk;
+        top->clk = 1-clk;
+        if( clk==1 ) {
+            int cenp1 = top->cen_p1;
+            top->cen_p1 = 1-cenp1;
+        }
     }
 
     void set_time_limit(vluint64_t t) { time_limit=t; }
@@ -41,22 +52,15 @@ public:
     int get_time_s() { return main_time/1000000000; }
     int get_time_ms() { return main_time/1000'000; }
     bool next_quarter() {
-        if( !toggle ) {
-            main_next = main_time + SEMIPERIOD;
-            main_time += CLKSTEP;
-            toggle = true;
-            return false; // toggle clock
+        bool adv=false;
+        main_time += CLKSTEP;
+        if ( !--toggle_cnt ) {
+            toggle_cnt=toggle_step;
+            advance_clock();
+            adv = true;
         }
-        else {
-            main_time = main_next;
-            if( --verbose_ticks == 0 ) {
-                // cerr << "Current time " << dec << (int)(main_time/1000000) << " ms\n";
-                cerr << '.';
-                verbose_ticks = 48000*24/2;
-            }
-            toggle=false;
-            return true; // do not toggle clock
-        }
+        top->eval();
+        return adv;        
     }
     bool finish() { return main_time > time_limit && limited(); }
 };
@@ -140,7 +144,7 @@ int main(int argc, char** argv, char** env) {
     RipParser *gym;
     bool forever=true, dump_hex=false, decode_pcm=true;
     char *gym_filename;
-    SimTime sim_time;
+    SimTime sim_time(top);
     int SAMPLERATE=0;
     vluint64_t SAMPLING_PERIOD=0, trace_start_time=0;
     string wav_filename;
@@ -291,8 +295,7 @@ int main(int argc, char** argv, char** env) {
     top->wr_n   = 1;
     // cerr << "Reset\n";
     while( sim_time.get_time() < 256*sim_time.period() ) {
-        top->eval();
-        if( sim_time.next_quarter() ) top->clk = 1-top->clk;
+        sim_time.next_quarter();
         // if(trace) tfp->dump(main_time);
     }
     top->rst = 0;
@@ -319,10 +322,7 @@ int main(int argc, char** argv, char** env) {
     int next_verbosity = 200;
     vluint64_t next_sample=0;
     while( forever || !sim_time.finish() ) {
-        top->eval();
         if( sim_time.next_quarter() ) {
-            int clk = top->clk;
-            top->clk = 1-clk;
             // int dout = top->dout;
             if( sim_time.get_time() > next_sample ) {
                 int16_t snd[2];
@@ -388,7 +388,8 @@ int main(int argc, char** argv, char** env) {
                     goto finish;
             }
         }
-        if( trace && sim_time.get_time()>trace_start_time ) tfp->dump(sim_time.get_time());
+        if( trace && sim_time.get_time()>trace_start_time )
+                tfp->dump(sim_time.get_time());
     }
 finish:
     writter.report_usage();
@@ -460,27 +461,30 @@ void CmdWritter::Eval() {
                 top->a0  = 0;
                 top->din = cmd;
                 top->wr_n = 0;
-                state=1;
+                state=10;
                 break;
-            case 1:
+            case 10:
                 top->wr_n = 1;
-                state = 2;
+                state = 11;
                 break;
-            case 2:
+            case 11:
+                state = 20; // wait for one cycle
+                break;
+            case 20:
                 top->a0  = 1;
                 top->din = val;
                 top->wr_n = 0;
-                state = 3;
+                state = 30;
                 break;
-            case 3:
+            case 30:
                 top->wr_n = 1;
-                state   =4;
+                state   =40;
                 top->a0 = 0; // read busy signal
                 break;
-            case 4:
+            case 40:
                 if( (((int)top->dout) &0x80 ) == 0 ) {
                     done = true;
-                    state=5;
+                    state=50;
                 }
                 break;
             default: break;

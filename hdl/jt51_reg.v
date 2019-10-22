@@ -24,7 +24,7 @@ module jt51_reg(
     input           rst,
     input           clk,
     input           cen,        // P1
-    input   [7:0]   d_in,
+    input   [7:0]   din,
 
     input           up_rl,
     input           up_kc,
@@ -98,24 +98,24 @@ always @(*) begin
     c2_enters = cur_op == 2'b11;
 end
 
-wire    [1:0]   rl_in   = d_in[7:6];
-wire    [2:0]   fb_in   = d_in[5:3];
-wire    [2:0]   con_in  = d_in[2:0];
-wire    [6:0]   kc_in   = d_in[6:0];
-wire    [5:0]   kf_in   = d_in[7:2];
-wire    [2:0]   pms_in  = d_in[6:4];
-wire    [1:0]   ams_in  = d_in[1:0];
-wire    [2:0]   dt1_in  = d_in[6:4];
-wire    [3:0]   mul_in  = d_in[3:0];
-wire    [6:0]   tl_in   = d_in[6:0];
-wire    [1:0]   ks_in   = d_in[7:6];
-wire    [4:0]   ar_in   = d_in[4:0];
-wire            amsen_in= d_in[7];
-wire    [4:0]   d1r_in  = d_in[4:0];
-wire    [1:0]   dt2_in  = d_in[7:6];
-wire    [4:0]   d2r_in  = d_in[4:0];
-wire    [3:0]   d1l_in  = d_in[7:4];
-wire    [3:0]   rr_in   = d_in[3:0];
+wire    [1:0]   rl_in   = din[7:6];
+wire    [2:0]   fb_in   = din[5:3];
+wire    [2:0]   con_in  = din[2:0];
+wire    [6:0]   kc_in   = din[6:0];
+wire    [5:0]   kf_in   = din[7:2];
+wire    [2:0]   pms_in  = din[6:4];
+wire    [1:0]   ams_in  = din[1:0];
+wire    [2:0]   dt1_in  = din[6:4];
+wire    [3:0]   mul_in  = din[3:0];
+wire    [6:0]   tl_in   = din[6:0];
+wire    [1:0]   ks_in   = din[7:6];
+wire    [4:0]   ar_in   = din[4:0];
+wire            amsen_in= din[7];
+wire    [4:0]   d1r_in  = din[4:0];
+wire    [1:0]   dt2_in  = din[7:6];
+wire    [4:0]   d2r_in  = din[4:0];
+wire    [3:0]   d1l_in  = din[7:4];
+wire    [3:0]   rr_in   = din[3:0];
 
 wire up =   up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
             up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
@@ -184,8 +184,8 @@ always @(posedge clk, posedge rst) begin : up_counter
 end
 
 wire [2:0] cur_ch =  cur[2:0];
-wire [3:0] keyon_op = d_in[6:3];
-wire [2:0] keyon_ch = d_in[2:0];
+wire [3:0] keyon_op = din[6:3];
+wire [2:0] keyon_ch = din[2:0];
 
 jt51_kon u_kon (
     .rst       (rst       ),
