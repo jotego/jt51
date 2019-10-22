@@ -27,25 +27,25 @@ module jt51_lin2exp(
 );
 
 always @(*) begin
-  casex( lin[15:9] )
+  casez( lin[15:9] )
     // negative numbers
-    7'b10XXXXX: begin
+    7'b10?????: begin
         man = lin[15:6];
         exp = 3'd7;
       end
-    7'b110XXXX: begin
+    7'b110????: begin
         man = lin[14:5];
         exp = 3'd6;
       end
-    7'b1110XXX: begin
+    7'b1110???: begin
         man = lin[13:4];
         exp = 3'd5;
       end
-    7'b11110XX: begin
+    7'b11110??: begin
         man = lin[12:3];
         exp = 3'd4;
       end
-    7'b111110X: begin
+    7'b111110?: begin
         man = lin[11:2];
         exp = 3'd3;
       end
@@ -58,23 +58,23 @@ always @(*) begin
         exp = 3'd1;
       end    
     // positive numbers
-    7'b01XXXXX: begin
+    7'b01?????: begin
         man = lin[15:6];
         exp = 3'd7;
       end
-    7'b001XXXX: begin
+    7'b001????: begin
         man = lin[14:5];
         exp = 3'd6;
       end
-    7'b0001XXX: begin
+    7'b0001???: begin
         man = lin[13:4];
         exp = 3'd5;
       end
-    7'b00001XX: begin
+    7'b00001??: begin
         man = lin[12:3];
         exp = 3'd4;
       end
-    7'b000001X: begin
+    7'b000001?: begin
         man = lin[11:2];
         exp = 3'd3;
       end

@@ -59,7 +59,7 @@ reg [3:0]   cnt;
 
 always @(posedge clk, posedge rst)
     if( rst ) begin
-        cnt  <= 5'b0;
+        cnt  <= 4'b0;
     end
     else if(cen) begin
         if( op31_no ) begin
@@ -71,7 +71,7 @@ always @(posedge clk, posedge rst)
                 // NFREQ=0 (or 1), the output trips every 16 samples
                 // so NFREQ[0] does not really add resolution
             end
-            else cnt <= cnt + 1'b1;
+            else cnt <= cnt + 4'b1;
             base <= &cnt;
         end
         else base <= 1'b0;

@@ -58,7 +58,7 @@ reg [15+b0:0] base;
 
 always @(posedge clk) begin : base_counter
     if( rst ) begin
-        base    <= {b0+15{1'b0}};
+        base    <= {b0+16{1'b0}};
     end
     else begin
         if( zero ) base <= base + 1'b1;
@@ -69,8 +69,8 @@ reg sel_base;
 reg [4:0] freq_sel;
 
 always @(*) begin : base_mux
-    freq_sel = lfo_freq[7:4] 
-        + ( lfo_w==2'd2 ? 1'b1 : 1'b0 );
+    freq_sel = {1'b0,lfo_freq[7:4]} 
+        + ( lfo_w==2'd2 ? 5'b1 : 5'b0 );
     case( freq_sel )
         5'h10: sel_base = base[b0-1]; 
         5'hf: sel_base = base[b0+0]; 
@@ -158,10 +158,10 @@ always @(posedge clk, posedge rst)
                     else begin
                         am <= am + 1'b1;
                         am_bresenham <= am_bresenham 
-                        - { cnt_lim, 1'b0} + lfo_amd;               
+                        - { 2'd0, cnt_lim, 1'b0} + {4'd0,lfo_amd};               
                     end
                 end
-                else am_bresenham <= am_bresenham + lfo_amd;
+                else am_bresenham <= am_bresenham + {4'd0,lfo_amd};
 
                 if( pm_bresenham > 0 ) begin
                     if( pm == { 1'b0, lfo_pmd } ) begin
@@ -171,10 +171,10 @@ always @(posedge clk, posedge rst)
                     else begin
                         pm <= pm + 1'b1;
                         pm_bresenham <= pm_bresenham 
-                        - cnt_lim + lfo_pmd;
+                        - {2'd0,cnt_lim} + {3'd0,lfo_pmd};
                     end
                 end
-                else pm_bresenham <= pm_bresenham + lfo_pmd;
+                else pm_bresenham <= pm_bresenham + {3'b0,lfo_pmd};
                 end
             2'd1: // AM square waveform
                 if( cnt == cnt_lim ) begin
@@ -190,17 +190,17 @@ always @(posedge clk, posedge rst)
                         am_up <= 1'b0;
                         am_bresenham <= 11'd0;
                     end
-                    else if( am == 8'd0 && !am_up) begin
+                    else if( am == 7'd0 && !am_up) begin
                         am_up <= 1'b1;
                         am_bresenham <= 11'd0;
                     end
                     else begin
                         am <= am_up ? am+1'b1 : am-1'b1;
                         am_bresenham <= am_bresenham 
-                        - { cnt_lim, 1'b0} + lfo_amd;               
+                        - { 2'b0, cnt_lim, 1'b0} + {4'd0,lfo_amd};               
                     end
                 end
-                else am_bresenham <= am_bresenham + lfo_amd;
+                else am_bresenham <= am_bresenham + {4'd0,lfo_amd};
                 
                 if( pm_bresenham > 0 ) begin
                     if( pm == {1'b0, lfo_pmd} && pm_up) begin
@@ -214,29 +214,29 @@ always @(posedge clk, posedge rst)
                     else begin
                         pm <= pm_up ? pm+1'b1 : pm-1'b1;
                         pm_bresenham <= pm_bresenham 
-                        - cnt_lim + lfo_pmd;
+                        - {2'd0,cnt_lim} + {3'd0,lfo_pmd};
                     end
                 end
-                else pm_bresenham <= pm_bresenham + lfo_pmd;
+                else pm_bresenham <= pm_bresenham + {3'd0,lfo_pmd};
                 end
             2'd3: begin 
-                casex( lfo_amd ) // same as real chip
-                    7'b1xxxxxx: am <= noise_am[6:0];
-                    7'b01xxxxx: am <= { 1'b0, noise_am[5:0] };
-                    7'b001xxxx: am <= { 2'b0, noise_am[4:0] };
-                    7'b0001xxx: am <= { 3'b0, noise_am[3:0] };
-                    7'b00001xx: am <= { 4'b0, noise_am[2:0] };
-                    7'b000001x: am <= { 5'b0, noise_am[1:0] };
+                casez( lfo_amd ) // same as real chip
+                    7'b1??????: am <= noise_am[6:0];
+                    7'b01?????: am <= { 1'b0, noise_am[5:0] };
+                    7'b001????: am <= { 2'b0, noise_am[4:0] };
+                    7'b0001???: am <= { 3'b0, noise_am[3:0] };
+                    7'b00001??: am <= { 4'b0, noise_am[2:0] };
+                    7'b000001?: am <= { 5'b0, noise_am[1:0] };
                     7'b0000001: am <= { 6'b0, noise_am[0]   };
                     default:    am <= 7'd0;
                 endcase
-                casex( lfo_pmd ) 
-                    7'b1xxxxxx: pm <= noise_pm;
-                    7'b01xxxxx: pm <= { {2{noise_pm[7]}}, noise_pm[5:0] };
-                    7'b001xxxx: pm <= { {3{noise_pm[7]}}, noise_pm[4:0] };
-                    7'b0001xxx: pm <= { {4{noise_pm[7]}}, noise_pm[3:0] };
-                    7'b00001xx: pm <= { {5{noise_pm[7]}}, noise_pm[2:0] };
-                    7'b000001x: pm <= { {6{noise_pm[7]}}, noise_pm[1:0] };
+                casez( lfo_pmd ) 
+                    7'b1??????: pm <= noise_pm;
+                    7'b01?????: pm <= { {2{noise_pm[7]}}, noise_pm[5:0] };
+                    7'b001????: pm <= { {3{noise_pm[7]}}, noise_pm[4:0] };
+                    7'b0001???: pm <= { {4{noise_pm[7]}}, noise_pm[3:0] };
+                    7'b00001??: pm <= { {5{noise_pm[7]}}, noise_pm[2:0] };
+                    7'b000001?: pm <= { {6{noise_pm[7]}}, noise_pm[1:0] };
                     7'b0000001: pm <= { {7{noise_pm[7]}}, noise_pm[0]   };
                     default:    pm <= 8'd0;
                 endcase 

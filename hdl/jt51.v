@@ -28,8 +28,9 @@ module jt51(
     input               cs_n,   // chip select
     input               wr_n,   // write
     input               a0,
-    input       [7:0]   d_in, // data in
-    output      [7:0]   d_out, // data out
+    input       [7:0]   din, // data in
+    output      [7:0]   dout, // data out
+    // peripheral control
     output              ct1,
     output              ct2,
     output              irq_n,  // I do not synchronize this signal
@@ -257,7 +258,7 @@ wire    busy_mmr;
 reg [1:0] busy_mmr_sh;
 
 reg     flag_B_s, flag_A_s;
-assign  d_out = { busy, 5'h0, flag_B_s, flag_A_s };
+assign  dout = { busy, 5'h0, flag_B_s, flag_A_s };
 
 always @(posedge clk ) 
     { flag_B_s, flag_A_s } <= { flag_B, flag_A };
@@ -265,7 +266,7 @@ always @(posedge clk )
 
 wire        write = !cs_n && !wr_n;
 
-reg [7:0]   d_in_copy;
+reg [7:0]   din_copy;
 reg         a0_copy;
 reg         write_copy;
 
@@ -273,7 +274,7 @@ always @(posedge clk) begin : cpu_interface
     if( rst ) begin
         busy        <= 1'b0;
         a0_copy     <= 1'b0;
-        d_in_copy   <= 8'd0;
+        din_copy    <= 8'd0;
         write_copy  <= 1'b0;
     end
     else begin
@@ -282,7 +283,7 @@ always @(posedge clk) begin : cpu_interface
             busy        <= 1'b1;
             write_copy  <= 1'b1;
             a0_copy     <= a0;
-            d_in_copy   <= d_in;
+            din_copy    <= din;
         end
         else begin
             if( busy_mmr ) write_copy   <= 1'b0;
@@ -299,7 +300,7 @@ jt51_mmr u_mmr(
     .cen        ( cen_p1        ),
     .a0         ( a0_copy       ),
     .write      ( write_copy    ),
-    .d_in       ( d_in_copy     ),
+    .d_in       ( din_copy     ),
     .busy       ( busy_mmr      ),
 
     // CT

@@ -98,13 +98,13 @@ reg     [4:0]   cfg_III;
 
 always @(*) begin : pre_rate_calc
     if( cfg_III == 5'd0 )
-        pre_rate_III = 6'd0;
+        pre_rate_III = 7'd0;
     else
         case( ks_III )
-            2'd3:   pre_rate_III = { cfg_III, 1'b0 } + keycode_III;
-            2'd2:   pre_rate_III = { cfg_III, 1'b0 } + { 1'b0, keycode_III[4:1] };
-            2'd1:   pre_rate_III = { cfg_III, 1'b0 } + { 2'b0, keycode_III[4:2] };
-            2'd0:   pre_rate_III = { cfg_III, 1'b0 } + { 3'b0, keycode_III[4:3] };
+            2'd3:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 2'b0, keycode_III      };
+            2'd2:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 3'b0, keycode_III[4:1] };
+            2'd1:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 4'b0, keycode_III[4:2] };
+            2'd0:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 5'b0, keycode_III[4:3] };
         endcase
 end
 
@@ -149,7 +149,7 @@ always @(posedge clk) if(cen) begin
     if( d1l_I == 4'd15 )
         d1level_II <= 5'h10; // 48dB 
     else
-        d1level_II <= d1l_I;
+        d1level_II <= {1'b0,d1l_I};
 end
 
 //  II
@@ -218,7 +218,7 @@ always @(posedge clk) if(cen) begin
     state_in_V  <= state_in_IV;
     rate_V <= rate_IV;
     if( state_in_IV == ATTACK )
-        casex( rate_IV[5:2] )
+        case( rate_IV[5:2] )
             4'h0: cnt_V <= eg_cnt[13:11]; 
             4'h1: cnt_V <= eg_cnt[12:10]; 
             4'h2: cnt_V <= eg_cnt[11: 9]; 
@@ -233,7 +233,7 @@ always @(posedge clk) if(cen) begin
             default: cnt_V <= eg_cnt[ 2: 0]; 
         endcase
     else
-        casex( rate_IV[5:2] )
+        case( rate_IV[5:2] )
             4'h0: cnt_V <= eg_cnt[14:12]; 
             4'h1: cnt_V <= eg_cnt[13:11]; 
             4'h2: cnt_V <= eg_cnt[12:10]; 
@@ -264,11 +264,11 @@ reg [8:0] ar_sum0_VI;
 reg [9:0] ar_result_VI, ar_sum_VI;
 
 always @(*) begin : ar_calculation
-    casex( rate_VI[5:2] )
-        default: ar_sum0_VI = eg_VI[9:4] + 1'd1;
-        4'b1100: ar_sum0_VI = eg_VI[9:4] + 1'd1;        
-        4'b1101: ar_sum0_VI = eg_VI[9:3] + 1'd1;
-        4'b111x: ar_sum0_VI = eg_VI[9:2] + 1'd1;
+    casez( rate_VI[5:2] )
+        default: ar_sum0_VI = { 3'd0, eg_VI[9:4] } + 9'd1;
+        4'b1100: ar_sum0_VI = { 3'd0, eg_VI[9:4] } + 9'd1;        
+        4'b1101: ar_sum0_VI = { 2'd0, eg_VI[9:3] } + 9'd1;
+        4'b111?: ar_sum0_VI = { 1'd0, eg_VI[9:2] } + 9'd1;
     endcase
     if( rate_VI[5:4] == 2'b11 )
         ar_sum_VI = step_VI ? { ar_sum0_VI, 1'b0 } : { 1'b0, ar_sum0_VI };
@@ -284,7 +284,7 @@ always @(posedge clk) if(cen) begin
     else
     if( state_in_VI == ATTACK ) begin
         if( sum_up && eg_VI != 10'd0 )
-            if( rate_VI[5:1]==4'hf ) 
+            if( rate_VI[5:1]==5'hf ) 
                 eg_VII <= 10'd0; 
             else
                 eg_VII <= ar_result_VI;
@@ -295,11 +295,11 @@ always @(posedge clk) if(cen) begin
         if( sum_up ) begin
             if ( eg_VI<= (10'd1023-10'd8) ) 
                 case( rate_VI[5:2] )
-                    4'b1100: eg_VII <= eg_VI + { step_VI, ~step_VI }; // 12
-                    4'b1101: eg_VII <= eg_VI + { step_VI, ~step_VI, 1'b0 }; // 13
-                    4'b1110: eg_VII <= eg_VI + { step_VI, ~step_VI, 2'b0 }; // 14
-                    4'b1111: eg_VII <= eg_VI + 4'd8;// 15
-                    default: eg_VII <= eg_VI + { step_VI, 1'b0 };
+                    4'b1100: eg_VII <= eg_VI + { 8'd0, step_VI, ~step_VI }; // 12
+                    4'b1101: eg_VII <= eg_VI + { 7'd0, step_VI, ~step_VI, 1'b0 }; // 13
+                    4'b1110: eg_VII <= eg_VI + { 6'd0, step_VI, ~step_VI, 2'b0 }; // 14
+                    4'b1111: eg_VII <= eg_VI + 10'd8;// 15
+                    default: eg_VII <= eg_VI + { 8'd0, step_VI, 1'b0 };
                 endcase
             else eg_VII <= 10'h3FF;
         end
@@ -309,20 +309,20 @@ end
 
 // VII
 always @(*) begin : sum_eg_and_tl
-    casex( {amsen_VII, ams_VII } )
-        3'b0xx,3'b100: am_final_VII = 9'd0;
+    casez( {amsen_VII, ams_VII } )
+        3'b0??,3'b100: am_final_VII = 9'd0;
         3'b101: am_final_VII = { 2'b00, am };
         3'b110: am_final_VII = { 1'b0, am, 1'b0};
         3'b111: am_final_VII = { am, 2'b0      };
     endcase
     `ifdef TEST_SUPPORT
     if( test_eg && tl_VII!=7'd0 )
-        sum_eg_tl_VII = 11'd0;
+        sum_eg_tl_VII = 12'd0;
     else
     `endif
-    sum_eg_tl_VII = { tl_VII,   3'd0 } 
-               + eg_VII 
-               + { am_final_VII, 1'b0 };
+    sum_eg_tl_VII = { 2'b0, tl_VII,   3'd0 } 
+               + {2'b0, eg_VII} 
+               + {2'b0, am_final_VII, 1'b0 };
 end
 
 always @(posedge clk) if(cen) begin

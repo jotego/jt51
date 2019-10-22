@@ -201,6 +201,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                     REG_DUMP:
                         mmr_dump <= 1'b1;
                     `endif
+                    default:;
                     endcase
                 end else
                 // channel registers
@@ -222,6 +223,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                         3'h5: up_amsen  <= 1'b1;
                         3'h6: up_dt2    <= 1'b1;
                         3'h7: up_d1l    <= 1'b1;
+                        default:;
                     endcase
                 end
             end

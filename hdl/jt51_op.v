@@ -221,9 +221,10 @@ end
 // Register cycle 12
 // Exponential table
 wire [44:0] exp_XII;
-reg [11:0]  totalatten_XII;
-reg [12:0]  etb;
-reg [ 9:0]  etf, etg;
+reg  [11:0] totalatten_XII;
+reg  [12:0] etb;
+reg  [ 9:0] etf;
+reg  [ 2:0] etg;
 
 jt51_exprom u_exprom(
     .clk    ( clk           ),
@@ -258,10 +259,6 @@ always @(*) begin
                 etf = { 2'b00, exp_XII[10:3]  };
                 etg = exp_XII[2:0];
             end
-        default: begin
-                etf = 10'dx;
-                etg = 10'dx;
-            end
     endcase 
 end
 
@@ -270,7 +267,7 @@ reg [3:0]   exponent_XIII;
 
 always @(posedge clk) if(cen) begin
     //RESULT
-    mantissa_XIII <= etf + ( totalatten_XII[0] ? 3'd0 : etg ); //carry-out discarded
+    mantissa_XIII <= etf + { 7'd0, totalatten_XII[0] ? 3'd0 : etg }; //carry-out discarded
     exponent_XIII <= totalatten_XII[11:8];
 end
 
@@ -287,14 +284,12 @@ always @(*) begin
         2'b01: shifter_2 = shifter;
         2'b10: shifter_2 = { shifter[11:0], 1'b0 };
         2'b11: shifter_2 = { shifter[10:0], 2'b0 };
-        default: shifter_2 = {12{1'bx}};
     endcase
     case( ~exponent_XIII[3:2] )
         2'b00: shifter_3 = {12'b0, shifter_2[12]   };
         2'b01: shifter_3 = { 8'b0, shifter_2[12:8] };
         2'b10: shifter_3 = { 4'b0, shifter_2[12:4] };
         2'b11: shifter_3 = shifter_2;
-        default: shifter_3 = {12{1'bx}};
     endcase
 end
 
@@ -302,7 +297,7 @@ reg signed [13:0] op_XIII;
 wire signbit_XIII;
 
 always @(*) begin
-    op_XIII = ({ test_214, shifter_3 } ^ {14{signbit_XIII}}) + signbit_XIII;               
+    op_XIII = ({ test_214, shifter_3 } ^ {14{signbit_XIII}}) + {13'd0, signbit_XIII};               
 end
 
 jt51_sh #( .width(14), .stages(4)) out_padding(

@@ -56,7 +56,7 @@ always @(*) begin : addition
             else if( lim>=10'd128 ) extra = 2'd1;
             else extra = 2'd0;            
     endcase
-    kcex0 = {1'b0,kcin,kf_I} + { 4'd0, extra, 6'd0 } + { 1'd0, mod_I };
+    kcex0 = {1'b0,kcin,kf_I} + { 6'd0, extra, 6'd0 } + { 5'd0, mod_I };
     kcex1 = kcex0[7:6]==2'd3 ? kcex0 + 14'd64 : kcex0;    
 end
 
@@ -81,7 +81,7 @@ always @(*) begin : subtraction
             else if( slim>=10'sd193 ) sextra = 2'd1;
             else sextra = 2'd0;            
     endcase
-    skcex0 = {1'b0,kcin,kf_I} - { 4'd0, sextra, 6'd0 } - { 1'd0, mod_I };
+    skcex0 = {1'b0,kcin,kf_I} - { 6'd0, sextra, 6'd0 } - { 5'd0, mod_I };
     skcex1 = skcex0[7:6]==2'd3 ? skcex0 - 14'd64 : skcex0;
 end
 

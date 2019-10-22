@@ -85,10 +85,10 @@ reg [4:0] dt1_limited_IV;
 
 always @(*) begin : dt1_limit_mux
     case( dt1_IV[1:0] )
-        default: dt1_limit = 5'd8;
-        2'd1: dt1_limit = 5'd8;
-        2'd2: dt1_limit = 5'd16;
-        2'd3: dt1_limit = 5'd22;
+        default: dt1_limit = 6'd8;
+        2'd1: dt1_limit    = 6'd8;
+        2'd2: dt1_limit    = 6'd16;
+        2'd3: dt1_limit    = 6'd22;
     endcase
     case( dt1_kf_IV )
         3'd0:   dt1_unlimited = { 5'd0, pow2[4]   }; // <2
@@ -100,7 +100,7 @@ always @(*) begin : dt1_limit_mux
         default:dt1_unlimited = 6'd0;
     endcase
     dt1_limited_IV = dt1_unlimited > dt1_limit ? 
-                            dt1_limit : dt1_unlimited[4:0]; 
+                            dt1_limit[4:0] : dt1_unlimited[4:0]; 
 end
 
 reg signed [8:0] mod_I;
@@ -197,12 +197,12 @@ end
     // V APPLY_DT1
 always @(posedge clk) if(cen) begin
     if( dt1_V[1:0]==2'd0 )
-        phase_base_VI   <=  phase_base_V;
+        phase_base_VI   <=  {2'b0, phase_base_V};
     else begin
         if( !dt1_V[2] )
-            phase_base_VI   <=  phase_base_V + dt1_offset_V;
+            phase_base_VI   <= {2'b0, phase_base_V} + { 15'd0, dt1_offset_V };
         else
-            phase_base_VI   <=  phase_base_V - dt1_offset_V;
+            phase_base_VI   <= {2'b0, phase_base_V} - { 15'd0, dt1_offset_V };
     end
 end
 
@@ -251,11 +251,11 @@ jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
 
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
+/*
 
 wire [4:0] cnt;
 
 sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt));
-/*
 wire zero_VIII;
 
 jt51_sh #(.width(1),.stages(7)) u_sep_aux(
@@ -269,12 +269,12 @@ sep32 #(.width(1),.stg(8)) sep_ref(
     .mixed  ( zero_VIII     ),
     .cnt    ( cnt           )
     );
-*/
 sep32 #(.width(10),.stg(10)) sep_ph(
     .clk    ( clk           ),
     .mixed  ( pg_phase_X    ),
     .cnt    ( cnt           )
     );
+*/
 
 /* verilator lint_on PINMISSING */
 `endif

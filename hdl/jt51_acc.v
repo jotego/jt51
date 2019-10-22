@@ -98,12 +98,12 @@ always @(posedge clk) begin
 end
             
 reg  signed [15:0] opsum;
-wire signed [16:0] opsum10 = op_val+total;
+wire signed [16:0] opsum10 = {2'b0,op_val}+{1'b0,total};
 
 always @(*) begin
     if( rst_sum )
         opsum = sum_en ? { {2{op_val[13]}}, op_val } : 16'd0;
-    else if(cen) begin
+    else begin
         if( sum_en )
             if( opsum10[16]==opsum10[15] )
                 opsum = opsum10[15:0];

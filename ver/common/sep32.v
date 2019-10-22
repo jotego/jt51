@@ -104,8 +104,10 @@ reg [width-1:0] slot_37 /*verilator public*/;
 
 localparam pos0 = 33-stg;
 
+/* verilator lint_off WIDTH */
 always @(*)
 	cntadj = (cnt+pos0)%32;
+/* verilator lint_on WIDTH */
 
 always @(posedge clk) begin
 	slots[cntadj] <= mixed;
