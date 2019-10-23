@@ -5,13 +5,10 @@
 using namespace std;
 
 void WaveWritter::write( int16_t* lr ) {
-    int16_t g[2];
-    g[0] = lr[0]+lr[2]; // Left  + PSG
-    g[1] = lr[1]+lr[2]; // right + PSG
-    fsnd.write( (char*)&g, sizeof(int16_t)*2 );
+    fsnd.write( (char*)lr, sizeof(int16_t)*2 );
     if( dump_hex ) {
-        fhex << hex << g[0] << '\n';
-        fhex << hex << g[1] << '\n';
+        fhex << hex << lr[0] << '\n';
+        fhex << hex << lr[1] << '\n';
     }
 }
 
