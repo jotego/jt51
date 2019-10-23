@@ -12,7 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2016
@@ -39,7 +39,7 @@ module jt51_reg(
     input           up_keyon,
     input   [1:0]   op,     // operator to update
     input   [2:0]   ch,     // channel to update
-    
+
     input           csm,
     input           overflow_A,
 
@@ -75,7 +75,7 @@ module jt51_reg(
     // Operator
     output          use_prevprev1,
     output          use_internal_x,
-    output          use_internal_y, 
+    output          use_internal_y,
     output          use_prev2,
     output          use_prev1,
 
@@ -97,25 +97,6 @@ always @(*) begin
     c1_enters = cur_op == 2'b10;
     c2_enters = cur_op == 2'b11;
 end
-
-wire    [1:0]   rl_in   = din[7:6];
-wire    [2:0]   fb_in   = din[5:3];
-wire    [2:0]   con_in  = din[2:0];
-wire    [6:0]   kc_in   = din[6:0];
-wire    [5:0]   kf_in   = din[7:2];
-wire    [2:0]   pms_in  = din[6:4];
-wire    [1:0]   ams_in  = din[1:0];
-wire    [2:0]   dt1_in  = din[6:4];
-wire    [3:0]   mul_in  = din[3:0];
-wire    [6:0]   tl_in   = din[6:0];
-wire    [1:0]   ks_in   = din[7:6];
-wire    [4:0]   ar_in   = din[4:0];
-wire            amsen_in= din[7];
-wire    [4:0]   d1r_in  = din[4:0];
-wire    [1:0]   dt2_in  = din[7:6];
-wire    [4:0]   d2r_in  = din[4:0];
-wire    [3:0]   d1l_in  = din[7:4];
-wire    [3:0]   rr_in   = din[3:0];
 
 wire up =   up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
             up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
@@ -208,77 +189,67 @@ jt51_mod u_mod(
     .m2_enters  ( m2_enters ),
     .c1_enters  ( c1_enters ),
     .c2_enters  ( c2_enters ),
-    
+
     .use_prevprev1 ( use_prevprev1  ),
     .use_internal_x( use_internal_x ),
-    .use_internal_y( use_internal_y ),  
+    .use_internal_y( use_internal_y ),
     .use_prev2   ( use_prev2      ),
     .use_prev1   ( use_prev1      )
 );
 
-// memory for OP registers
-localparam opreg_w = 42;
-reg  [opreg_w-1:0] reg_op[31:0];
-reg  [opreg_w-1:0] reg_out;
+jt51_csr_op u_csr_op(
+    .rst            (  rst          ),
+    .clk            (  clk          ),
+    .cen            (  cen          ),  // P1
+    .din            (  din          ),
 
-assign { dt1_II, mul_VI, tl_VII, ks_III, amsen_VII, 
-    dt2_I, d1l_I, arate_II, rate1_II, rate2_II, rrate_II  } = reg_out;
+    .up_dt1_op      (  up_dt1_op    ),
+    .up_mul_op      (  up_mul_op    ),
+    .up_tl_op       (  up_tl_op     ),
+    .up_ks_op       (  up_ks_op     ),
+    .up_amsen_op    (  up_amsen_op  ),
+    .up_dt2_op      (  up_dt2_op    ),
+    .up_d1l_op      (  up_d1l_op    ),
+    .up_ar_op       (  up_ar_op     ),
+    .up_d1r_op      (  up_d1r_op    ),
+    .up_d2r_op      (  up_d2r_op    ),
+    .up_rr_op       (  up_rr_op     ),
 
-wire [opreg_w-1:0] reg_in = {   
-                    up_dt1_op   ? dt1_in    : dt1_II,       // 3
-                    up_mul_op   ? mul_in    : mul_VI,       // 4
-                    up_tl_op    ? tl_in     : tl_VII,       // 7
-                    up_ks_op    ? ks_in     : ks_III,       // 2
-                    up_amsen_op ? amsen_in  : amsen_VII,    // 1
-                    up_dt2_op   ? dt2_in    : dt2_I,        // 2
-                    up_d1l_op   ? d1l_in    : d1l_I,        // 4
+    .dt1            (  dt1_II       ),
+    .mul            (  mul_VI       ),
+    .tl             (  tl_VII       ),
+    .ks             (  ks_III       ),
+    .amsen          (  amsen_VII    ),
+    .dt2            (  dt2_I        ),
+    .d1l            (  d1l_I        ),
+    .arate          (  arate_II     ),
+    .rate1          (  rate1_II     ),
+    .rate2          (  rate2_II     ),
+    .rrate          (  rrate_II     )
+);
 
-                    up_ar_op    ? ar_in     : arate_II,     // 5
-                    up_d1r_op   ? d1r_in    : rate1_II,     // 5
-                    up_d2r_op   ? d2r_in    : rate2_II,     // 5
-                    up_rr_op    ? rr_in     : rrate_II };   // 4
+jt51_csr_ch u_csr_ch(
+    .rst        (  rst          ),
+    .clk        (  clk          ),
+    .cen        (  cen          ),
+    .din        (  din          ),
 
-// wire opdata_wr = |{ up_dt1_op, up_mul_op, up_tl_op, up_ks_op, up_amsen_op, 
-//  up_dt2_op, up_d1l_op, up_ar_op  , up_d1r_op, up_d2r_op, up_rr_op     };
+    .up_rl_ch   (  up_rl_ch     ),
+    .up_fb_ch   (  up_fb_ch     ),
+    .up_con_ch  (  up_con_ch    ),
+    .up_kc_ch   (  up_kc_ch     ),
+    .up_kf_ch   (  up_kf_ch     ),
+    .up_ams_ch  (  up_ams_ch    ),
+    .up_pms_ch  (  up_pms_ch    ),
 
-always @(posedge clk) if(cen) begin
-    reg_out     <= reg_op[next];
-    if( busy )
-        reg_op[cur] <= reg_in;
-end
-
-// jt51_sh #( .width(opreg_w), .stages(8)) u_regop(
-//     .rst    ( rst     ),
-//     .clk    ( clk     ),
-//     .cen    ( cen     ),
-//     .din    ( reg_in  ),
-//     .drop   ( reg_out )
-// );
-// 
-
-// memory for CH registers
-localparam chreg_w = 26;
-reg  [chreg_w-1:0] reg_ch[7:0];
-reg  [chreg_w-1:0] reg_ch_out;
-wire [chreg_w-1:0] reg_ch_in = {
-        up_rl_ch    ? rl_in     : rl_I,
-        up_fb_ch    ? fb_in     : fb_II,
-        up_con_ch   ? con_in    : con_I,
-        up_kc_ch    ? kc_in     : kc_I,
-        up_kf_ch    ? kf_in     : kf_I,
-        up_ams_ch   ? ams_in    : ams_VII,
-        up_pms_ch   ? pms_in    : pms_I     };
-        
-assign { rl_I, fb_II, con_I, kc_I, kf_I, ams_VII, pms_I  } = reg_ch_out;
-
-wire [2:0] next_ch = next[2:0];
-// wire chdata_wr = |{ up_rl_ch, up_fb_ch, up_con_ch, up_kc_ch, up_kf_ch, up_ams_ch, up_pms_ch };
-
-always @(posedge clk) if(cen) begin
-    reg_ch_out      <= reg_ch[next_ch];
-    if( busy )
-        reg_ch[cur_ch]  <= reg_ch_in;
-end
+    .rl         (  rl_I         ),
+    .fb         (  fb_II        ),
+    .con        (  con_I        ),
+    .kc         (  kc_I         ),
+    .kf         (  kf_I         ),
+    .ams        (  ams_VII      ),
+    .pms        (  pms_I        )
+);
 
 //////////////////// Debug
 `ifndef JT51_NODEBUG

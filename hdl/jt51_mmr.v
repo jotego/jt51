@@ -138,6 +138,9 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         `ifdef TEST_SUPPORT
         { test_eg, test_op0 } <= 2'd0;
         `endif
+        // noise
+        nfrq <= 5'b0;
+        ne   <= 1'b0;
         // timers
         { value_A, value_B } <= 18'd0;
         { clr_flag_B, clr_flag_A,
@@ -260,7 +263,7 @@ always @(posedge clk)
         busy_cnt <= 5'd0;
     end
     else begin
-        old_write <= write;        
+        old_write <= write;
         if (!old_write && write && a0 ) begin // only set for data writes
             busy <= 1'b1;
             busy_cnt <= 5'd0;
