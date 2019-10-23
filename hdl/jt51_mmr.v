@@ -173,6 +173,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                 up_amsen <= 1'b0;
                 up_dt2   <= 1'b0;
                 up_d1l   <= 1'b0;
+                up_keyon <= 1'b0;
                 // Global registers
                 if( selected_register < 8'h20 ) begin
                     case( selected_register)
