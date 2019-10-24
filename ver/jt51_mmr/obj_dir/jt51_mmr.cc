@@ -223,7 +223,7 @@ int main(int argc, char **argv, char **env) {
 	if( trace ) {
 		Verilated::traceEverOn(true);
 		top->trace(tfp,99);
-		tfp->open("jt51_mmr.vcd");	
+		tfp->open("../jt51_mmr.vcd");	
 	}
 
 	cout << "JT51 MMR testbench\n";

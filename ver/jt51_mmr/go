@@ -41,9 +41,6 @@ if [ $VERBOSE -eq 1 ]; then
 	echo Additional commands to "'verilator'" = $OTHER
 fi
 
-INCDIR2=../../hdl
-TOP=jt51_test
-
 echo Simulating using $SIMULATOR
 
 case $SIMULATOR in
