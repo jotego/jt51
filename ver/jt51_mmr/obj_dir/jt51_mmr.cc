@@ -31,6 +31,8 @@
 #include <cstdlib>
 #include <string>
 
+using namespace std;
+
 Vjt51* top;
 vluint64_t main_time = 0;	   // Current simulation time
 // This is a 64-bit integer to reduce wrap over issues and
@@ -228,10 +230,12 @@ int main(int argc, char **argv, char **env) {
 	// Reset
 	top->clk = 0;
 	top->rst = 1;
+	top->cen = 1;
+	top->cen_p1 = 1;
 	top->cs_n = 1;
 	top->wr_n = 0;
 	top->a0 = 0;
-	top->d_in = 0;
+	top->din = 0;
 	while( main_time < 100 ) {
 		top->eval();
 		if( main_time%10==0 ) top->clk = 1-top->clk;
@@ -260,7 +264,7 @@ int main(int argc, char **argv, char **env) {
 			clk_time = main_time+half_period;
 			top->clk = 1-clk;
 			if( clk==1 ) ticks++;
-			int dout = top->d_out;
+			int dout = top->dout;
 			// cout << "clk = " << clk << " dout = " << dout << '\n';
 			if( clk==0 ) {
 				if( (dout&0x80)==0 && (--wait<=0)) {
@@ -284,14 +288,14 @@ int main(int argc, char **argv, char **env) {
 							top->a0 = 0;
 							reg = random_reg();
 							// cout << "Wr to " << reg << " ";
-							top->d_in = reg;
+							top->din = reg;
 							state = WRITE_VAL; 
 							wait=rand()%8;							
 							break;
 						case WRITE_VAL:
 							top->a0 = 1;
 							val = random_val();
-							top->d_in = val;
+							top->din = val;
 							state = WRITE_REG;
 							wait=64+(rand()%256);
 							ref_mmr.write( reg, val );
