@@ -12,7 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2016
@@ -31,11 +31,11 @@ module jt51_eg(
     // envelope configuration
     input       [4:0]   keycode_III,
     input       [4:0]   arate_II,
-    input       [4:0]   rate1_II,   
-    input       [4:0]   rate2_II,   
-    input       [3:0]   rrate_II,   
+    input       [4:0]   rate1_II,
+    input       [4:0]   rate2_II,
+    input       [3:0]   rrate_II,
     input       [3:0]   d1l_I,
-    input       [1:0]   ks_III, 
+    input       [1:0]   ks_III,
     // envelope operation
     input               keyon_II,
     output  reg         pg_rst_III,
@@ -51,7 +51,10 @@ module jt51_eg(
         // eg[5:0] -> mantisa attenuation (uses LUT)
         // 1 LSB of eg is -0.09257 dB
 
-parameter ATTACK=2'd0, DECAY1=2'd1, DECAY2=2'd2, RELEASE=2'd3;
+localparam ATTACK=2'd0,
+           DECAY1=2'd1,
+           DECAY2=2'd2,
+           RELEASE=2'd3;
 
 reg     [4:0]   d1level_II;
 reg     [2:0]   cnt_V;
@@ -134,8 +137,8 @@ always @(*) begin : rate_step
             2'd1: step_idx = 8'b11101010; // 5
             2'd2: step_idx = 8'b11101110; // 6
             2'd3: step_idx = 8'b11111110; // 7
-        endcase 
-    end 
+        endcase
+    end
     // a rate_IV of zero keeps the level still
     step_V = rate_V[5:1]==5'd0 ? 1'b0 : step_idx[ cnt_V ];
 end
@@ -147,7 +150,7 @@ wire    ar_off_VI;
 always @(posedge clk) if(cen) begin
     // I
     if( d1l_I == 4'd15 )
-        d1level_II <= 5'h10; // 48dB 
+        d1level_II <= 5'h10; // 48dB
     else
         d1level_II <= {1'b0,d1l_I};
 end
@@ -191,71 +194,71 @@ always @(posedge clk) if(cen) begin
                     end
                     else begin
                         cfg_III      <= rate1_II;
-                        state_in_III <= state_II;   // decay1               
+                        state_in_III <= state_II;   // decay1
                     end
                 end
                 DECAY2: begin
                         cfg_III      <= rate2_II;
-                        state_in_III <= state_II;   // decay2               
+                        state_in_III <= state_II;   // decay2
                     end
                 RELEASE: begin
                         cfg_III      <= { rrate_II, 1'b1 };
-                        state_in_III <= state_II;   // release              
+                        state_in_III <= state_II;   // release
                     end
             endcase
         end
     end
 end
 
-    // III      
+    // III
 always @(posedge clk) if(cen) begin
     state_in_IV <= state_in_III;
     rate_IV <= pre_rate_III[6] ? 6'd63 : pre_rate_III[5:0];
 end
 
     // IV
-always @(posedge clk) if(cen) begin 
+always @(posedge clk) if(cen) begin
     state_in_V  <= state_in_IV;
     rate_V <= rate_IV;
     if( state_in_IV == ATTACK )
         case( rate_IV[5:2] )
-            4'h0: cnt_V <= eg_cnt[13:11]; 
-            4'h1: cnt_V <= eg_cnt[12:10]; 
-            4'h2: cnt_V <= eg_cnt[11: 9]; 
-            4'h3: cnt_V <= eg_cnt[10: 8]; 
-            4'h4: cnt_V <= eg_cnt[ 9: 7]; 
-            4'h5: cnt_V <= eg_cnt[ 8: 6]; 
-            4'h6: cnt_V <= eg_cnt[ 7: 5]; 
-            4'h7: cnt_V <= eg_cnt[ 6: 4]; 
-            4'h8: cnt_V <= eg_cnt[ 5: 3]; 
-            4'h9: cnt_V <= eg_cnt[ 4: 2]; 
-            4'ha: cnt_V <= eg_cnt[ 3: 1]; 
-            default: cnt_V <= eg_cnt[ 2: 0]; 
+            4'h0: cnt_V <= eg_cnt[13:11];
+            4'h1: cnt_V <= eg_cnt[12:10];
+            4'h2: cnt_V <= eg_cnt[11: 9];
+            4'h3: cnt_V <= eg_cnt[10: 8];
+            4'h4: cnt_V <= eg_cnt[ 9: 7];
+            4'h5: cnt_V <= eg_cnt[ 8: 6];
+            4'h6: cnt_V <= eg_cnt[ 7: 5];
+            4'h7: cnt_V <= eg_cnt[ 6: 4];
+            4'h8: cnt_V <= eg_cnt[ 5: 3];
+            4'h9: cnt_V <= eg_cnt[ 4: 2];
+            4'ha: cnt_V <= eg_cnt[ 3: 1];
+            default: cnt_V <= eg_cnt[ 2: 0];
         endcase
     else
         case( rate_IV[5:2] )
-            4'h0: cnt_V <= eg_cnt[14:12]; 
-            4'h1: cnt_V <= eg_cnt[13:11]; 
-            4'h2: cnt_V <= eg_cnt[12:10]; 
-            4'h3: cnt_V <= eg_cnt[11: 9]; 
-            4'h4: cnt_V <= eg_cnt[10: 8]; 
-            4'h5: cnt_V <= eg_cnt[ 9: 7]; 
-            4'h6: cnt_V <= eg_cnt[ 8: 6]; 
-            4'h7: cnt_V <= eg_cnt[ 7: 5]; 
-            4'h8: cnt_V <= eg_cnt[ 6: 4]; 
-            4'h9: cnt_V <= eg_cnt[ 5: 3]; 
-            4'ha: cnt_V <= eg_cnt[ 4: 2]; 
-            4'hb: cnt_V <= eg_cnt[ 3: 1]; 
-            default: cnt_V <= eg_cnt[ 2: 0]; 
+            4'h0: cnt_V <= eg_cnt[14:12];
+            4'h1: cnt_V <= eg_cnt[13:11];
+            4'h2: cnt_V <= eg_cnt[12:10];
+            4'h3: cnt_V <= eg_cnt[11: 9];
+            4'h4: cnt_V <= eg_cnt[10: 8];
+            4'h5: cnt_V <= eg_cnt[ 9: 7];
+            4'h6: cnt_V <= eg_cnt[ 8: 6];
+            4'h7: cnt_V <= eg_cnt[ 7: 5];
+            4'h8: cnt_V <= eg_cnt[ 6: 4];
+            4'h9: cnt_V <= eg_cnt[ 5: 3];
+            4'ha: cnt_V <= eg_cnt[ 4: 2];
+            4'hb: cnt_V <= eg_cnt[ 3: 1];
+            default: cnt_V <= eg_cnt[ 2: 0];
         endcase
 end
 
     // V
 always @(posedge clk) if(cen) begin
-    state_in_VI <= state_in_V;  
-    rate_VI <= rate_V[5:1];
-    sum_up <= cnt_V[0] != cnt_out;
-    step_VI <= step_V;
+    state_in_VI <= state_in_V;
+    rate_VI     <= rate_V[5:1];
+    sum_up      <= cnt_V[0] != cnt_out;
+    step_VI     <= step_V;
 end
 
 ///////////////////////////////////////
@@ -266,7 +269,7 @@ reg [9:0] ar_result_VI, ar_sum_VI;
 always @(*) begin : ar_calculation
     casez( rate_VI[5:2] )
         default: ar_sum0_VI = { 3'd0, eg_VI[9:4] } + 9'd1;
-        4'b1100: ar_sum0_VI = { 3'd0, eg_VI[9:4] } + 9'd1;        
+        4'b1100: ar_sum0_VI = { 3'd0, eg_VI[9:4] } + 9'd1;
         4'b1101: ar_sum0_VI = { 2'd0, eg_VI[9:3] } + 9'd1;
         4'b111?: ar_sum0_VI = { 1'd0, eg_VI[9:2] } + 9'd1;
     endcase
@@ -284,8 +287,8 @@ always @(posedge clk) if(cen) begin
     else
     if( state_in_VI == ATTACK ) begin
         if( sum_up && eg_VI != 10'd0 )
-            if( rate_VI[5:1]==5'hf ) 
-                eg_VII <= 10'd0; 
+            if( rate_VI[5:1]==5'hf )
+                eg_VII <= 10'd0;
             else
                 eg_VII <= ar_result_VI;
         else
@@ -293,7 +296,7 @@ always @(posedge clk) if(cen) begin
     end
     else begin : DECAY_SUM
         if( sum_up ) begin
-            if ( eg_VI<= (10'd1023-10'd8) ) 
+            if ( eg_VI<= (10'd1023-10'd8) )
                 case( rate_VI[5:2] )
                     4'b1100: eg_VII <= eg_VI + { 8'd0, step_VI, ~step_VI }; // 12
                     4'b1101: eg_VII <= eg_VI + { 7'd0, step_VI, ~step_VI, 1'b0 }; // 13
@@ -320,8 +323,8 @@ always @(*) begin : sum_eg_and_tl
         sum_eg_tl_VII = 12'd0;
     else
     `endif
-    sum_eg_tl_VII = { 2'b0, tl_VII,   3'd0 } 
-               + {2'b0, eg_VII} 
+    sum_eg_tl_VII = { 2'b0, tl_VII,   3'd0 }
+               + {2'b0, eg_VII}
                + {2'b0, am_final_VII, 1'b0 };
 end
 
@@ -330,7 +333,7 @@ always @(posedge clk) if(cen) begin
 end
 
 jt51_sh #( .width(10), .stages(3) ) u_egpadding (
-    .rst    ( rst       ),    
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( eg_VIII   ),

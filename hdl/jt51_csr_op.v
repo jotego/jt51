@@ -60,10 +60,9 @@ wire    [4:0]   d1r_in  = din[4:0];
 wire    [4:0]   d2r_in  = din[4:0];
 wire    [3:0]   rr_in   = din[3:0];
 
-wire [41:0] reg_in = {   
+wire [30:0] reg0_in = {   
         up_dt1_op   ? dt1_in    : dt1,          // 3
         up_mul_op   ? mul_in    : mul,          // 4
-        up_tl_op    ? tl_in     : tl,           // 7
         up_ks_op    ? ks_in     : ks,           // 2
         up_amsen_op ? amsen_in  : amsen,        // 1
         up_dt2_op   ? dt2_in    : dt2,          // 2
@@ -71,20 +70,34 @@ wire [41:0] reg_in = {
 
         up_ar_op    ? ar_in     : arate,        // 5
         up_d1r_op   ? d1r_in    : rate1,        // 5
-        up_d2r_op   ? d2r_in    : rate2,        // 5
+        up_d2r_op   ? d2r_in    : rate2    };   // 5
+
+wire [10:0] reg1_in = {
+        up_tl_op    ? tl_in     : tl,           // 7
         up_rr_op    ? rr_in     : rrate    };   // 4
 
-wire [41:0] reg_out;
+wire [30:0] reg0_out;
+wire [10:0] reg1_out;
 
-assign { dt1, mul, tl, ks, amsen, dt2, d1l, arate, rate1, rate2, rrate  } 
-    = reg_out;
+assign { dt1, mul, ks, amsen, dt2, d1l, arate, rate1, rate2, tl, rrate  } 
+    = {reg0_out, reg1_out};
 
-jt51_sh #( .width(42), .stages(32)) u_regop(
-    .rst    ( rst     ),
-    .clk    ( clk     ),
-    .cen    ( cen     ),
-    .din    ( reg_in  ),
-    .drop   ( reg_out )
+// reset to zero
+jt51_sh #( .width(31), .stages(32)) u_reg0op(
+    .rst    ( rst      ),
+    .clk    ( clk      ),
+    .cen    ( cen      ),
+    .din    ( reg0_in  ),
+    .drop   ( reg0_out )
+);
+
+// reset to one
+jt51_sh #( .width(11), .stages(32), .rstval(1'b1)) u_reg1op(
+    .rst    ( rst      ),
+    .clk    ( clk      ),
+    .cen    ( cen      ),
+    .din    ( reg1_in  ),
+    .drop   ( reg1_out )
 );
 
 
