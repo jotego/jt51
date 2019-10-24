@@ -60,7 +60,7 @@ always @(posedge clk) begin : base_counter
     if( rst ) begin
         base    <= {b0+16{1'b0}};
     end
-    else begin
+    else if(cen) begin
         if( zero ) base <= base + 1'b1;
     end
 end

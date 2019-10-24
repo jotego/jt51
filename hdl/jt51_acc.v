@@ -98,7 +98,7 @@ always @(posedge clk) begin
 end
             
 reg  signed [15:0] opsum;
-wire signed [16:0] opsum10 = {2'b0,op_val}+{1'b0,total};
+wire signed [16:0] opsum10 = {{3{op_val[13]}},op_val}+{total[15],total};
 
 always @(*) begin
     if( rst_sum )
@@ -158,7 +158,7 @@ wire signed [15:0] dump = left;
 initial skip=1;
 
 always @(posedge clk)
-    if( c1_enters && (!skip || dump) ) begin
+    if( c1_enters && (!skip || dump) && cen) begin
         $display("%d", dump );
         skip <= 0;
     end
