@@ -28,7 +28,8 @@
 module jt51_phrom
 (
 	input [4:0] addr,
-	input clk, 
+	input clk,
+	input cen,
 	output reg [45:0] ph
 );
 
@@ -70,7 +71,7 @@ module jt51_phrom
 
 	end
 
-	always @ (posedge clk)
+	always @ (posedge clk) if(cen)
 		ph <= sinetable[addr];
 
 endmodule

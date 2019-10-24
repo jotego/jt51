@@ -61,8 +61,17 @@ wire   busy = dout[7];
 
 initial begin
     $readmemh( "cmd.hex", cmd);
+end
+
+initial begin
+    `ifdef NCVERILOG
     $shm_open("test.shm");
     $shm_probe(test,"AS");
+    `else
+    $dumpfile("test.lxt");
+    $dumpvars(0,test);
+    $dumpon;
+    `endif
 end
 
 always @(posedge clk, posedge rst) begin

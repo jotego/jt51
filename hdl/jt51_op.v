@@ -168,6 +168,7 @@ wire [45:0] sta_XI;
 
 jt51_phrom u_phrom(
     .clk    ( clk       ),
+    .cen    ( cen       ),
     .addr   ( aux_X[5:1]),
     .ph     ( sta_XI    )
 );
