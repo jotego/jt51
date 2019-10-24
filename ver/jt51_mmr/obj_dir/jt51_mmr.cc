@@ -246,8 +246,7 @@ int main(int argc, char **argv, char **env) {
 	int last_a=0, ticks=0;
 	int wait=10;
 	int cmd_cnt=0;
-	enum { WRITE_REG, WRITE_VAL, WAIT_FINISH } state;
-	state = WRITE_REG;
+	int state=0;
 	const int half_period=140;
 	vluint64_t clk_time = half_period;
 	bool wait_nonzero=true;
@@ -284,23 +283,28 @@ int main(int argc, char **argv, char **env) {
 					// cout << "\tstate= " << state << " cmd_cnt = " << cmd_cnt;
 					// cout << " reg=" << reg[cmd_cnt] << '\n';
 					switch( state) {
-						case WRITE_REG: 
+						case 0: 
 							top->a0 = 0;
 							reg = random_reg();
 							// cout << "Wr to " << reg << " ";
 							top->din = reg;
-							state = WRITE_VAL; 
+							state++;
 							wait=rand()%8;							
 							break;
-						case WRITE_VAL:
+						case 2:
 							top->a0 = 1;
 							val = random_val();
 							top->din = val;
-							state = WRITE_REG;
+							state++;
 							wait=64+(rand()%256);
 							ref_mmr.write( reg, val );
+                            break;
+                        case 4:
 							next_check--;
-							break;
+                        default: 
+                            state++;
+                            state&=0xf;
+                            break;
 						}
 				}
 				else top->cs_n=1;
@@ -308,7 +312,7 @@ int main(int argc, char **argv, char **env) {
 			if( clk==0 && (dout&0x80==0x80)) top->cs_n = 1;
 		}
 		main_time+=2;
-		if(trace && (main_time%140==0)) { tfp->dump(main_time); }
+		if(trace && (main_time%70==0)) { tfp->dump(main_time); }
 	}
 finish:
 	cout << "$finish: #" << dec << main_time << '\n';
