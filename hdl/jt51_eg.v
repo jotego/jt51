@@ -343,7 +343,7 @@ jt51_sh #( .width(10), .stages(3) ) u_egpadding (
 
 // Shift registers
 
-jt51_sh #( .width(10), .stages(32-7+2) ) u_eg1sh(
+jt51_sh #( .width(10), .stages(32-7+2), .rstval(1'b1) ) u_eg1sh(
     .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
@@ -351,7 +351,7 @@ jt51_sh #( .width(10), .stages(32-7+2) ) u_eg1sh(
     .drop   ( eg_II     )
 );
 
-jt51_sh #( .width(10), .stages(4) ) u_eg2sh(
+jt51_sh #( .width(10), .stages(4), .rstval(1'b1) ) u_eg2sh(
     .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
@@ -383,7 +383,7 @@ jt51_sh #( .width(1), .stages(32) ) u_cntsh(
     .drop   ( cnt_out   )
 );
 
-jt51_sh #( .width(2), .stages(32-3+2) ) u_statesh(
+jt51_sh #( .width(2), .stages(32-3+2), .rstval(1'b1) ) u_statesh(
     .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
@@ -396,22 +396,25 @@ jt51_sh #( .width(2), .stages(32-3+2) ) u_statesh(
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt;
 
-sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt));
+sep32_cnt u_sep32_cnt (.clk(clk), .cen(cen), .zero(zero), .cnt(cnt));
 
 sep32 #(.width(10),.stg(11)) sep_eg(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( eg_XI         ),
     .cnt    ( cnt           )
     );
 
 sep32 #(.width(7),.stg(7)) sep_tl(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( tl_VII        ),
     .cnt    ( cnt           )
     );
 
 sep32 #(.width(2),.stg(2)) sep_state(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( state_II      ),
     .cnt    ( cnt           )
     );
@@ -424,6 +427,7 @@ sep32 #(.width(5),.stg(6)) sep_rate(
 
 sep32 #(.width(9),.stg(7)) sep_amfinal(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( am_final_VII  ),
     .cnt    ( cnt           )
     );

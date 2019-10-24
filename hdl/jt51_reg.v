@@ -257,16 +257,18 @@ jt51_csr_ch u_csr_ch(
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt_aux;
 
-sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt_aux));
+sep32_cnt u_sep32_cnt (.clk(clk), .cen(cen), .zero(zero), .cnt(cnt_aux));
 
 sep32 #(.width(7),.stg(1)) sep_tl(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( tl_VII        ),
     .cnt    ( cnt_aux       )
     );
 
 sep32 #(.width(5),.stg(1)) sep_ar(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( arate_II      ),
     .cnt    ( cnt_aux       )
     );
@@ -274,6 +276,7 @@ sep32 #(.width(5),.stg(1)) sep_ar(
 
 sep32 #(.width(4),.stg(1)) sep_d1l(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( d1l_I         ),
     .cnt    ( cnt_aux       )
     );
@@ -281,12 +284,14 @@ sep32 #(.width(4),.stg(1)) sep_d1l(
 
 sep32 #(.width(4),.stg(1)) sep_rr(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( rrate_II      ),
     .cnt    ( cnt_aux       )
     );
 
 sep32 #(.width(1),.stg(1)) sep_amsen(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( amsen_VII     ),
     .cnt    ( cnt_aux       )
     );

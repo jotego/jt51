@@ -342,29 +342,29 @@ jt51_reg u_reg(
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt_aux;
 
-sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt_aux));
+sep32_cnt u_sep32_cnt (.clk(clk), .cen(cen), .zero(zero), .cnt(cnt_aux));
 
-sep32 #(.width(2),.stg(1)) sep_rl (.clk(clk),.cnt(cnt_aux),.mixed( rl_I     ));
-sep32 #(.width(3),.stg(2)) sep_fb (.clk(clk),.cnt(cnt_aux),.mixed( fb_II    ));
-sep32 #(.width(3),.stg(1)) sep_con(.clk(clk),.cnt(cnt_aux),.mixed( con_I    ));
+sep32 #(.width(2),.stg(1)) sep_rl (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( rl_I     ));
+sep32 #(.width(3),.stg(2)) sep_fb (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( fb_II    ));
+sep32 #(.width(3),.stg(1)) sep_con(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( con_I    ));
 
-sep32 #(.width(7),.stg(1)) sep_kc (.clk(clk),.cnt(cnt_aux),.mixed( kc_I     ));
-sep32 #(.width(6),.stg(1)) sep_kf (.clk(clk),.cnt(cnt_aux),.mixed( kf_I     ));
-sep32 #(.width(3),.stg(1)) sep_pms(.clk(clk),.cnt(cnt_aux),.mixed( pms_I    ));
-sep32 #(.width(2),.stg(7)) sep_ams(.clk(clk),.cnt(cnt_aux),.mixed( ams_VII  ));
+sep32 #(.width(7),.stg(1)) sep_kc (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( kc_I     ));
+sep32 #(.width(6),.stg(1)) sep_kf (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( kf_I     ));
+sep32 #(.width(3),.stg(1)) sep_pms(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( pms_I    ));
+sep32 #(.width(2),.stg(7)) sep_ams(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( ams_VII  ));
 
-sep32 #(.width(3),.stg(2)) sep_dt1(.clk(clk),.cnt(cnt_aux),.mixed( dt1_II   ));
-sep32 #(.width(2),.stg(1)) sep_dt2(.clk(clk),.cnt(cnt_aux),.mixed( dt2_I    ));
-sep32 #(.width(4),.stg(6)) sep_mul(.clk(clk),.cnt(cnt_aux),.mixed( mul_VI   ));
-sep32 #(.width(7),.stg(7)) sep_tl (.clk(clk),.cnt(cnt_aux),.mixed( tl_VII   ));
-sep32 #(.width(2),.stg(3)) sep_ks (.clk(clk),.cnt(cnt_aux),.mixed( ks_III   ));
+sep32 #(.width(3),.stg(2)) sep_dt1(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( dt1_II   ));
+sep32 #(.width(2),.stg(1)) sep_dt2(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( dt2_I    ));
+sep32 #(.width(4),.stg(6)) sep_mul(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( mul_VI   ));
+sep32 #(.width(7),.stg(7)) sep_tl (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( tl_VII   ));
+sep32 #(.width(2),.stg(3)) sep_ks (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( ks_III   ));
 
-sep32 #(.width(5),.stg(2)) sep_ar (.clk(clk),.cnt(cnt_aux),.mixed( arate_II ));
-sep32 #(.width(1),.stg(7)) sep_ame(.clk(clk),.cnt(cnt_aux),.mixed( amsen_VII));
-sep32 #(.width(5),.stg(2)) sep_dr1(.clk(clk),.cnt(cnt_aux),.mixed( rate1_II ));
-sep32 #(.width(5),.stg(2)) sep_dr2(.clk(clk),.cnt(cnt_aux),.mixed( rate2_II ));
-sep32 #(.width(4),.stg(2)) sep_rr (.clk(clk),.cnt(cnt_aux),.mixed( rrate_II ));
-sep32 #(.width(4),.stg(1)) sep_d1l(.clk(clk),.cnt(cnt_aux),.mixed( d1l_I    ));
+sep32 #(.width(5),.stg(2)) sep_ar (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( arate_II ));
+sep32 #(.width(1),.stg(7)) sep_ame(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( amsen_VII));
+sep32 #(.width(5),.stg(2)) sep_dr1(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( rate1_II ));
+sep32 #(.width(5),.stg(2)) sep_dr2(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( rate2_II ));
+sep32 #(.width(4),.stg(2)) sep_rr (.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( rrate_II ));
+sep32 #(.width(4),.stg(1)) sep_d1l(.clk(clk),.cnt(cnt_aux),.cen(cen),.mixed( d1l_I    ));
 `endif
 `endif
 

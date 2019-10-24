@@ -29,7 +29,8 @@
 module jt51_exprom
 (
     input [4:0]         addr,
-    input               clk, 
+    input               clk,
+    input               cen,
     output reg [44:0]   exp
 );
 
@@ -70,7 +71,8 @@ module jt51_exprom
     explut[31] = 45'b010111010010110101000001100001001100000000011;
     end
 
-    always @ (posedge clk) 
+    always @ (posedge clk) if(cen) begin
         exp <= explut[addr];
+    end
 
 endmodule

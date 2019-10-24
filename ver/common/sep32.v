@@ -28,6 +28,7 @@ for instance if signal is xx_VIII, then set stg to 8
 module sep32 #(parameter width=10, parameter stg=5'd0)
 (
     input   clk,
+    input   cen,
     input [width-1:0] mixed,
     input [4:0] cnt,    
     
@@ -67,7 +68,7 @@ module sep32 #(parameter width=10, parameter stg=5'd0)
 
 reg [4:0] cntadj;
 
-reg [width-1:0] slots[32] /*verilator public*/;
+reg [width-1:0] slots[0:31] /*verilator public*/;
 
 localparam pos0 = 33-stg;
 
@@ -76,7 +77,7 @@ always @(*)
     cntadj = (cnt+pos0)%32;
 /* verilator lint_on WIDTH */
 
-always @(posedge clk) begin
+always @(posedge clk) if(cen) begin
     slots[cntadj] <= mixed;
     case( cntadj ) // octal numbers!
         5'o00:  slot_00 <= mixed;

@@ -233,6 +233,7 @@ reg  [ 2:0] etg;
 
 jt51_exprom u_exprom(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .addr   ( atten_internal_XI[5:1] ),
     .exp    ( exp_XII       )
 );
@@ -327,10 +328,11 @@ jt51_sh #( .width(1), .stages(3)) shsignbit(
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt;
 
-sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt));
+sep32_cnt u_sep32_cnt (.clk(clk), .cen(cen), .zero(zero), .cnt(cnt));
 
 sep32 #(.width(14),.stg(17)) sep_op(
     .clk    ( clk           ),
+    .cen    ( cen           ),
     .mixed  ( op_XVII       ),
     .cnt    ( cnt           )
     );

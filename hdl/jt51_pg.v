@@ -23,7 +23,7 @@
 module jt51_pg(
     input               rst,
     input               clk,
-    input               cen,
+    input               cen /* direct_enable */,
     input               zero,
     // Channel frequency
     input       [6:0]   kc_I,
@@ -216,24 +216,36 @@ always @(posedge clk) if(cen) begin
 end
 
 // VII have same number of stages as jt51_envelope
-always @(posedge clk) if(cen) begin 
-    ph_VIII <= pg_rst_VII ? 20'd0 : ph_VII + phase_step_VII;
-    `ifdef DISPLAY_STEP
+always @(posedge clk, posedge rst) begin
+    if( rst )
+        ph_VIII <= 20'd0;
+    else if(cen) begin 
+        ph_VIII <= pg_rst_VII ? 20'd0 : ph_VII + phase_step_VII;
+        `ifdef DISPLAY_STEP
             $display( "%d", phase_step_VII );
-    `endif      
+        `endif      
+    end
 end
 
 // VIII
 reg [19:0] ph_IX;
-always @(posedge clk) if(cen) begin
-    ph_IX <= ph_VIII[19:0];
+always @(posedge clk, posedge rst) begin
+    if( rst )
+        ph_IX <= 20'd0;
+    else if(cen) begin
+        ph_IX <= ph_VIII[19:0];
+    end
 end
 
 // IX
 reg [19:0] ph_X;
 assign pg_phase_X = ph_X[19:10];
-always @(posedge clk) if(cen) begin
-    ph_X  <= ph_IX;
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        ph_X  <= 20'd0;
+    end else if(cen) begin
+        ph_X  <= ph_IX;
+    end
 end
 
 jt51_sh #( .width(20), .stages(32-3) ) u_phsh(
@@ -254,30 +266,30 @@ jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
 
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
-/*
 
 wire [4:0] cnt;
 
-sep32_cnt u_sep32_cnt (.clk(clk), .zero(zero), .cnt(cnt));
-wire zero_VIII;
-
-jt51_sh #(.width(1),.stages(7)) u_sep_aux(
-    .clk    ( clk       ),
-    .din    ( zero      ),
-    .drop   ( zero_VIII )
-    );
-
-sep32 #(.width(1),.stg(8)) sep_ref(
-    .clk    ( clk           ),
-    .mixed  ( zero_VIII     ),
-    .cnt    ( cnt           )
-    );
+sep32_cnt u_sep32_cnt (.clk(clk), .cen(cen), .zero(zero), .cnt(cnt));
+// wire zero_VIII;
+// 
+// jt51_sh #(.width(1),.stages(7)) u_sep_aux(
+//     .clk    ( clk       ),
+//     .din    ( zero      ),
+//     .drop   ( zero_VIII )
+//     );
+// 
+// sep32 #(.width(1),.stg(8)) sep_ref(
+//     .clk    ( clk           ),
+//     .cen(cen),
+//     .mixed  ( zero_VIII     ),
+//     .cnt    ( cnt           )
+//     );
 sep32 #(.width(10),.stg(10)) sep_ph(
     .clk    ( clk           ),
+    .cen(cen),
     .mixed  ( pg_phase_X    ),
     .cnt    ( cnt           )
     );
-*/
 
 /* verilator lint_on PINMISSING */
 `endif

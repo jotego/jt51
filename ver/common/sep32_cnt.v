@@ -20,6 +20,7 @@
 
 module sep32_cnt(
     input           clk,
+    input           cen,
     input           zero,
     output reg [4:0]    cnt
     );
@@ -27,7 +28,7 @@ module sep32_cnt(
 always @(posedge clk) begin : proc_cnt
     if(zero) begin
         cnt <= 5'b1;
-    end else begin
+    end else if(cen) begin
         cnt <= cnt + 5'b1;
     end
 end
