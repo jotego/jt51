@@ -17,6 +17,11 @@ function append_file {
 
 EXTRA=${MACRO}SIMULATION
 
+FILE=simple.hex
+
+if [ -e "$1" ]; then FILE="$1"; fi
+cp "$FILE" cmd.hex
+
 case $SIMULATOR in
     ncverilog)
         $SIMULATOR test.v -F ../../hdl/jt51.f +access+r $EXTRA

@@ -53,13 +53,16 @@ wire                sample, ct1, ct2, irq_n;
 );
 
 // simulation control
-reg [7:0] cmd[0:4096];
+localparam RAML = 128*1024;
+reg [7:0] cmd[0:RAML-1];
 integer cnt, waitcnt;
 
 assign a0 = ~cnt[0];
 wire   busy = dout[7];
 
-initial begin
+initial begin : ram_init
+    integer aux;
+    for( aux=0; aux<RAML; aux=aux+1) cmd[aux]=8'd1;
     $readmemh( "cmd.hex", cmd);
 end
 
@@ -83,15 +86,16 @@ always @(posedge clk, posedge rst) begin
     end else begin
         wr_n <= 1'b1;
         if(!busy ) begin
-            waitcnt <= waitcnt-1;
+            if( sample ) waitcnt <= waitcnt-1;
             if(waitcnt==0) begin
-                $display("%d, %h, %d", a0, cmd[cnt], waitcnt);
+                //$display("%d, %h, %d", a0, cmd[cnt], waitcnt);
                 if( cnt[0]==1'b0 && (cmd[cnt]==0 || cmd[cnt]==1) ) begin
-                    if( cmd[cnt]==0) begin
+                    if( cmd[cnt]==1) begin // 1 = finish
                         $finish;
                     end else begin
-                        cnt<=cnt+4; // wait
-                        waitcnt<={cmd[cnt+1],~11'h0};                    
+                        cnt<=cnt+4; // 0=wait
+                        waitcnt<=cmd[cnt+1];                    
+                        $display("Wait %d", cmd[cnt+1]);
                     end
                 end
                 else begin

@@ -188,26 +188,21 @@ int main(int argc, char** argv, char** env) {
             continue;
         }
         if( string(argv[k])=="-noam" ) {
-            writter.block( 0xF0, 0x60, [](int v){return v&0x7f;} );
+            writter.block( 0xe0, 0xa0, [](int v){return v&0x7f;} );
             continue;
         }
         if( string(argv[k])=="-noks") {
-            writter.block( 0xF0, 0x50, [](int v){return v&0x1f;} );
+            writter.block( 0xe0, 0x80, [](int v){return v&0x1f;} );
             continue;
         }
         if( string(argv[k])=="-nomul") {
             cerr << "All writes to MULT locked to 1\n";
-            writter.block( 0xF0, 0x30, [](int v){ return (v&0x70)|1;} );
+            writter.block( 0xe0, 0x40, [](int v){ return (v&0x70)|1;} );
             continue;
         }
-        if( string(argv[k])=="-nodt") {
-            cerr << "All writes to DT locked to 1\n";
-            writter.block( 0xF0, 0x30, [](int v){ return (v&0x0F)|1;} );
-            continue;
-        }
-        if( string(argv[k])=="-nossg") {
-            cerr << "All writes to FM's SSG-EG locked to 0\n";
-            writter.block( 0xF0, 0x90, [](int v){ return 0;} );
+        if( string(argv[k])=="-nodt2") {
+            cerr << "All writes to DT locked to 0\n";
+            writter.block( 0xe0, 0xc0, [](int v){ return v&0x1F;} );
             continue;
         }
         if( string(argv[k])=="-mute") {
@@ -420,11 +415,26 @@ CmdWritter::CmdWritter( Vjt51* _top ) {
     top  = _top;
     last_clk = 0;
     done = true;
-    features.push_back( FeatureUse("DT",   0xF0, 0x30, 0x70, [](char v)->bool{return v!=0;} ));
-    features.push_back( FeatureUse("MULT", 0xF0, 0x30, 0x0F, [](char v)->bool{return v!=1;} ));
-    features.push_back( FeatureUse("KS",   0xF0, 0x50, 0xC0, [](char v)->bool{return v!=0;} ));
-    features.push_back( FeatureUse("AM",   0xF0, 0x60, 0x80, [](char v)->bool{return v!=0;} ));
-    features.push_back( FeatureUse("SSG",  0xF0, 0x90, 0x08, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("PMS",  0xF8, 0x38, 0x70, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("CON0", 0xF8, 0x20, 0x07, [](char v)->bool{return v==0;} ));
+    features.push_back( FeatureUse("CON1", 0xF8, 0x20, 0x07, [](char v)->bool{return v==1;} ));
+    features.push_back( FeatureUse("CON2", 0xF8, 0x20, 0x07, [](char v)->bool{return v==2;} ));
+    features.push_back( FeatureUse("CON3", 0xF8, 0x20, 0x07, [](char v)->bool{return v==3;} ));
+    features.push_back( FeatureUse("CON4", 0xF8, 0x20, 0x07, [](char v)->bool{return v==4;} ));
+    features.push_back( FeatureUse("CON5", 0xF8, 0x20, 0x07, [](char v)->bool{return v==5;} ));
+    features.push_back( FeatureUse("CON6", 0xF8, 0x20, 0x07, [](char v)->bool{return v==6;} ));
+    features.push_back( FeatureUse("CON7", 0xF8, 0x20, 0x07, [](char v)->bool{return v==7;} ));
+    features.push_back( FeatureUse("DT",   0xE0, 0x40, 0x70, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("MULT", 0xE0, 0x40, 0x0F, [](char v)->bool{return v!=1;} ));
+    features.push_back( FeatureUse("TL",   0xE0, 0x60, 0x7F, [](char v)->bool{return v!=1;} ));
+    features.push_back( FeatureUse("KS",   0xE0, 0x80, 0xC0, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("AR",   0xE0, 0x80, 0x1F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("AMS",  0xE0, 0xA0, 0x80, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("D1R",  0xE0, 0xA0, 0x1F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("DT2",  0xE0, 0xC0, 0xC0, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("D2R",  0xE0, 0xC0, 0x1F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("D1L",  0xE0, 0xE0, 0xF8, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("RR",   0xE0, 0xE0, 0x0F, [](char v)->bool{return v!=0;} ));
     watch_ch = -1;
     //add_op_mirror( 0x30, "DT", 0x70, 2, )
 }

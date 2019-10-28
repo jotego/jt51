@@ -130,7 +130,6 @@ always @(*) begin
             3'd5: phasemod_II = pm_preshift_II[14:5];
             3'd6: phasemod_II = pm_preshift_II[13:4];
             3'd7: phasemod_II = pm_preshift_II[12:3];
-            default: phasemod_II = 10'dx;
         endcase
 end
 

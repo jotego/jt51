@@ -31,7 +31,7 @@ RipParser* ParserFactory( const char *filename, int clk_period );
 
 class VGMParser : public RipParser {
     std::ifstream file;
-    std::ofstream ftrans; // translation to JTT format
+    std::ofstream ftrans, fhex; // translation to JTT format
     float cur_time; // used by ftrans
     int totalwait, pending_wait, stream_id;
     bool done, stream_notmplemented_info;
@@ -43,6 +43,8 @@ class VGMParser : public RipParser {
     }
     void translate_cmd();
     void translate_wait();
+    void translate_hex();
+    void translate_wait_hex();
     char *stream_data;
     uint32_t data_offset, ym_freq;
 

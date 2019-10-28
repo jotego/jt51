@@ -222,8 +222,9 @@ void VGMParser::open(const char* filename, int limit) {
     auto pos = aux.find_last_of('/');
     if( pos == string::npos ) pos=0; else pos++;
     aux = aux.substr( pos ); // trim path
-    aux = aux+".jtt";
-    ftrans.open(aux);
+    ftrans.open(aux+".jtt");
+    // hex translation file
+    fhex.open(aux+".hex");
     cur_time=0;
     if( stream_data != NULL ) { delete stream_data; stream_data=NULL; }
     data_offset=0;
@@ -236,6 +237,13 @@ VGMParser::~VGMParser() {
     file.close();
     ftrans.close();
     if( stream_data != NULL ) { delete stream_data; stream_data=NULL; }
+}
+
+void VGMParser::translate_hex() {
+    int _cmd = cmd; _cmd&=0xff;
+    int _val = val; _val&=0xff;
+    fhex << hex << _cmd << '\n';
+    fhex << hex << _val << '\n';    
 }
 
 void VGMParser::translate_cmd() {
@@ -252,6 +260,23 @@ void VGMParser::translate_cmd() {
             ftrans << " # Key off";
     }
     ftrans << '\n';
+    translate_hex();
+}
+
+int min(int a, int b ) {
+    return a<b ? a : b;
+}
+
+void VGMParser::translate_wait_hex() {
+    float ws = wait;
+    ws /= 44100.0; // wait in seconds
+    const float Tsyn = 32.0*clk_period*1e-9; // 32 for YM2151
+    int wsyn = ws/Tsyn;
+    while( wsyn>0) {
+        fhex << "0\n";
+        fhex << hex << min(255,wsyn) << '\n';
+        wsyn -= 255;
+    }
 }
 
 void VGMParser::translate_wait() {
