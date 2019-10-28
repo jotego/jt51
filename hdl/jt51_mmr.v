@@ -113,9 +113,28 @@ wire    busy_reg;
 
 `ifdef SIMULATION
 reg mmr_dump;
+integer sample_cnt=0;
+integer flog;
+
+reg [7:0] log_reg, log_data;
+
+initial begin
+    flog = $fopen("jt51.log","w");
+end
+
+always @(posedge zero) sample_cnt <=sample_cnt+1;
+
+always @(posedge clk) begin
+    log_reg  <= selected_register;
+    log_data <= din_copy;
+    if( log_data != din_copy ) begin
+        $fdisplay(flog,"%d,%X,%X", sample_cnt, selected_register, din_copy );
+    end
+end
+
 `endif
 
-parameter   REG_TEST    =   8'h01,
+localparam  REG_TEST    =   8'h01,
             REG_TEST2   =   8'h02,
             REG_KON     =   8'h08,
             REG_NOISE   =   8'h0f,
@@ -221,10 +240,10 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                 // channel registers
                 if( selected_register < 8'h40 ) begin
                     case( selected_register[4:3] )
-                        2'h0: up_rl <= 1'b1;
-                        2'h1: up_kc <= 1'b1;
-                        2'h2: up_kf <= 1'b1;
-                        2'h3: up_pms<= 1'b1;
+                        2'h0: up_rl <= 1'b1; // 0x20-0x27
+                        2'h1: up_kc <= 1'b1; // 0x28-0x2F
+                        2'h2: up_kf <= 1'b1; // 0x30-0x37
+                        2'h3: up_pms<= 1'b1; // 0x38-0x3F
                     endcase
                 end
                 else
