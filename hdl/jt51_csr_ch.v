@@ -21,7 +21,7 @@
 module jt51_csr_ch(
     input         rst,
     input         clk,
-    input         cen,
+    (*direct_enable *) input cen,
     input  [ 7:0] din,
 
     input         up_rl_ch,  

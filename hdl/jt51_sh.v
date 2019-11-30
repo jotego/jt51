@@ -23,7 +23,7 @@
 module jt51_sh #(parameter width=5, stages=32, rstval=1'b0 ) (
     input                           rst,
     input                           clk,
-    input                           cen,
+    (*direct_enable *) input        cen,
     input       [width-1:0]         din,
     output      [width-1:0]         drop
 );

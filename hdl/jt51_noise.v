@@ -46,7 +46,7 @@
 module jt51_noise(
     input           rst,
     input           clk,
-    input           cen,
+    (*direct_enable *) input cen,
     input   [4:0]   nfrq,
     input   [9:0]   eg,
     input           op31_no,

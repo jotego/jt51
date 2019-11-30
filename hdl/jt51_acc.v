@@ -23,7 +23,7 @@
 module jt51_acc(
     input                   rst,
     input                   clk,
-    input                   cen,
+    (*direct_enable *) input cen,
     input                   m1_enters,
     input                   m2_enters,
     input                   c1_enters,

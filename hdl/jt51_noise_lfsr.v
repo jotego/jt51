@@ -25,7 +25,7 @@
 module jt51_noise_lfsr #(parameter init=14220 )(
     input   rst,
     input   clk,
-    input   cen,
+    (*direct_enable *) input cen,
     input   base,
     output  out
 );

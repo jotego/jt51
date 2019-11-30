@@ -29,7 +29,7 @@
 module jt51_lfo(
     input               rst,
     input               clk,
-    input               cen,
+    (*direct_enable *) input cen,
     input               zero,
     input               lfo_rst,
     input       [7:0]   lfo_freq,

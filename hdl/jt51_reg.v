@@ -23,7 +23,7 @@
 module jt51_reg(
     input           rst,
     input           clk,
-    input           cen,        // P1
+    (*direct_enable *) input cen,        // P1
     input   [7:0]   din,
 
     input           up_rl,

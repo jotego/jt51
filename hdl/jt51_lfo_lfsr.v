@@ -23,7 +23,7 @@
 module jt51_lfo_lfsr #(parameter init=220 )(
     input   rst,
     input   clk,
-    input   cen,
+    (*direct_enable *) input cen,
     input   base,
     output  out
 );

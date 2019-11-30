@@ -29,7 +29,7 @@ module jt51_op(
     `endif
     input               rst,
     input               clk,
-    input               cen,            // P1
+    (*direct_enable *) input cen,
     input       [9:0]   pg_phase_X,
     input       [2:0]   con_I,
     input       [2:0]   fb_II,

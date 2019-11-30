@@ -29,7 +29,7 @@ module jt51_phrom
 (
 	input [4:0] addr,
 	input clk,
-	input cen,
+	(*direct_enable *) input cen,
 	output reg [45:0] ph
 );
 

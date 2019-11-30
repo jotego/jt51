@@ -26,7 +26,7 @@ module jt51_eg(
     `endif
     input               rst,
     input               clk,
-    input               cen,
+    (*direct_enable *) input cen,
     input               zero,
     // envelope configuration
     input       [4:0]   keycode_III,

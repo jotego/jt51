@@ -30,7 +30,7 @@ module jt51_exprom
 (
     input [4:0]         addr,
     input               clk,
-    input               cen,
+    (*direct_enable *) input cen,
     output reg [44:0]   exp
 );
 

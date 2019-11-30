@@ -23,7 +23,7 @@
 module jt51_timers(
     input         rst,
     input         clk,
-    input         cen,
+    (*direct_enable *) input cen,
     input [9:0]   value_A,
     input [7:0]   value_B,
     input         load_A,
@@ -76,7 +76,7 @@ module jt51_timer #(parameter counter_width = 10, mult_width=5 )
 (
     input   rst,
     input   clk, 
-    input   cen, 
+    (*direct_enable *) input cen, 
     input   [counter_width-1:0] start_value,
     input   load,
     input   clr_flag,

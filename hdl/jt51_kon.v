@@ -26,7 +26,7 @@
 module jt51_kon(
     input           rst,
     input           clk,
-    input           cen,
+    (*direct_enable *) input cen,
     input   [3:0]   keyon_op,
     input   [2:0]   keyon_ch,
     input   [1:0]   cur_op,

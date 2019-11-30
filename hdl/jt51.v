@@ -256,15 +256,8 @@ jt51_acc u_acc(
 );
 
 wire    busy;
-
-reg     flag_B_s, flag_A_s;
-assign  dout = { busy, 5'h0, flag_B_s, flag_A_s };
-
-always @(posedge clk ) 
-    { flag_B_s, flag_A_s } <= { flag_B, flag_A };
-
-
-wire        write = !cs_n && !wr_n;
+wire    write = !cs_n && !wr_n;
+assign  dout  = { busy, 5'h0, flag_B, flag_A  };
 
 /*verilator tracing_on*/
 
