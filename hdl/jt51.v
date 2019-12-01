@@ -35,7 +35,7 @@ module jt51(
     output              ct2,
     output              irq_n,  // I do not synchronize this signal
     // Low resolution output (same as real chip)
-    output              sample, // marks new output sample
+    (*keep*) output     sample, // marks new output sample
     output  signed  [15:0] left,
     output  signed  [15:0] right,
     // Full resolution output

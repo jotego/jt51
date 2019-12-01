@@ -93,9 +93,9 @@ always @(posedge clk, posedge rst) begin
                     if( cmd[cnt]==1) begin // 1 = finish
                         $finish;
                     end else begin
-                        cnt<=cnt+4; // 0=wait
-                        waitcnt<=cmd[cnt+1];                    
-                        $display("Wait %d", cmd[cnt+1]);
+                        cnt<=cnt+2; // 0=wait
+                        waitcnt<=cmd[cnt+1]<<2;                    
+                        $display("(%3d) wait %d", cnt, cmd[cnt+1]);
                     end
                 end
                 else begin

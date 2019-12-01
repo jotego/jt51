@@ -36,15 +36,15 @@ module jt51_timers(
     input         clr_run_B,  
     input         enable_irq_A,
     input         enable_irq_B,
-    output        flag_A,
-    output        flag_B,
+    (*keep*) output        flag_A,
+    (*keep*) output        flag_B,
     output        overflow_A,
-    output        irq_n
+    (*keep*) output        irq_n
 );
 
 assign irq_n = ~( (flag_A&enable_irq_A) | (flag_B&enable_irq_B) );
 
-jt51_timer #(.mult_width(6), .counter_width(10)) timer_A(
+jt51_timer #(.BW(6), .CW(10)) timer_A(
     .rst        ( rst       ),
     .clk        ( clk       ), 
     .cen        ( cen       ), 
@@ -57,7 +57,7 @@ jt51_timer #(.mult_width(6), .counter_width(10)) timer_A(
     .overflow   ( overflow_A)
 );
 
-jt51_timer #(.mult_width(10), .counter_width(8)) timer_B(
+jt51_timer #(.BW(10), .CW(8)) timer_B(
     .rst        ( rst       ),
     .clk        ( clk       ), 
     .cen        ( cen       ), 
@@ -72,55 +72,44 @@ jt51_timer #(.mult_width(10), .counter_width(8)) timer_B(
 
 endmodule
 
-module jt51_timer #(parameter counter_width = 10, mult_width=5 )
+module jt51_timer #(parameter CW=10, BW=5 )
 (
     input   rst,
     input   clk, 
     (*direct_enable *) input cen, 
-    input   [counter_width-1:0] start_value,
+    input   [CW-1:0] start_value,
     input   load,
     input   clr_flag,
     input   set_run,
     input   clr_run,
     output reg flag,
-    output reg overflow
+    (*keep*) output reg overflow
 );
 
-reg run;
-reg [   mult_width-1:0] mult;
-reg [counter_width-1:0] cnt;
+(*keep*) reg [BW+CW-1:0] cnt;
+reg  last_load, last_clr;
+wire posedge_load = load && !last_load;
+wire posedge_clr  = clr_flag  && !last_clr;
+wire [BW+CW-1:0] cnt0 = { start_value, {BW{1'b0}}};
 
-always@(posedge clk, posedge rst)
-    if( rst )
+always @(posedge clk) begin : edges
+    last_load <= load;    
+    last_clr  <= clr_flag;
+end
+
+always @(posedge clk) begin : flag_latch
+    if( clr_flag )
         flag <= 1'b0;
-    else if(cen) begin
-        if( clr_flag )
-            flag <= 1'b0;
-        else if(overflow) flag<=1'b1;
-    end
-
-always@(posedge clk, posedge rst)
-    if( rst )
-        run <= 1'b0;
-    else if(cen) begin
-        if( clr_run )
-            run <= 1'b0;
-        else if(set_run || load) run<=1'b1;
-    end
-
-reg [mult_width+counter_width-1:0] next, init;
-
-always @(*) begin
-    {overflow, next } = { 1'b0, cnt, mult } + 1'b1;
-    init = { start_value, { (mult_width){1'b0} } };
+    else if( overflow && cen) flag<=1'b1;
 end
 
-always @(posedge clk) if(cen) begin : counter
-    if( load ) begin
-      mult <= { (mult_width){1'b0} };
-      cnt  <= start_value;
-    end     
-    else if( run )
-      { cnt, mult } <= overflow ? init : next;
+always @(posedge clk) begin
+    if( load )
+        cnt <= cnt0;
+    else if(cen) begin
+        overflow <= &cnt;
+        cnt <= cnt + 1'b1;
+    end
 end
+
 endmodule

@@ -261,7 +261,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                 end
             end
         end
-        else begin /* clear once-only bits */
+        else if(cen) begin /* clear once-only bits */
             `ifdef SIMULATION
             mmr_dump <= 1'b0;
             `endif
