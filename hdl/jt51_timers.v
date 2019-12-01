@@ -28,21 +28,21 @@ module jt51_timers(
     input [7:0]   value_B,
     input         load_A,
     input         load_B,
+    output        load_ack_A,
+    output        load_ack_B,
     input         clr_flag_A,
     input         clr_flag_B,
-    input         set_run_A,
-    input         set_run_B,  
-    input         clr_run_A,
-    input         clr_run_B,  
+    output        clr_ack_A,
+    output        clr_ack_B,
     input         enable_irq_A,
     input         enable_irq_B,
     (*keep*) output        flag_A,
     (*keep*) output        flag_B,
     output        overflow_A,
-    (*keep*) output        irq_n
+    (*keep*) output reg    irq_n
 );
 
-assign irq_n = ~( (flag_A&enable_irq_A) | (flag_B&enable_irq_B) );
+always @(posedge clk) irq_n <= !(flag_A || flag_B);
 
 jt51_timer #(.BW(6), .CW(10)) timer_A(
     .rst        ( rst       ),
@@ -50,10 +50,11 @@ jt51_timer #(.BW(6), .CW(10)) timer_A(
     .cen        ( cen       ), 
     .start_value( value_A   ),  
     .load       ( load_A    ),
+    .load_ack   ( load_ack_A),
     .clr_flag   ( clr_flag_A),
-    .set_run    ( set_run_A ),
-    .clr_run    ( clr_run_A ),
+    .clr_ack    ( clr_ack_A ),
     .flag       ( flag_A    ),
+    .flag_enable( enable_irq_A ),
     .overflow   ( overflow_A)
 );
 
@@ -63,10 +64,11 @@ jt51_timer #(.BW(10), .CW(8)) timer_B(
     .cen        ( cen       ), 
     .start_value( value_B   ),  
     .load       ( load_B    ),
+    .load_ack   ( load_ack_B),
     .clr_flag   ( clr_flag_B),
-    .set_run    ( set_run_B ),
-    .clr_run    ( clr_run_B ),
+    .clr_ack    ( clr_ack_B ),
     .flag       ( flag_B    ),
+    .flag_enable( enable_irq_B ),
     .overflow   (           )
 );
 
@@ -74,15 +76,16 @@ endmodule
 
 module jt51_timer #(parameter CW=10, BW=5 )
 (
-    input   rst,
-    input   clk, 
-    (*direct_enable *) input cen, 
-    input   [CW-1:0] start_value,
-    input   load,
-    input   clr_flag,
-    input   set_run,
-    input   clr_run,
-    output reg flag,
+    input          rst,
+    input          clk, 
+    input          cen, 
+    input [CW-1:0] start_value,
+    (*keep*) input          load,
+    (*keep*) input          clr_flag,
+    (*keep*) output reg     clr_ack,
+    (*keep*) output reg     load_ack,
+    (*keep*) output reg     flag,
+    (*keep*) input          flag_enable,
     (*keep*) output reg overflow
 );
 
@@ -97,18 +100,39 @@ always @(posedge clk) begin : edges
     last_clr  <= clr_flag;
 end
 
-always @(posedge clk) begin : flag_latch
-    if( clr_flag )
-        flag <= 1'b0;
-    else if( overflow && cen) flag<=1'b1;
+always @(posedge clk, posedge rst) begin : flag_latch
+    if( rst ) begin
+        clr_ack <= 1'b0;
+        flag    <= 1'b0;
+    end else begin
+        if( clr_flag ) begin
+            flag    <= 1'b0;
+            clr_ack <= 1'b1;
+        end else begin
+            clr_ack <= 1'b0;
+            if( flag_enable && overflow ) flag<=1'b1;
+        end
+    end
 end
 
-always @(posedge clk) begin
-    if( load )
-        cnt <= cnt0;
-    else if(cen) begin
-        overflow <= &cnt;
-        cnt <= cnt + 1'b1;
+(*keep*) reg cntup;
+
+always @(posedge clk) cntup <= cen;
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        cnt <= {BW+CW{1'b0}};
+        overflow <= 1'b0;
+        load_ack <= 1'b0;
+    end else begin
+        if( load ) begin
+            cnt      <= cnt0;
+            overflow <= 1'b0;
+            load_ack <= 1'b1;
+        end else begin
+            load_ack <= 1'b0;
+            {overflow, cnt } <= { 1'b0, cnt } + cntup;
+        end
     end
 end
 

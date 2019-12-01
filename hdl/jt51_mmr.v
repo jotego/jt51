@@ -24,7 +24,7 @@ module jt51_mmr(
     input           rst,
     input           clk,
     input           cen,        // P1
-    input   [7:0]   din,
+    (*keep*) input   [7:0]   din,
     input           write,
     input           a0,
     output  reg     busy,
@@ -48,14 +48,14 @@ module jt51_mmr(
     output  reg [7:0]   value_B,
     output  reg         load_A,
     output  reg         load_B,
+    input               load_ack_A,
+    input               load_ack_B,
     output  reg         enable_irq_A,
     output  reg         enable_irq_B,
     output  reg         clr_flag_A,
     output  reg         clr_flag_B,
-    output  reg         clr_run_A,
-    output  reg         clr_run_B,
-    output  reg         set_run_A,
-    output  reg         set_run_B,
+    input               clr_ack_A,
+    input               clr_ack_B,
     input               overflow_A,
 
     `ifdef TEST_SUPPORT
@@ -164,7 +164,6 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         { value_A, value_B } <= 18'd0;
         { clr_flag_B, clr_flag_A,
         enable_irq_B, enable_irq_A, load_B, load_A } <= 6'd0;
-        { clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'b1100;
         // LFO
         { lfo_amd, lfo_pmd }    <= 14'h0;
         lfo_freq        <= 8'd0;
@@ -178,6 +177,10 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         `endif
     end else begin
         // WRITE IN REGISTERS
+        if( clr_ack_A  ) clr_flag_A <= 1'b0;
+        if( clr_ack_B  ) clr_flag_B <= 1'b0;
+        if( load_ack_A ) load_A <= 1'b0;
+        if( load_ack_B ) load_B <= 1'b0;
         if( write ) begin
             if( !a0 )
                 selected_register <= din;
@@ -211,13 +214,11 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                     REG_CLKB:   value_B      <= din;
                     REG_TIMER: begin
                         csm <= din[7];
-                        { clr_flag_B, clr_flag_A,
-                          enable_irq_B, enable_irq_A,
-                          load_B, load_A } <= din[5:0];
-                          clr_run_A <= ~din[0];
-                          set_run_A <=  din[0];
-                          clr_run_B <= ~din[1];
-                          set_run_B <=  din[1];
+                        { enable_irq_B, enable_irq_A } <= din[3:2];
+                          if( din[5] ) clr_flag_B <= 1'b1;
+                          if( din[4] ) clr_flag_A <= 1'b1;
+                          if( din[1] ) load_B <= 1'b1;
+                          if( din[0] ) load_A <= 1'b1;
                         end
                     REG_LFRQ:   lfo_freq <= din;
                     REG_PMDAMD: begin
@@ -267,8 +268,6 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
             `endif
             csm     <= 1'b0;
             lfo_rst <= 1'b0;
-            { clr_flag_B, clr_flag_A, load_B, load_A } <= 4'd0;
-            { clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'd0;
         end
     end
 end

@@ -53,11 +53,11 @@ assign dacright = { ~xright[15], xright[14:0] };
 wire [9:0]  value_A;
 wire [7:0]  value_B;
 wire        load_A, load_B;
+wire        load_ack_A, load_ack_B;
 wire        enable_irq_A, enable_irq_B;
 wire        clr_flag_A, clr_flag_B;
+wire        clr_ack_A,  clr_ack_B;
 wire        flag_A, flag_B, overflow_A;
-wire        set_run_A, set_run_B;
-wire        clr_run_A, clr_run_B;
 
 jt51_timers timers( 
     .clk        ( clk           ),
@@ -67,14 +67,14 @@ jt51_timers timers(
     .value_B    ( value_B       ),
     .load_A     ( load_A        ),
     .load_B     ( load_B        ),
+    .load_ack_A ( load_ack_A    ),
+    .load_ack_B ( load_ack_B    ),
     .enable_irq_A( enable_irq_A ),
     .enable_irq_B( enable_irq_B ),
     .clr_flag_A ( clr_flag_A    ),
     .clr_flag_B ( clr_flag_B    ),
-    .set_run_A  ( set_run_A     ),
-    .set_run_B  ( set_run_B     ),
-    .clr_run_A  ( clr_run_A     ),
-    .clr_run_B  ( clr_run_B     ),  
+    .clr_ack_A  ( clr_ack_A     ),
+    .clr_ack_B  ( clr_ack_B     ),
     .flag_A     ( flag_A        ),
     .flag_B     ( flag_B        ),
     .overflow_A ( overflow_A    ),
@@ -289,14 +289,14 @@ jt51_mmr u_mmr(
     .value_B    ( value_B       ),
     .load_A     ( load_A        ),
     .load_B     ( load_B        ),
+    .load_ack_A ( load_ack_A    ),
+    .load_ack_B ( load_ack_B    ),
     .enable_irq_A( enable_irq_A ),
     .enable_irq_B( enable_irq_B ),
     .clr_flag_A ( clr_flag_A    ),
     .clr_flag_B ( clr_flag_B    ),  
-    .clr_run_A  ( clr_run_A     ),
-    .clr_run_B  ( clr_run_B     ),  
-    .set_run_A  ( set_run_A     ),
-    .set_run_B  ( set_run_B     ),  
+    .clr_ack_A  ( clr_ack_A     ),
+    .clr_ack_B  ( clr_ack_B     ),
     .overflow_A ( overflow_A    ),
     `ifdef TEST_SUPPORT 
     // Test
