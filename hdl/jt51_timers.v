@@ -93,7 +93,7 @@ reg [counter_width-1:0] cnt;
 always@(posedge clk, posedge rst)
     if( rst )
         flag <= 1'b0;
-    else if(cen) begin
+    else /*if(cen)*/ begin
         if( clr_flag )
             flag <= 1'b0;
         else if(overflow) flag<=1'b1;
@@ -102,7 +102,7 @@ always@(posedge clk, posedge rst)
 always@(posedge clk, posedge rst)
     if( rst )
         run <= 1'b0;
-    else if(cen) begin
+    else /*if(cen)*/ begin
         if( clr_run )
             run <= 1'b0;
         else if(set_run || load) run<=1'b1;
