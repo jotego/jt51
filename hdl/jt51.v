@@ -56,8 +56,6 @@ wire        load_A, load_B;
 wire        enable_irq_A, enable_irq_B;
 wire        clr_flag_A, clr_flag_B;
 wire        flag_A, flag_B, overflow_A;
-wire        set_run_A, set_run_B;
-wire        clr_run_A, clr_run_B;
 
 jt51_timers timers( 
     .clk        ( clk           ),
@@ -71,10 +69,6 @@ jt51_timers timers(
     .enable_irq_B( enable_irq_B ),
     .clr_flag_A ( clr_flag_A    ),
     .clr_flag_B ( clr_flag_B    ),
-    .set_run_A  ( set_run_A     ),
-    .set_run_B  ( set_run_B     ),
-    .clr_run_A  ( clr_run_A     ),
-    .clr_run_B  ( clr_run_B     ),  
     .flag_A     ( flag_A        ),
     .flag_B     ( flag_B        ),
     .overflow_A ( overflow_A    ),
@@ -294,10 +288,6 @@ jt51_mmr u_mmr(
     .enable_irq_B( enable_irq_B ),
     .clr_flag_A ( clr_flag_A    ),
     .clr_flag_B ( clr_flag_B    ),  
-    .clr_run_A  ( clr_run_A     ),
-    .clr_run_B  ( clr_run_B     ),  
-    .set_run_A  ( set_run_A     ),
-    .set_run_B  ( set_run_B     ),  
     .overflow_A ( overflow_A    ),
     `ifdef TEST_SUPPORT 
     // Test

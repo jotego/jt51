@@ -52,10 +52,6 @@ module jt51_mmr(
     output  reg         enable_irq_B,
     output  reg         clr_flag_A,
     output  reg         clr_flag_B,
-    output  reg         clr_run_A,
-    output  reg         clr_run_B,
-    output  reg         set_run_A,
-    output  reg         set_run_B,
     input               overflow_A,
 
     `ifdef TEST_SUPPORT
@@ -145,7 +141,6 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         { value_A, value_B } <= 18'd0;
         { clr_flag_B, clr_flag_A,
         enable_irq_B, enable_irq_A, load_B, load_A } <= 6'd0;
-        { clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'b1100;
         // LFO
         { lfo_amd, lfo_pmd }    <= 14'h0;
         lfo_freq        <= 8'd0;
@@ -195,10 +190,6 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                         { clr_flag_B, clr_flag_A,
                           enable_irq_B, enable_irq_A,
                           load_B, load_A } <= din[5:0];
-                          clr_run_A <= ~din[0];
-                          set_run_A <=  din[0];
-                          clr_run_B <= ~din[1];
-                          set_run_B <=  din[1];
                         end
                     REG_LFRQ:   lfo_freq <= din;
                     REG_PMDAMD: begin
@@ -248,8 +239,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
             `endif
             csm     <= 1'b0;
             lfo_rst <= 1'b0;
-            { clr_flag_B, clr_flag_A, load_B, load_A } <= 4'd0;
-            { clr_run_A, clr_run_B, set_run_A, set_run_B } <= 4'd0;
+            { clr_flag_B, clr_flag_A } <= 4'd0;
         end
     end
 end

@@ -30,10 +30,6 @@ module jt51_timers(
     input         load_B,
     input         clr_flag_A,
     input         clr_flag_B,
-    input         set_run_A,
-    input         set_run_B,  
-    input         clr_run_A,
-    input         clr_run_B,  
     input         enable_irq_A,
     input         enable_irq_B,
     output        flag_A,
@@ -51,8 +47,6 @@ jt51_timer #(.mult_width(6), .counter_width(10)) timer_A(
     .start_value( value_A   ),  
     .load       ( load_A    ),
     .clr_flag   ( clr_flag_A),
-    .set_run    ( set_run_A ),
-    .clr_run    ( clr_run_A ),
     .flag       ( flag_A    ),
     .overflow   ( overflow_A)
 );
@@ -64,8 +58,6 @@ jt51_timer #(.mult_width(10), .counter_width(8)) timer_B(
     .start_value( value_B   ),  
     .load       ( load_B    ),
     .clr_flag   ( clr_flag_B),
-    .set_run    ( set_run_B ),
-    .clr_run    ( clr_run_B ),
     .flag       ( flag_B    ),
     .overflow   (           )
 );
@@ -80,13 +72,11 @@ module jt51_timer #(parameter counter_width = 10, mult_width=5 )
     input   [counter_width-1:0] start_value,
     input   load,
     input   clr_flag,
-    input   set_run,
-    input   clr_run,
     output reg flag,
     output reg overflow
 );
 
-reg run;
+reg last_load;
 reg [   mult_width-1:0] mult;
 reg [counter_width-1:0] cnt;
 
@@ -99,28 +89,19 @@ always@(posedge clk, posedge rst)
         else if(overflow) flag<=1'b1;
     end
 
-always@(posedge clk, posedge rst)
-    if( rst )
-        run <= 1'b0;
-    else /*if(cen)*/ begin
-        if( clr_run )
-            run <= 1'b0;
-        else if(set_run || load) run<=1'b1;
-    end
-
-reg [mult_width+counter_width-1:0] next, init;
+reg [mult_width+counter_width-1:0] next;
 
 always @(*) begin
     {overflow, next } = { 1'b0, cnt, mult } + 1'b1;
-    init = { start_value, { (mult_width){1'b0} } };
 end
 
 always @(posedge clk) if(cen) begin : counter
-    if( load ) begin
+    last_load <= load;
+    if( (load && !last_load) || overflow ) begin
       mult <= { (mult_width){1'b0} };
       cnt  <= start_value;
     end     
-    else if( run )
-      { cnt, mult } <= overflow ? init : next;
+    else if( last_load )
+      { cnt, mult } <= next;
 end
 endmodule
