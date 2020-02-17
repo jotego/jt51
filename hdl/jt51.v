@@ -75,6 +75,7 @@ jt51_timers timers(
     .irq_n      ( irq_n         )
 );
 
+`ifndef JT51_ONLYTIMERS
 `define YM_TIMER_CTRL 8'h14
 
 wire    [1:0]   rl_I;
@@ -248,6 +249,12 @@ jt51_acc u_acc(
     .xleft      ( xleft         ),
     .xright     ( xright        )
 );
+`else
+assign left   = 16'd0;
+assign right  = 16'd0;
+assign xleft  = 16'd0;
+assign xright = 16'd0;
+`endif
 
 wire    busy;
 wire    write = !cs_n && !wr_n;
@@ -291,29 +298,29 @@ jt51_mmr u_mmr(
     .overflow_A ( overflow_A    ),
     `ifdef TEST_SUPPORT 
     // Test
-    .test_eg    ( test_eg   ),
-    .test_op0   ( test_op0  ),
+    .test_eg    ( test_eg       ),
+    .test_op0   ( test_op0      ),
     `endif
     // REG
-    .rl_I       ( rl_I      ),
-    .fb_II      ( fb_II     ),
-    .con_I      ( con_I     ),
-    .kc_I       ( kc_I      ),
-    .kf_I       ( kf_I      ),
-    .pms_I      ( pms_I     ),
-    .ams_VII    ( ams_VII   ),
-    .dt1_II     ( dt1_II    ),
-    .mul_VI ( mul_VI    ),
-    .tl_VII     ( tl_VII    ),
-    .ks_III     ( ks_III    ),
-    .arate_II   ( arate_II  ),
-    .amsen_VII  ( amsen_VII ),
-    .rate1_II   ( rate1_II  ),
-    .dt2_I      ( dt2_I     ),
-    .rate2_II   ( rate2_II  ),
-    .d1l_I      ( d1l_I     ),
-    .rrate_II   ( rrate_II  ),
-    .keyon_II   ( keyon_II  ),
+    .rl_I       ( rl_I          ),
+    .fb_II      ( fb_II         ),
+    .con_I      ( con_I         ),
+    .kc_I       ( kc_I          ),
+    .kf_I       ( kf_I          ),
+    .pms_I      ( pms_I         ),
+    .ams_VII    ( ams_VII       ),
+    .dt1_II     ( dt1_II        ),
+    .mul_VI     ( mul_VI        ),
+    .tl_VII     ( tl_VII        ),
+    .ks_III     ( ks_III        ),
+    .arate_II   ( arate_II      ),
+    .amsen_VII  ( amsen_VII     ),
+    .rate1_II   ( rate1_II      ),
+    .dt2_I      ( dt2_I         ),
+    .rate2_II   ( rate2_II      ),
+    .d1l_I      ( d1l_I         ),
+    .rrate_II   ( rrate_II      ),
+    .keyon_II   ( keyon_II      ),
 
     .cur_op     ( cur_op        ),
     .op31_no    ( op31_no       ),

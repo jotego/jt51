@@ -25,8 +25,21 @@ Simulation modules are added if macro:
     - SIMULATION   is defined
     - JT51_NODEBUG is not defined
 
+Use macro JT51_ONLYTIMERS in order to avoid simulating the FM signal chain but keep the timer modules working. This is useful if a CPU depends on the timer interrupts but you do not want to simulate the full FM sound (to speed up sims).
+
 ## Related projects
 
+All by the same author:
+
 * [JT12](https://github.com/jotego/jt12): clone of YM2612
+* [JT49](https://github.com/jotego/jt12): clone of YM2149
 * [JT89](https://github.com/jotego/jt89): clone of SN76489AN
+* [JT6295](https://github.com/jotego/jt6295): clone of OKI6295
+
+This sound core has been used at least in the following arcade cores for FPGA
+
+* [JTCPS1](https://github.com/jotego/jtcps1): CAPCOM SYSTEM arcade clone
+* [JTDD](https://github.com/jotego/jtdd): Double Dragon 1 & 2 arcade clone
+* [JTGNG](https://github.com/jotego/jt_gng): arcade clones of pre-CPS CAPCOM games. Some use YM2151 through JT51
+
 More to come soon!
