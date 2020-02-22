@@ -24,6 +24,7 @@ module jt51_timers(
     input         rst,
     input         clk,
     input         cen,
+    input         zero,
     input [9:0]   value_A,
     input [7:0]   value_B,
     input         load_A,
@@ -40,10 +41,11 @@ module jt51_timers(
 
 assign irq_n = ~( (flag_A&enable_irq_A) | (flag_B&enable_irq_B) );
 
-jt51_timer #(.mult_width(6), .counter_width(10)) timer_A(
+jt51_timer #(.counter_width(10)) timer_A(
     .rst        ( rst       ),
     .clk        ( clk       ), 
     .cen        ( cen       ), 
+    .zero       ( zero      ),
     .start_value( value_A   ),  
     .load       ( load_A    ),
     .clr_flag   ( clr_flag_A),
@@ -51,24 +53,26 @@ jt51_timer #(.mult_width(6), .counter_width(10)) timer_A(
     .overflow   ( overflow_A)
 );
 
-jt51_timer #(.mult_width(10), .counter_width(8)) timer_B(
+jt51_timer #(.counter_width(8)) timer_B(
     .rst        ( rst       ),
     .clk        ( clk       ), 
     .cen        ( cen       ), 
+    .zero       ( zero      ),
     .start_value( value_B   ),  
     .load       ( load_B    ),
-    .clr_flag   ( clr_flag_B),
+    .clr_flag   ( {clr_flag_B, 4'b0}),
     .flag       ( flag_B    ),
     .overflow   (           )
 );
 
 endmodule
 
-module jt51_timer #(parameter counter_width = 10, mult_width=5 )
+module jt51_timer #(parameter counter_width = 10 )
 (
     input   rst,
     input   clk, 
     input   cen, 
+    input   zero, 
     input   [counter_width-1:0] start_value,
     input   load,
     input   clr_flag,
@@ -77,8 +81,7 @@ module jt51_timer #(parameter counter_width = 10, mult_width=5 )
 );
 
 reg last_load;
-reg [   mult_width-1:0] mult;
-reg [counter_width-1:0] cnt;
+reg [counter_width-1:0] cnt, next;
 
 always@(posedge clk, posedge rst)
     if( rst )
@@ -89,19 +92,15 @@ always@(posedge clk, posedge rst)
         else if(overflow) flag<=1'b1;
     end
 
-reg [mult_width+counter_width-1:0] next;
-
 always @(*) begin
-    {overflow, next } = { 1'b0, cnt, mult } + 1'b1;
+    {overflow, next } = { 1'b0, cnt } + 1'b1;
 end
 
-always @(posedge clk) if(cen) begin : counter
+always @(posedge clk) if(cen && zero) begin : counter
     last_load <= load;
     if( (load && !last_load) || overflow ) begin
-      mult <= { (mult_width){1'b0} };
       cnt  <= start_value;
     end     
-    else if( last_load )
-      { cnt, mult } <= next;
+    else if( last_load ) cnt <= next;
 end
 endmodule

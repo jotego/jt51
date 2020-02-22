@@ -59,8 +59,9 @@ wire        flag_A, flag_B, overflow_A;
 
 jt51_timers timers( 
     .clk        ( clk           ),
-    .cen        ( cen           ),
+    .cen        ( cen_p1        ),
     .rst        ( rst           ),
+    .zero       ( zero          ),
     .value_A    ( value_A       ),
     .value_B    ( value_B       ),
     .load_A     ( load_A        ),
