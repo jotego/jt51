@@ -338,5 +338,17 @@ jt51_mmr u_mmr(
     .use_prev1      ( use_prev1         )
 );
 
+
+`ifdef SIMULATION
+integer fsnd;
+initial begin
+    fsnd=$fopen("jt51.raw","wb");
+end
+
+always @(posedge zero) begin
+    $fwrite(fsnd,"%u", {xleft, xright});
+end
+`endif
+
 endmodule
 

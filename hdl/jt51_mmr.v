@@ -124,7 +124,7 @@ parameter   REG_TEST    =   8'h01,
             REG_CTW     =   8'h1b,
             REG_DUMP    =   8'h1f;
 
-reg csm;
+reg csm, last_write;
 
 always @(posedge clk, posedge rst) begin : memory_mapped_registers
     if( rst ) begin
@@ -152,9 +152,11 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         `ifdef SIMULATION
         mmr_dump <= 1'b0;
         `endif
+        last_write <= 1'b0;
     end else begin
+        last_write <= write;
         // WRITE IN REGISTERS
-        if( write ) begin
+        if( write && !last_write ) begin
             if( !a0 )
                 selected_register <= din;
             else begin
@@ -326,6 +328,27 @@ jt51_reg u_reg(
     .use_prev2      ( use_prev2         ),
     .use_prev1      ( use_prev1         )
 );
+
+`ifdef SIMULATION
+integer fdump;
+integer clk_count;
+initial begin
+    clk_count=0;
+    fdump=$fopen("jt51_cmd.txt","w");
+end
+
+always @(posedge clk) clk_count <= clk_count+1;
+
+always @(posedge write) begin
+    $fdisplay(fdump,"%d,%d,%X",clk_count,a0,din);
+end
+
+always @(posedge write) begin
+    if( busy && a0 ) begin
+        $display("WARNING: JT51 register value written while busy is high at time %t",$time());
+    end
+end
+`endif
 
 `ifndef JT51_NODEBUG
 `ifdef SIMULATION
