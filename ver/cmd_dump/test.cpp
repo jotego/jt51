@@ -133,7 +133,7 @@ int main(int argc, char** argv, char** env) {
             trace=true;
             continue; 
         }
-        if( string(argv[k])=="-time" ) {
+        if( string(argv[k])=="-time" || string(argv[k])=="-t" ) {
             int aux;
             sscanf(argv[++k],"%d",&aux);
             vluint64_t time_limit = aux;

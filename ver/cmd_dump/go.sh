@@ -1,7 +1,6 @@
 #!/bin/bash
 
 TRACE=
-TIME=
 
 if [ -e set_trace.h ]; then
     mv set_trace.h old_trace.h
@@ -9,19 +8,13 @@ fi
 
 echo "// no trace" > set_trace.h
 
-while [ $# -gt 0 ]; do
-    case "$1" in
-        --trace|-trace)
+for i in $*; do
+    case "$i" in
+        -trace)
             TRACE=--trace
             echo "#define TRACE" > set_trace.h
             ;;
-        -t|-time)
-            shift
-            TIME="-time $1";;
-        *)  echo "Unknown argument " $1
-            exit 1;;
     esac
-    shift
 done
 
 # delete the old files if the trace condition has changed
@@ -39,8 +32,8 @@ else
         exit $?
     fi
     if [ -n "$TRACE" ]; then
-        obj_dir/Vtest -trace $TIME |  grep -v "^INFO: " | vcd2fst -v - -f test.fst
+        obj_dir/Vtest $* |  grep -v "^INFO: " | vcd2fst -v - -f test.fst
     else
-        obj_dir/Vtest $TIME
+        obj_dir/Vtest $*
     fi
 fi

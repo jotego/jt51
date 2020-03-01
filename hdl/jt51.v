@@ -77,6 +77,8 @@ jt51_timers u_timers(
     .irq_n      ( irq_n         )
 );
 
+/*verilator tracing_off*/
+
 `ifndef JT51_ONLYTIMERS
 `define YM_TIMER_CTRL 8'h14
 
