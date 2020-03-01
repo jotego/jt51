@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <list>
+#include "set_trace.h"
 #include "Vtest.h"
 #include "verilated_vcd_c.h"
 #include "WaveWritter.hpp"
@@ -148,12 +149,14 @@ int main(int argc, char** argv, char** env) {
     SAMPLERATE = 55780;
     cerr << "Sample rate " << dec << SAMPLERATE << " Hz\n";
 
+    #ifdef TRACE
     VerilatedVcdC* tfp = new VerilatedVcdC;
     if( trace ) {
         Verilated::traceEverOn(true);
         top->trace(tfp,99);
         tfp->open("/dev/stdout");
     }
+    #endif
     // Reset
     top->rst    = 1;
     top->clk    = 0;
@@ -187,8 +190,10 @@ int main(int argc, char** argv, char** env) {
             }
             else top->wr_n = 1;
         }
+        #ifdef TRACE
         if( trace && sim_time.get_time()>trace_start_time )
                 tfp->dump(sim_time.get_time());
+        #endif
     }
 finish:
     if( skip_zeros ) {
@@ -200,7 +205,9 @@ finish:
     } else {
         cerr << "$finish at " << dec << sim_time.get_time_ms() << "ms = " << sim_time.get_time() << " ns\n";
     }
+    #ifdef TRACE
     if(trace) tfp->close();
+    #endif
     delete top;
 }
 
