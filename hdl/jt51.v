@@ -56,8 +56,9 @@ wire        load_A, load_B;
 wire        enable_irq_A, enable_irq_B;
 wire        clr_flag_A, clr_flag_B;
 wire        flag_A, flag_B, overflow_A;
+wire        zero;
 
-jt51_timers timers( 
+jt51_timers u_timers( 
     .clk        ( clk           ),
     .cen        ( cen_p1        ),
     .rst        ( rst           ),
@@ -99,7 +100,6 @@ wire    [3:0]   d1l_I;
 wire    [3:0]   rrate_II;
 
 wire    [1:0]   cur_op;
-wire            zero;
 assign  sample =zero;
 wire            keyon_II;
 
@@ -338,6 +338,19 @@ jt51_mmr u_mmr(
     .use_prev2      ( use_prev2         ),
     .use_prev1      ( use_prev1         )
 );
+
+`ifdef SIMULATION
+`ifndef VERILATOR
+integer fsnd;
+initial begin
+    fsnd=$fopen("jt51.raw","wb");
+end
+
+always @(posedge zero) begin
+    $fwrite(fsnd,"%u", {xleft, xright});
+end
+`endif
+`endif
 
 endmodule
 

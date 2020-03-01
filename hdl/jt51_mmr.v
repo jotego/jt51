@@ -239,7 +239,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
             `endif
             csm     <= 1'b0;
             lfo_rst <= 1'b0;
-            { clr_flag_B, clr_flag_A } <= 4'd0;
+            { clr_flag_B, clr_flag_A } <= 2'd0;
         end
     end
 end
@@ -326,6 +326,24 @@ jt51_reg u_reg(
     .use_prev2      ( use_prev2         ),
     .use_prev1      ( use_prev1         )
 );
+
+`ifdef SIMULATION
+`ifndef VERILATOR
+integer fdump;
+integer clk_count;
+initial begin
+    clk_count=0;
+    fdump=$fopen("jt51_cmd.txt","w");
+end
+
+always @(posedge clk) clk_count <= clk_count+1;
+
+always @(posedge write) begin
+    $fdisplay(fdump,"%d,%d,%X",clk_count,a0,din);
+end
+`endif
+`endif
+
 
 `ifndef JT51_NODEBUG
 `ifdef SIMULATION
