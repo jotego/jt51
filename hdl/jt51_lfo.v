@@ -134,7 +134,7 @@ always @(posedge clk, posedge rst)
         pm_up       <= 1'b1;
         am_bresenham <= 11'd0;
         pm_bresenham <= 10'd0;
-    end else if ( cen ) begin
+    end else begin
         if( lfo_rst ) begin // synchronous reset
             last_base   <= 1'd0;
             lfo_clk     <= 1'b0;
@@ -145,7 +145,7 @@ always @(posedge clk, posedge rst)
             pm_up       <= 1'b1;
             am_bresenham <= 11'd0;
             pm_bresenham <= 10'd0;
-        end else begin
+        end else if ( cen ) begin
         last_base <= sel_base;
         if( last_base != sel_base ) begin
             case( lfo_w )
