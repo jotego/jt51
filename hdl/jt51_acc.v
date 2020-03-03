@@ -63,8 +63,9 @@ end
 
 wire ren = rl_I[1];
 wire len = rl_I[0];
-reg signed [15:0] pre_left, pre_right;
+reg signed [16:0] pre_left, pre_right;
 wire signed [15:0] total;
+wire signed [16:0] total_ex = {total[15],total};
 
 reg sum_all;
 
@@ -72,6 +73,13 @@ wire rst_sum = c2_enters;
 //wire rst_sum = c1_enters;
 //wire rst_sum = m1_enters;
 //wire rst_sum = m2_enters;
+
+function signed [15:0] lim16;
+    input signed [16:0] din;
+    lim16 = !din[16] &&  din[15] ? 16'h7fff : 
+           ( din[16] && !din[15] ? 16'h8000 : din[15:0] );
+endfunction
+
 
 always @(posedge clk) begin
     if( rst ) begin
@@ -81,18 +89,18 @@ always @(posedge clk) begin
         if( rst_sum )  begin
             sum_all <= 1'b1;
             if( !sum_all ) begin
-                pre_right <= ren ? total : 16'd0;
-                pre_left  <= len ? total : 16'd0;
+                pre_right <= ren ? total_ex : 17'd0;
+                pre_left  <= len ? total_ex : 17'd0;
             end
             else begin
-                pre_right <= pre_right + (ren ? total : 16'd0);
-                pre_left  <= pre_left  + (len ? total : 16'd0);
+                pre_right <= pre_right + (ren ? total_ex : 17'd0);
+                pre_left  <= pre_left  + (len ? total_ex : 17'd0);
             end
         end
         if( c1_enters ) begin
             sum_all <= 1'b0;
-            xleft  <= pre_left;
-            xright <= pre_right;
+            xleft  <= lim16(pre_left);
+            xright <= lim16(pre_right);
         end
     end
 end
