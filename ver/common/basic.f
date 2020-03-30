@@ -19,3 +19,5 @@
 ../../hdl/jt51_noise_lfsr.v
 ../../hdl/jt51_kon.v
 ../../hdl/jt51_mod.v
+../../hdl/jt51_csr_op.v
+../../hdl/jt51_csr_ch.v
