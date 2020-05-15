@@ -10,7 +10,7 @@ echo "// no trace" > set_trace.h
 
 for i in $*; do
     case "$i" in
-        -trace)
+        -trace|-trace_start)
             TRACE=--trace
             echo "#define TRACE" > set_trace.h
             ;;
