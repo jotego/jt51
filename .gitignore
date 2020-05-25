@@ -1,0 +1,5 @@
+obj_dir
+xilinx
+*.lxt
+*.fst
+*.o

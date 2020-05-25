@@ -1,0 +1,15 @@
+# Key on should work even if line 9 is uncommented
+# Even if line 12 is commented
+$020,C7
+$028,4A
+$040,01
+$060,00
+$080,1F
+$0A0,00
+$0E0,FF
+#wait 5
+$008,08
+wait 25
+$028,4A   # This is a duplicate (i.e. redundant) write
+wait 1000
+

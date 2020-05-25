@@ -63,10 +63,10 @@ function set_slow {
         "-runonly")
             echo Skipping Verilator and make steps
             SKIPMAKE=TRUE;;
-        -help | --help)
+        -h | -help | --help)
             cat << EOF
-    -w          dump all signals
-    -w1         dump top level signals
+    -w          dump all signals to file test.fst
+    -w1         dump top level signals to file test.fst
     -w0  t      dump all signals from time t
     -hex        hexadecimal sound dump
     -f          specify vgm file for parsing

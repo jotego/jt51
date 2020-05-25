@@ -176,7 +176,7 @@ jt51_kon u_kon (
     .keyon_ch  (keyon_ch  ),
     .cur_op    (cur_op    ),
     .cur_ch    (cur_ch    ),
-    .up_keyon  (up_keyon && busy ),
+    .up_keyon  (up_keyon  ),
     .csm       (csm       ),
     .overflow_A(overflow_A),
     .keyon_II  (keyon_II  )
