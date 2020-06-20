@@ -27,14 +27,19 @@ Simulation modules are added if macro:
 
 Use macro JT51_ONLYTIMERS in order to avoid simulating the FM signal chain but keep the timer modules working. This is useful if a CPU depends on the timer interrupts but you do not want to simulate the full FM sound (to speed up sims).
 
-## Related projects
+## Related Projects
 
-All by the same author:
+Other sound chips from the same author
 
-* [JT12](https://github.com/jotego/jt12): clone of YM2612
-* [JT49](https://github.com/jotego/jt12): clone of YM2149
-* [JT89](https://github.com/jotego/jt89): clone of SN76489AN
-* [JT6295](https://github.com/jotego/jt6295): clone of OKI6295
+Chip                   | Repository
+-----------------------|------------
+YM2203, YM2612, YM2610 | [JT12](https://github.com/jotego/jt12)
+YM2151                 | [JT51](https://github.com/jotego/jt51)
+YM3526                 | [JTOPL](https://github.com/jotego/jtopl)
+YM2149                 | [JT49](https://github.com/jotego/jt49)
+sn76489an              | [JT89](https://github.com/jotego/jt89)
+OKI 6295               | [JT6295](https://github.com/jotego/jt6295)
+OKI MSM5205            | [JT5205](https://github.com/jotego/jt5205)
 
 This sound core has been used at least in the following arcade cores for FPGA
 
