@@ -333,7 +333,7 @@ int main(int argc, char** argv, char** env) {
                     skip_zeros=false;
                     waves.write( top );
                 }
-                next_sample = sim_time.get_time() + SAMPLING_PERIOD;
+                next_sample += SAMPLING_PERIOD;
             }
             last_sample = top->sample;
             writter.Eval();
