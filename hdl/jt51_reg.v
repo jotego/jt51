@@ -43,7 +43,6 @@ module jt51_reg(
     input           csm,
     input           overflow_A,
 
-    output  reg     busy,
     output  [1:0]   rl_I,
     output  [2:0]   fb_II,
     output  [2:0]   con_I,
@@ -155,12 +154,10 @@ always @(posedge clk, posedge rst) begin : up_counter
     if( rst ) begin
         cur     <= 5'h0;
         zero    <= 1'b0;
-        busy    <= 1'b0;
     end
     else if(cen) begin
         cur     <= next;
         zero    <= next== 5'd0;
-        if( &cur ) busy <= up && !busy;
     end
 end
 

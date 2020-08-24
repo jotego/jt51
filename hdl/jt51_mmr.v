@@ -105,8 +105,6 @@ reg       up_rl,  up_kc,  up_kf,  up_pms,
 reg [1:0] up_op;
 reg [2:0] up_ch;
 
-wire    busy_reg;
-
 `ifdef SIMULATION
 reg mmr_dump;
 `endif
@@ -287,7 +285,6 @@ jt51_reg u_reg(
     .csm        ( csm       ),
     .overflow_A ( overflow_A),
 
-    .busy       ( busy_reg  ),
     .rl_I       ( rl_I      ),
     .fb_II      ( fb_II     ),
     .con_I      ( con_I     ),
