@@ -12,12 +12,12 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2016
     */
-    
+
 `timescale 1ns / 1ps
 
 module jt51_timers(
@@ -41,24 +41,24 @@ module jt51_timers(
 
 assign irq_n = ~( (flag_A&enable_irq_A) | (flag_B&enable_irq_B) );
 
-jt51_timer #(.counter_width(10)) timer_A(
+jt51_timer #(.CW(10)) timer_A(
     .rst        ( rst       ),
-    .clk        ( clk       ), 
-    .cen        ( cen       ), 
+    .clk        ( clk       ),
+    .cen        ( cen       ),
     .zero       ( zero      ),
-    .start_value( value_A   ),  
+    .start_value( value_A   ),
     .load       ( load_A    ),
     .clr_flag   ( clr_flag_A),
     .flag       ( flag_A    ),
     .overflow   ( overflow_A)
 );
 
-jt51_timer #(.counter_width(12)) timer_B(
+jt51_timer #(.CW(8),.FREE_EN(1)) timer_B(
     .rst        ( rst           ),
-    .clk        ( clk           ), 
-    .cen        ( cen           ), 
+    .clk        ( clk           ),
+    .cen        ( cen           ),
     .zero       ( zero          ),
-    .start_value( {value_B,4'b0}),  
+    .start_value( value_B       ),
     .load       ( load_B        ),
     .clr_flag   ( clr_flag_B    ),
     .flag       ( flag_B        ),
@@ -67,21 +67,25 @@ jt51_timer #(.counter_width(12)) timer_B(
 
 endmodule
 
-module jt51_timer #(parameter counter_width = 10 )
-(
+module jt51_timer #(parameter
+    CW      = 8, // counter bit width. This is the counter that can be loaded
+    FREE_EN = 0  // enables a 4-bit free enable count
+) (
     input   rst,
-    input   clk, 
-    input   cen, 
-    input   zero, 
-    input   [counter_width-1:0] start_value,
+    input   clk,
+    input   cen,
+    input   zero,
+    input   [CW-1:0] start_value,
     input   load,
     input   clr_flag,
     output reg flag,
     output reg overflow
 );
 
-reg last_load;
-reg [counter_width-1:0] cnt, next;
+reg          last_load;
+reg [CW-1:0] cnt, next;
+reg [   3:0] free_cnt, free_next;
+reg          free_ov;
 
 always@(posedge clk, posedge rst)
     if( rst )
@@ -93,14 +97,25 @@ always@(posedge clk, posedge rst)
     end
 
 always @(*) begin
-    {overflow, next } = { 1'b0, cnt } + 1'b1;
+    {free_ov, free_next} = { 1'b0, free_cnt} + 1'b1;
+    {overflow, next }    = { 1'b0, cnt }     + (FREE_EN ? free_ov : 1'b1);
 end
 
 always @(posedge clk) if(cen && zero) begin : counter
     last_load <= load;
     if( (load && !last_load) || overflow ) begin
       cnt  <= start_value;
-    end     
+    end
     else if( last_load ) cnt <= next;
 end
+
+// Free running counter
+always @(posedge clk) begin
+    if( rst ) begin
+        free_cnt <= 4'd0;
+    end else if( cen&&zero ) begin
+        free_cnt <= free_cnt+4'd1;
+    end
+end
+
 endmodule
