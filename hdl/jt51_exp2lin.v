@@ -18,7 +18,6 @@
 	Date: 27-10-2016
 	*/
 
-`timescale 1ns / 1ps
 
 module jt51_exp2lin(
   output	reg signed 	[15:0] 	lin,
