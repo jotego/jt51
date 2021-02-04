@@ -96,7 +96,9 @@ always@(posedge clk, posedge rst)
 
 always @(*) begin
     {free_ov, free_next} = { 1'b0, free_cnt} + 1'b1;
+    /* verilator lint_off WIDTH */
     {overflow, next }    = { 1'b0, cnt }     + (FREE_EN ? free_ov : 1'b1);
+    /* verilator lint_on WIDTH */
 end
 
 always @(posedge clk) if(cen && zero) begin : counter

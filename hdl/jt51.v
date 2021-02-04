@@ -12,7 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2016
@@ -57,7 +57,7 @@ wire        clr_flag_A, clr_flag_B;
 wire        flag_A, flag_B, overflow_A;
 wire        zero;
 
-jt51_timers u_timers( 
+jt51_timers u_timers(
     .clk        ( clk           ),
     .cen        ( cen_p1        ),
     .rst        ( rst           ),
@@ -76,7 +76,7 @@ jt51_timers u_timers(
     .irq_n      ( irq_n         )
 );
 
-/*verilator tracing_off*/
+/*verilator tracing_on*/
 
 `ifndef JT51_ONLYTIMERS
 `define YM_TIMER_CTRL 8'h14
@@ -162,7 +162,7 @@ wire [9:0]  eg_XI;
 jt51_eg u_eg(
     `ifdef TEST_SUPPORT
     .test_eg    ( test_eg   ),
-    `endif  
+    `endif
     .rst        ( rst       ),
     .clk        ( clk       ),
     .cen        ( cen_p1    ),
@@ -191,7 +191,7 @@ wire signed [13:0] op_out;
 jt51_op u_op(
     `ifdef TEST_SUPPORT
     .test_eg        ( test_eg           ),
-    .test_op0       ( test_op0          ),  
+    .test_op0       ( test_op0          ),
     `endif
     .rst            ( rst               ),
     .clk            ( clk               ),
@@ -209,7 +209,7 @@ jt51_op u_op(
     .use_internal_x ( use_internal_x    ),
     .use_internal_y ( use_internal_y    ),
     .use_prev2      ( use_prev2         ),
-    .use_prev1      ( use_prev1         ),  
+    .use_prev1      ( use_prev1         ),
     .test_214       ( 1'b0              ),
     `ifdef SIMULATION
     .zero           ( zero              ),
@@ -226,7 +226,7 @@ jt51_noise u_noise(
     .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen_p1    ),
-    .nfrq   ( nfrq      ),  
+    .nfrq   ( nfrq      ),
     .eg     ( eg_XI     ),
     .out    ( noise_out ),
     .op31_no( op31_no   )
@@ -283,11 +283,11 @@ jt51_mmr u_mmr(
     .lfo_amd    ( amd           ),
     .lfo_pmd    ( pmd           ),
     .lfo_rst    ( lfo_rst       ),
-    
+
     // Noise
     .ne         ( ne            ),
     .nfrq       ( nfrq          ),
-    
+
     // Timers
     .value_A    ( value_A       ),
     .value_B    ( value_B       ),
@@ -296,9 +296,9 @@ jt51_mmr u_mmr(
     .enable_irq_A( enable_irq_A ),
     .enable_irq_B( enable_irq_B ),
     .clr_flag_A ( clr_flag_A    ),
-    .clr_flag_B ( clr_flag_B    ),  
+    .clr_flag_B ( clr_flag_B    ),
     .overflow_A ( overflow_A    ),
-    `ifdef TEST_SUPPORT 
+    `ifdef TEST_SUPPORT
     // Test
     .test_eg    ( test_eg       ),
     .test_op0   ( test_op0      ),
