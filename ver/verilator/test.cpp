@@ -8,6 +8,7 @@
 #include "VGMParser.hpp"
 #include "feature.hpp"
 #include "WaveWritter.hpp"
+#include "opm.h"
 
   // #include "verilated.h"
 
@@ -20,7 +21,9 @@ class SimTime {
     int toggle_cnt, toggle_step;
     int PERIOD, SEMIPERIOD, CLKSTEP;
     class Vjt51 *top;
+    opm_t* ref;
 public:
+    int32_t ref_output;
     void set_period( int _period ) {
         PERIOD =_period;
         PERIOD += PERIOD%2; // make it even
@@ -30,8 +33,10 @@ public:
         //CLKSTEP = SEMIPERIOD;
     }
     int period() { return PERIOD; }
-    SimTime(Vjt51 *_top) {
+    SimTime(Vjt51 *_top, opm_t *_ref ) {
         top = _top;
+        ref = _ref;
+        ref_output=0;
         main_time=0; fast_forward=0; time_limit=0; toggle_cnt=2;
         verbose_ticks = 48000*24/2;
         set_period(132*6);
@@ -42,14 +47,18 @@ public:
         if( clk==1 ) {
             int cenp1 = top->cen_p1;
             top->cen_p1 = 1-cenp1;
+            if( cenp1 ) OPM_Clock( ref, &ref_output, NULL, NULL, NULL );
         }
+        //uint8_t sh1, sh2, so;
+        //OPM_Clock( ref, &ref_output, &sh1, &sh2, &so );
+        //printf("%c%c%c\n",sh1+'0',sh2+'0',so+'0');
     }
 
     void set_time_limit(vluint64_t t) { time_limit=t; }
     bool limited() { return time_limit!=0; }
     vluint64_t get_time_limit() { return time_limit; }
     vluint64_t get_time() { return main_time; }
-    int get_time_s() { return main_time/1000000000; }
+    int get_time_s() { return main_time/1000'000'000; }
     int get_time_ms() { return main_time/1000'000; }
     bool next_quarter() {
         bool adv=false;
@@ -60,7 +69,7 @@ public:
             adv = true;
         }
         top->eval();
-        return adv;        
+        return adv;
     }
     bool finish() { return main_time > time_limit && limited(); }
 };
@@ -77,6 +86,7 @@ double sc_time_stamp () {      // Called by $time in Verilog
 class CmdWritter {
     int addr, cmd, val;
     Vjt51 *top;
+    opm_t *ref;
     bool done;
     int last_clk;
     int state;
@@ -88,7 +98,7 @@ class CmdWritter {
     list<Block_def>blocks;
     // map<int>YMReg mirror;
 public:
-    CmdWritter( Vjt51* _top );
+    CmdWritter( Vjt51* _top, opm_t* _ref );
     void Write( int _addr, int _cmd, int _val );
     void block( int cmd_mask, int cmd, int (*filter)(int), int blk_addr=3 ) {
         Block_def aux;
@@ -114,6 +124,7 @@ public:
     WaveOutputs( const string& filename, int sample_rate, bool dump_hex );
     ~WaveOutputs();
     void write( class Vjt51 *top );
+    void write( int32_t val );
 };
 
 WaveOutputs::WaveOutputs( const string& filename, int sample_rate, bool dump_hex ) {
@@ -136,29 +147,42 @@ void WaveOutputs::write( class Vjt51 *top ) {
     mixed->write(snd);
 }
 
+void WaveOutputs::write( int32_t val ) {
+    int16_t snd[2];
+    snd[0] = (val>>16)&0xffff;
+    snd[1] = val&0xffff;
+    mixed->write(snd);
+}
+
 int main(int argc, char** argv, char** env) {
     Verilated::commandArgs(argc, argv);
+
     Vjt51* top = new Vjt51;
-    CmdWritter writter(top);
+    opm_t ref; // Reference design
+
+    CmdWritter writter(top, &ref);
     bool trace = false, slow=false;
     RipParser *gym;
     bool forever=true, dump_hex=false, decode_pcm=true;
     char *gym_filename;
-    SimTime sim_time(top);
+    SimTime sim_time(top, &ref);
     int SAMPLERATE=0;
     vluint64_t SAMPLING_PERIOD=0, trace_start_time=0;
     string wav_filename;
 
+
+    OPM_Reset(&ref);
+
     for( int k=1; k<argc; k++ ) {
         if( string(argv[k])=="-trace" ) { trace=true; continue; }
-        if( string(argv[k])=="-trace_start" ) { 
+        if( string(argv[k])=="-trace_start" ) {
             int aux;
             sscanf(argv[++k],"%d",&aux);
             cerr << "Trace will start at time " << aux << "ms\n";
             trace_start_time = aux;
             trace_start_time *= 1000'000;
             trace=true;
-            continue; 
+            continue;
         }
         if( string(argv[k])=="-slow" )  { slow=true;  continue; }
         if( string(argv[k])=="-hex" )  { dump_hex=true;  continue; }
@@ -313,6 +337,7 @@ int main(int argc, char** argv, char** env) {
     vluint64_t wait=0;
     int last_sample=0;
     WaveOutputs waves( wav_filename, SAMPLERATE, dump_hex );
+    WaveOutputs waves_ref( "ref_"+wav_filename, SAMPLERATE, false );
     // forced values
     list<YMcmd> forced_values;
     // main loop
@@ -332,6 +357,7 @@ int main(int argc, char** argv, char** env) {
                 if( !skip_zeros || snd[0]!=0 || snd[1]!=0 ) {
                     skip_zeros=false;
                     waves.write( top );
+                    waves_ref.write( sim_time.ref_output );
                 }
                 next_sample += SAMPLING_PERIOD;
             }
@@ -416,15 +442,35 @@ void CmdWritter::report_usage() {
     cerr << '\n';
 }
 
-CmdWritter::CmdWritter( Vjt51* _top ) {
+CmdWritter::CmdWritter( Vjt51* _top, opm_t *_ref ) {
     top  = _top;
+    ref  = _ref;
     last_clk = 0;
     done = true;
-    features.push_back( FeatureUse("DT",   0xF0, 0x30, 0x70, [](char v)->bool{return v!=0;} ));
-    features.push_back( FeatureUse("MULT", 0xF0, 0x30, 0x0F, [](char v)->bool{return v!=1;} ));
-    features.push_back( FeatureUse("KS",   0xF0, 0x50, 0xC0, [](char v)->bool{return v!=0;} ));
-    features.push_back( FeatureUse("AM",   0xF0, 0x60, 0x80, [](char v)->bool{return v!=0;} ));
-    features.push_back( FeatureUse("SSG",  0xF0, 0x90, 0x08, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("DT",    0xE0, 0x40, 0x70, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("MULT",  0xE0, 0x40, 0x0F, [](char v)->bool{return v!=1;} ));
+    //features.push_back( FeatureUse("TL",    0xE0, 0x60, 0x7F, [](char v)->bool{return v!=0;} ));
+    //features.push_back( FeatureUse("AR",    0xE0, 0x80, 0x1F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("KS",    0xE0, 0x80, 0xE0, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("AMS-EN",0xE0, 0xA0, 0x80, [](char v)->bool{return v!=0;} ));
+    //features.push_back( FeatureUse("D1R",   0xE0, 0xA0, 0x1F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("DT2",   0xE0, 0xC0, 0xE0, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("D1L",   0xE0, 0xE0, 0xF0, [](char v)->bool{return v!=0;} ));
+    //features.push_back( FeatureUse("RR",    0xE0, 0xE0, 0x0F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("FB",    0xF8, 0x20, 0x38, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("CON",   0xF8, 0x20, 0x07, [](char v)->bool{return v!=0;} ));
+    //features.push_back( FeatureUse("RL",    0xF8, 0x20, 0x30, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("KC",    0xF8, 0x28, 0x7F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("KF",    0xF8, 0x30, 0xFC, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("AMS",   0xF8, 0x38, 0x03, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("PMS",   0xF8, 0x38, 0x70, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("TEST",  0xFF, 0x01, 0xFF, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("NE",    0xFF, 0x0F, 0x80, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("NFRQ",  0xFF, 0x0F, 0x1F, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("LFRQ",  0xFF, 0x18, 0xFF, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("PMD",   0xFF, 0x19, 0x80, [](char v)->bool{return v!=0;} ));
+    features.push_back( FeatureUse("AMD",   0xFF, 0x19, 0x80, [](char v)->bool{return v==0;} ));
+    features.push_back( FeatureUse("W",     0xFF, 0x1B, 0x03, [](char v)->bool{return v==0;} ));
     watch_ch = -1;
     //add_op_mirror( 0x30, "DT", 0x70, 2, )
 }
@@ -454,27 +500,48 @@ void CmdWritter::Write( int _addr, int _cmd, int _val ) {
 
 void CmdWritter::Eval() {
     // cerr << "Writter eval " << state << "\n";
+    static int wait=0;
     int clk = top->clk;
+
     if( (clk==0) && (last_clk != clk) ) {
+        /*
+        if( (cmd==8 && (val&7)!=5) // only accept keyon for channel 5
+         || (cmd>=0x40 && (cmd&0x1f)!= 29)) // only accept for ch 5/op 4
+        {
+            done = true;
+            last_clk = clk;
+            return;
+        }
+        if( (cmd&0xf8)==0x20 ) val = 0xc7; // only connection 7
+        //if( (cmd&0xf8)==0x38 ) val = 0x0; // no PMS, no AMS
+        if( cmd==8 ) val &= (8<<3)|7; // only one operator
+*/
         switch( state ) {
             case 0:
                 top->a0  = 0;
                 top->din = cmd;
                 top->wr_n = 0;
+
+                OPM_Write( ref, 0, cmd);
                 state=10;
                 break;
             case 10:
                 top->wr_n = 1;
                 state = 11;
+                wait=0;
                 break;
             case 11:
-                state = 20; // wait for one cycle
+                wait++;
+                if( wait==8 ) {
+                    state = 20;
+                }
                 break;
             case 20:
                 top->a0  = 1;
                 top->din = val;
                 top->wr_n = 0;
                 state = 30;
+                OPM_Write( ref, 1, val);
                 break;
             case 30:
                 top->wr_n = 1;
@@ -482,7 +549,7 @@ void CmdWritter::Eval() {
                 top->a0 = 0; // read busy signal
                 break;
             case 40:
-                if( (((int)top->dout) &0x80 ) == 0 ) {
+                if( (((int)top->dout) &0x80 ) == 0 && !ref->write_busy) {
                     done = true;
                     state=50;
                 }

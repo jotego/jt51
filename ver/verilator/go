@@ -12,7 +12,7 @@ SKIPMAKE=FALSE
 
 function set_slow {
     FAST=
-    EXTRA="$EXTRA -slow"    
+    EXTRA="$EXTRA -slow"
 }
 
 #function eval_args {
@@ -122,7 +122,7 @@ fi
 if [ $SKIPMAKE = FALSE ]; then
     if ! verilator --cc -f gather.f --top-module jt51 \
         -I../../hdl --trace -DTEST_SUPPORT \
-        $VERI_EXTRA $FAST --exe test.cpp VGMParser.cpp WaveWritter.cpp; then
+        $VERI_EXTRA $FAST --exe test.cpp VGMParser.cpp WaveWritter.cpp opm.c; then
         exit $?
     fi
 

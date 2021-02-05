@@ -304,7 +304,7 @@ int VGMParser::parse() {
                 cmd = extra[0];
                 val = extra[1];
                 translate_cmd();
-                return cmd_write;                
+                return cmd_write;
             case 0x57:
             case 0x59: { // YM2610
                 addr = 1;
