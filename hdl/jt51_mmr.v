@@ -83,7 +83,8 @@ module jt51_mmr(
     output          op31_no,
     output          op31_acc,
 
-    output          zero,
+    output          zero,       // high once per round
+    output          half,       // high twice per round
     output          m1_enters,
     output          m2_enters,
     output          c1_enters,
@@ -311,6 +312,7 @@ jt51_reg u_reg(
     .op31_no    ( op31_no   ),
     .op31_acc   ( op31_acc  ),
     .zero       ( zero      ),
+    .half       ( half      ),
     .m1_enters  ( m1_enters ),
     .m2_enters  ( m2_enters ),
     .c1_enters  ( c1_enters ),

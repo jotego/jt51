@@ -12,18 +12,11 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2016
     */
-
-
-/*
-
-    tab size 4
-
-*/
 
 module jt51_lfo(
     input               rst,
@@ -33,7 +26,7 @@ module jt51_lfo(
     input               lfo_rst,
     input       [7:0]   lfo_freq,
     input       [6:0]   lfo_amd,
-    input       [6:0]   lfo_pmd,    
+    input       [6:0]   lfo_pmd,
     input       [1:0]   lfo_w,
     output  reg [6:0]   am,
     output  reg [7:0]   pm_u
@@ -68,27 +61,27 @@ reg sel_base;
 reg [4:0] freq_sel;
 
 always @(*) begin : base_mux
-    freq_sel = {1'b0,lfo_freq[7:4]} 
+    freq_sel = {1'b0,lfo_freq[7:4]}
         + ( lfo_w==2'd2 ? 5'b1 : 5'b0 );
     case( freq_sel )
-        5'h10: sel_base = base[b0-1]; 
-        5'hf: sel_base = base[b0+0]; 
-        5'he: sel_base = base[b0+1]; 
-        5'hd: sel_base = base[b0+2]; 
-        5'hc: sel_base = base[b0+3]; 
-        5'hb: sel_base = base[b0+4]; 
-        5'ha: sel_base = base[b0+5]; 
-        5'h9: sel_base = base[b0+6]; 
-        5'h8: sel_base = base[b0+7]; 
-        5'h7: sel_base = base[b0+8]; 
-        5'h6: sel_base = base[b0+9]; 
-        5'h5: sel_base = base[b0+10]; 
-        5'h4: sel_base = base[b0+11]; 
-        5'h3: sel_base = base[b0+12]; 
-        5'h2: sel_base = base[b0+13]; 
-        5'h1: sel_base = base[b0+14]; 
-        5'h0: sel_base = base[b0+15]; 
-        default: sel_base = base[b0-1]; 
+        5'h10: sel_base = base[b0-1];
+        5'hf: sel_base = base[b0+0];
+        5'he: sel_base = base[b0+1];
+        5'hd: sel_base = base[b0+2];
+        5'hc: sel_base = base[b0+3];
+        5'hb: sel_base = base[b0+4];
+        5'ha: sel_base = base[b0+5];
+        5'h9: sel_base = base[b0+6];
+        5'h8: sel_base = base[b0+7];
+        5'h7: sel_base = base[b0+8];
+        5'h6: sel_base = base[b0+9];
+        5'h5: sel_base = base[b0+10];
+        5'h4: sel_base = base[b0+11];
+        5'h3: sel_base = base[b0+12];
+        5'h2: sel_base = base[b0+13];
+        5'h1: sel_base = base[b0+14];
+        5'h0: sel_base = base[b0+15];
+        default: sel_base = base[b0-1];
     endcase
 end
 
@@ -122,7 +115,7 @@ wire signed [7:0] pmd_min = (~{1'b0, lfo_pmd[6:0]})+8'b1;
 
 reg lfo_clk, last_base, am_up, pm_up;
 
-always @(posedge clk, posedge rst) 
+always @(posedge clk, posedge rst)
     if( rst ) begin
         last_base   <= 1'd0;
         lfo_clk     <= 1'b0;
@@ -156,8 +149,8 @@ always @(posedge clk, posedge rst)
                     end
                     else begin
                         am <= am + 1'b1;
-                        am_bresenham <= am_bresenham 
-                        - { 2'd0, cnt_lim, 1'b0} + {4'd0,lfo_amd};               
+                        am_bresenham <= am_bresenham
+                        - { 2'd0, cnt_lim, 1'b0} + {4'd0,lfo_amd};
                     end
                 end
                 else am_bresenham <= am_bresenham + {4'd0,lfo_amd};
@@ -169,7 +162,7 @@ always @(posedge clk, posedge rst)
                     end
                     else begin
                         pm <= pm + 1'b1;
-                        pm_bresenham <= pm_bresenham 
+                        pm_bresenham <= pm_bresenham
                         - {2'd0,cnt_lim} + {3'd0,lfo_pmd};
                     end
                 end
@@ -182,7 +175,7 @@ always @(posedge clk, posedge rst)
                     am <= lfo_clk ? lfo_amd : 7'd0;
                     pm <= lfo_clk ? {1'b0, lfo_pmd } : pmd_min;
                 end
-                else cnt <= cnt + 1'd1;         
+                else cnt <= cnt + 1'd1;
             2'd2:  begin // AM triangle
                 if( am_bresenham > 0 ) begin
                     if( am == lfo_amd && am_up) begin
@@ -195,12 +188,12 @@ always @(posedge clk, posedge rst)
                     end
                     else begin
                         am <= am_up ? am+1'b1 : am-1'b1;
-                        am_bresenham <= am_bresenham 
-                        - { 2'b0, cnt_lim, 1'b0} + {4'd0,lfo_amd};               
+                        am_bresenham <= am_bresenham
+                        - { 2'b0, cnt_lim, 1'b0} + {4'd0,lfo_amd};
                     end
                 end
                 else am_bresenham <= am_bresenham + {4'd0,lfo_amd};
-                
+
                 if( pm_bresenham > 0 ) begin
                     if( pm == {1'b0, lfo_pmd} && pm_up) begin
                         pm_up <= 1'b0;
@@ -212,13 +205,13 @@ always @(posedge clk, posedge rst)
                     end
                     else begin
                         pm <= pm_up ? pm+1'b1 : pm-1'b1;
-                        pm_bresenham <= pm_bresenham 
+                        pm_bresenham <= pm_bresenham
                         - {2'd0,cnt_lim} + {3'd0,lfo_pmd};
                     end
                 end
                 else pm_bresenham <= pm_bresenham + {3'd0,lfo_pmd};
                 end
-            2'd3: begin 
+            2'd3: begin
                 casez( lfo_amd ) // same as real chip
                     7'b1??????: am <= noise_am[6:0];
                     7'b01?????: am <= { 1'b0, noise_am[5:0] };
@@ -229,7 +222,7 @@ always @(posedge clk, posedge rst)
                     7'b0000001: am <= { 6'b0, noise_am[0]   };
                     default:    am <= 7'd0;
                 endcase
-                casez( lfo_pmd ) 
+                casez( lfo_pmd )
                     7'b1??????: pm <= noise_pm;
                     7'b01?????: pm <= { {2{noise_pm[7]}}, noise_pm[5:0] };
                     7'b001????: pm <= { {3{noise_pm[7]}}, noise_pm[4:0] };
@@ -238,8 +231,8 @@ always @(posedge clk, posedge rst)
                     7'b000001?: pm <= { {6{noise_pm[7]}}, noise_pm[1:0] };
                     7'b0000001: pm <= { {7{noise_pm[7]}}, noise_pm[0]   };
                     default:    pm <= 8'd0;
-                endcase 
-                end         
+                endcase
+                end
             endcase
         end
     end
@@ -266,5 +259,5 @@ generate
         );
     end
 endgenerate
-    
+
 endmodule

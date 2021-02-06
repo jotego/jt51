@@ -1,0 +1,10 @@
+#Noise
+$0f,87  # enables noise
+$7f,00  # TL=0 for op. 31
+$9f,0f  # AR=0F
+$Bf,16  # D1R
+$DF,11  # D2R
+$FF,8f  # D1L - RR
+$27,c7  # RL, CON=7
+$8,47   # key on, channel 7, op. 3
+wait 800

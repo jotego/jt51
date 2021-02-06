@@ -30,12 +30,12 @@ KEEP=0
 OTHER=
 
 if (which verilator &> /dev/null); then
-	SIMULATOR=verilator
-else if (which iverilog &> /dev/null ); then
-	SIMULATOR=iverilog
-else
-	SIMULATOR=ncverilog
-fi
+		SIMULATOR=verilator
+	else if (which iverilog &> /dev/null ); then
+		SIMULATOR=iverilog
+	else
+		SIMULATOR=ncverilog
+	fi
 fi
 
 while [ $# -gt 0 ]; do
@@ -75,12 +75,12 @@ while [ $# -gt 0 ]; do
     if [ $1 = "CH"  ]; then shift; CH=$1;  shift; continue; fi
     if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  shift; continue; fi
     if [ $1 = "CON"  ]; then shift; CON=$1;  shift; continue; fi
-    if [ $1 = "FL"  ]; then shift; FL=$1;  shift; continue; fi	
-    if [ $1 = "MUL"  ]; then shift; MUL=$1;  shift; continue; fi	
-    if [ $1 = "NFREQ"  ]; then shift; NFREQ=$1;  shift; continue; fi	
-    if [ $1 = "-sim" ]; then 
-    	shift; 
-    	SIMULATOR=$1; 
+    if [ $1 = "FL"  ]; then shift; FL=$1;  shift; continue; fi
+    if [ $1 = "MUL"  ]; then shift; MUL=$1;  shift; continue; fi
+    if [ $1 = "NFREQ"  ]; then shift; NFREQ=$1;  shift; continue; fi
+    if [ $1 = "-sim" ]; then
+    	shift;
+    	SIMULATOR=$1;
     	if [[ $SIMULATOR != iverilog && $SIMULATOR != verilator && $SIMULATOR != ncverilog ]]; then
     		echo "Unsupported simulator: " $SIMULATOR
     		exit 1

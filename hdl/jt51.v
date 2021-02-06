@@ -55,7 +55,7 @@ wire        load_A, load_B;
 wire        enable_irq_A, enable_irq_B;
 wire        clr_flag_A, clr_flag_B;
 wire        flag_A, flag_B, overflow_A;
-wire        zero;
+wire        zero, half;
 
 jt51_timers u_timers(
     .clk        ( clk           ),
@@ -218,18 +218,20 @@ jt51_op u_op(
     .op_XVII        ( op_out            )
 );
 
-wire    [4:0] nfrq;
-wire    [10:0] noise_out;
-wire          ne, op31_acc, op31_no;
+wire [ 4:0] nfrq;
+wire [15:0] noise_mix;
+wire        ne, op31_acc, op31_no, noise;
 
 jt51_noise u_noise(
     .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen_p1    ),
+    .half   ( half      ),
     .nfrq   ( nfrq      ),
     .eg     ( eg_XI     ),
-    .out    ( noise_out ),
-    .op31_no( op31_no   )
+    .op31_no( op31_no   ),
+    .out    ( noise     ),
+    .mix    ( noise_mix )
 );
 
 jt51_acc u_acc(
@@ -245,7 +247,7 @@ jt51_acc u_acc(
     .con_I      ( con_I         ),
     .op_out     ( op_out        ),
     .ne         ( ne            ),
-    .noise      ( noise_out     ),
+    .noise_mix  ( noise_mix     ),
     .left       ( left          ),
     .right      ( right         ),
     .xleft      ( xleft         ),
@@ -328,6 +330,7 @@ jt51_mmr u_mmr(
     .op31_no    ( op31_no       ),
     .op31_acc   ( op31_acc      ),
     .zero       ( zero          ),
+    .half       ( half          ),
     .m1_enters  ( m1_enters     ),
     .m2_enters  ( m2_enters     ),
     .c1_enters  ( c1_enters     ),

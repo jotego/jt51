@@ -9,6 +9,7 @@
 #include "feature.hpp"
 #include "WaveWritter.hpp"
 #include "opm.h"
+#include "ref.h"
 
   // #include "verilated.h"
 
@@ -23,7 +24,7 @@ class SimTime {
     class Vjt51 *top;
     opm_t* ref;
 public:
-    int32_t ref_output;
+    int32_t ref_output[2];
     void set_period( int _period ) {
         PERIOD =_period;
         PERIOD += PERIOD%2; // make it even
@@ -36,7 +37,8 @@ public:
     SimTime(Vjt51 *_top, opm_t *_ref ) {
         top = _top;
         ref = _ref;
-        ref_output=0;
+        ref_output[0]=0;
+        ref_output[1]=0;
         main_time=0; fast_forward=0; time_limit=0; toggle_cnt=2;
         verbose_ticks = 48000*24/2;
         set_period(132*6);
@@ -47,11 +49,8 @@ public:
         if( clk==1 ) {
             int cenp1 = top->cen_p1;
             top->cen_p1 = 1-cenp1;
-            if( cenp1 ) OPM_Clock( ref, &ref_output, NULL, NULL, NULL );
+            if( cenp1 ) OPM_Clock( ref, ref_output, NULL, NULL, NULL );
         }
-        //uint8_t sh1, sh2, so;
-        //OPM_Clock( ref, &ref_output, &sh1, &sh2, &so );
-        //printf("%c%c%c\n",sh1+'0',sh2+'0',so+'0');
     }
 
     void set_time_limit(vluint64_t t) { time_limit=t; }
@@ -124,7 +123,7 @@ public:
     WaveOutputs( const string& filename, int sample_rate, bool dump_hex );
     ~WaveOutputs();
     void write( class Vjt51 *top );
-    void write( int32_t val );
+    void write( int32_t *val );
 };
 
 WaveOutputs::WaveOutputs( const string& filename, int sample_rate, bool dump_hex ) {
@@ -147,31 +146,32 @@ void WaveOutputs::write( class Vjt51 *top ) {
     mixed->write(snd);
 }
 
-void WaveOutputs::write( int32_t val ) {
+void WaveOutputs::write( int32_t* val ) {
     int16_t snd[2];
-    snd[0] = (val>>16)&0xffff;
-    snd[1] = val&0xffff;
+    snd[0] = val[0];
+    snd[1] = val[1];
     mixed->write(snd);
 }
+
+const int OPM_SIGNAL=1000'000;
 
 int main(int argc, char** argv, char** env) {
     Verilated::commandArgs(argc, argv);
 
     Vjt51* top = new Vjt51;
-    opm_t ref; // Reference design
+    Ref ref; // Reference design
 
-    CmdWritter writter(top, &ref);
+    CmdWritter writter(top, &ref.opm);
     bool trace = false, slow=false;
     RipParser *gym;
     bool forever=true, dump_hex=false, decode_pcm=true;
     char *gym_filename;
-    SimTime sim_time(top, &ref);
+    SimTime sim_time(top, &ref.opm);
     int SAMPLERATE=0;
     vluint64_t SAMPLING_PERIOD=0, trace_start_time=0;
     string wav_filename;
 
-
-    OPM_Reset(&ref);
+    OPM_Reset(&ref.opm);
 
     for( int k=1; k<argc; k++ ) {
         if( string(argv[k])=="-trace" ) { trace=true; continue; }
@@ -307,6 +307,7 @@ int main(int argc, char** argv, char** env) {
         Verilated::traceEverOn(true);
         top->trace(tfp,99);
         tfp->open("/dev/stdout");
+        //tfp->spTrace()->declBus(OPM_SIGNAL+0, "opm lfsr", false, -1, 15, 0 );
     }
     // Reset
     top->rst    = 1;
@@ -414,8 +415,10 @@ int main(int argc, char** argv, char** env) {
                     goto finish;
             }
         }
-        if( trace && sim_time.get_time()>trace_start_time )
-                tfp->dump(sim_time.get_time());
+        if( trace && sim_time.get_time()>trace_start_time ) {
+            ref.dump(sim_time.get_time());
+            tfp->dump(sim_time.get_time());
+        }
     }
 finish:
     writter.report_usage();

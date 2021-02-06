@@ -25,6 +25,7 @@
  */
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "opm.h"
 
 enum {
@@ -367,7 +368,7 @@ static int32_t OPM_CalcKCode(int32_t kcf, int32_t lfo, int32_t lfo_sign, int32_t
     {
         sum = 8127;
     }
-        
+
     t2 = sum & 63;
     if (dt == 2)
         t2 += 20;
@@ -551,7 +552,7 @@ static void OPM_EnvelopePhase2(opm_t *chip)
     {
         rate = 31;
     }
-    
+
     zr = rate == 0;
 
     ksv = chip->pg_kcode[slot] >> (chip->sl_ks[slot] ^ 3);
@@ -1496,7 +1497,7 @@ static void OPM_DoLFO1(opm_t *chip)
     w[7] = ((chip->cycles + 1) % 16) < 8;
 
     w[6] = w[5] ^ w[3];
-    
+
     w[9] = ampm_sel ? ((chip->cycles % 16) == 6) : !chip->lfo_saw_sign;
 
     w[8] = chip->lfo_wave == 1 ? w[9] : w[6];
@@ -1514,7 +1515,7 @@ static void OPM_DoLFO1(opm_t *chip)
     chip->lfo_val_carry = sum >> 1;
     chip->lfo_val <<= 1;
     chip->lfo_val |= lfo_bit;
-    
+
 
     if (chip->cycles % 16 == 15 && (chip->lfo_bit_counter & 7) == 7)
     {

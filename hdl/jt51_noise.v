@@ -12,83 +12,100 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
-    Date: 27-10-2016
+    Date: 6-2-2021
     */
 
 
 /*
 
-    tab size 4
-    
-    See xapp052.pdf from Xilinx
-    
-    The NFRQ formula in the App. Note does not make sense:
+    NFRQ formula in the App:
     Output rate is 55kHz but for NFRQ=1 the formula states that
-    the noise is 111kHz, twice the output rate per channel.
-    
+    the noise is 111kHz, twice the output rate per channel. The
+    reason must be the inversion of the LFSR data
+
     That would suggest that the noise for LEFT and RIGHT are
     different but the rest of the system suggest that LEFT and
     RIGHT outputs are calculated at the same time, based on the
     same OP output.
-    
-    Also, the block diagram states a 1 bit serial input from
-    EG to NOISE and that seems unnecessary too.
-    
+
     I have not been able to measure noise in actual chip because
-    operator 31 does not produce any output on my two chips.
+    operator 31 does not produce any output on my two chips. This
+    module is based on NukeYKT's work
 
 */
 
 module jt51_noise(
-    input           rst,
-    input           clk,
-    input           cen,
-    input   [4:0]   nfrq,
-    input   [9:0]   eg,
-    input           op31_no,
-    output  reg [10:0]  out
+    input             rst,
+    input             clk,
+    input             cen,    // phi 1
+    input             half,   // high ones every 16 cycles
+
+    // Noise Frequency
+    input      [ 4:0] nfrq,
+
+    // Noise envelope
+    input      [ 9:0] eg,     // serial signal in the original design
+    input             op31_no,
+
+    output            out,
+    output reg [15:0] mix
 );
 
+reg         update;
+reg  [ 4:0] cnt;
+reg  [15:0] lfsr;
+reg         last_lfsr0;
+wire        nfrq_met, all1, fb;
+reg         mix_sgn;
 
-reg         base;
-reg [3:0]   cnt;
+assign out = lfsr[0];
 
-always @(posedge clk, posedge rst)
+// period counter
+
+assign nfrq_met = ~nfrq == cnt;
+
+reg [15:0] debug;
+
+always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        cnt  <= 4'b0;
-    end
-    else if(cen) begin
-        if( op31_no ) begin
-            if ( &cnt ) begin               
-                cnt  <= nfrq[4:1]; // we do not need to use nfrq[0]
-                // because I run it off P1, YM2151 probably ran off PM
-                // but the result is the same, as for NFREQ=31 the YM2151
-                // trips the noise output at each output sample, and for
-                // NFREQ=0 (or 1), the output trips every 16 samples
-                // so NFREQ[0] does not really add resolution
-            end
-            else cnt <= cnt + 4'b1;
-            base <= &cnt;
+        cnt  <= 5'b0;
+    end else if(cen) begin
+        if( update ) begin
+            debug <= lfsr;
         end
-        else base <= 1'b0;
+        if( half ) begin
+            cnt <= nfrq_met ? 5'd0 : (cnt+5'd1);
+        end
+        update <= nfrq_met;
     end
-
-wire rnd_sign;
-
-always @(posedge clk) if(cen) begin
-    if( op31_no )
-        out <= { rnd_sign, {10{~rnd_sign}}^eg };
 end
 
-jt51_noise_lfsr #(.init(90)) u_lfsr (
-    .rst    ( rst      ),
-    .clk    ( clk      ),
-    .cen    ( cen      ),
-    .base   ( base     ),
-    .out    ( rnd_sign )
-);
+// LFSR
+
+assign fb   = update ? ((all1 & ~last_lfsr0) | (lfsr[2]^last_lfsr0))
+                     : ~lfsr[0];
+assign all1 = &lfsr;
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        lfsr <= 16'hffff;
+    end else if(cen) begin
+        lfsr       <= { fb, lfsr[15:1] };
+        if(update) last_lfsr0 <= ~lfsr[0];
+    end
+end
+
+// Noise mix
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        mix <= 16'd0;
+    end else if( op31_no && cen ) begin
+        mix_sgn <= eg!=10'd0 && !out;
+        mix     <= { {2{mix_sgn}}, eg ^ {10{~out}}, {4{mix_sgn}} };
+    end
+end
 
 endmodule

@@ -411,10 +411,10 @@ sep32 #(.width(7),.stg(7)) sep_tl(
     .cnt    ( cnt           )
     );
 
-sep32 #(.width(2),.stg(2)) sep_state(
+sep32 #(.width(2),.stg(3)) sep_state(
     .clk    ( clk           ),
     .cen    ( cen           ),
-    .mixed  ( state_II      ),
+    .mixed  ( state_in_III  ),
     .cnt    ( cnt           )
     );
 

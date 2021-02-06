@@ -66,6 +66,7 @@ module jt51_reg(
 
     // Pipeline order
     output  reg     zero,
+    output  reg     half,
     output  reg     m1_enters,
     output  reg     m2_enters,
     output  reg     c1_enters,
@@ -153,10 +154,12 @@ always @(posedge clk, posedge rst) begin : up_counter
     if( rst ) begin
         cur     <= 5'h0;
         zero    <= 1'b0;
+        half    <= 1'b0;
     end
     else if(cen) begin
         cur     <= next;
         zero    <= next== 5'd0;
+        half    <= next[3:0] == 4'd0;
     end
 end
 
