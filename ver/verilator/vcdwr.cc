@@ -50,7 +50,7 @@ void VCDwr::set_value( const char *name, uint64_t value ) {
         }
         s->last = value;
         if( s->width==1 ) {
-            fprintf( fout, "%ld$%d\n", value, s->id );
+            fprintf( fout, "%ld$%X\n", value, s->id );
         } else {
             uint64_t aux=value<<(64-s->width);
             bool first=true;

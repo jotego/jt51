@@ -162,7 +162,7 @@ int main(int argc, char** argv, char** env) {
     Ref ref; // Reference design
 
     CmdWritter writter(top, &ref.opm);
-    bool trace = false, slow=false;
+    bool trace = false, trace_ref=false, slow=false;
     RipParser *gym;
     bool forever=true, dump_hex=false, decode_pcm=true;
     char *gym_filename;
@@ -175,6 +175,7 @@ int main(int argc, char** argv, char** env) {
 
     for( int k=1; k<argc; k++ ) {
         if( string(argv[k])=="-trace" ) { trace=true; continue; }
+        if( string(argv[k])=="-trace-ref" ) { trace_ref=true; continue; }
         if( string(argv[k])=="-trace_start" ) {
             int aux;
             sscanf(argv[++k],"%d",&aux);
@@ -415,9 +416,10 @@ int main(int argc, char** argv, char** env) {
                     goto finish;
             }
         }
-        if( trace && sim_time.get_time()>trace_start_time ) {
-            ref.dump(sim_time.get_time());
-            tfp->dump(sim_time.get_time());
+        if( sim_time.get_time()>trace_start_time ) {
+            auto t = sim_time.get_time();
+            if( trace ) tfp->dump(t);
+            if( trace_ref ) ref.dump(sim_time.get_time());
         }
     }
 finish:
@@ -507,18 +509,6 @@ void CmdWritter::Eval() {
     int clk = top->clk;
 
     if( (clk==0) && (last_clk != clk) ) {
-        /*
-        if( (cmd==8 && (val&7)!=5) // only accept keyon for channel 5
-         || (cmd>=0x40 && (cmd&0x1f)!= 29)) // only accept for ch 5/op 4
-        {
-            done = true;
-            last_clk = clk;
-            return;
-        }
-        if( (cmd&0xf8)==0x20 ) val = 0xc7; // only connection 7
-        //if( (cmd&0xf8)==0x38 ) val = 0x0; // no PMS, no AMS
-        if( cmd==8 ) val &= (8<<3)|7; // only one operator
-*/
         switch( state ) {
             case 0:
                 top->a0  = 0;

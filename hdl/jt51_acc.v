@@ -32,7 +32,7 @@ module jt51_acc(
     input           [2:0]   con_I,
     input   signed  [13:0]  op_out,
     input                   ne,     // noise enable
-    input   signed  [15:0]  noise_mix,
+    input   signed  [11:0]  noise_mix,
     output  signed  [15:0]  left,
     output  signed  [15:0]  right,
     output  reg signed  [15:0]  xleft,  // exact outputs
@@ -43,7 +43,7 @@ reg signed [13:0] op_val;
 
 always @(*) begin
     if( ne && op31_acc ) // cambiar a OP 31
-        op_val = noise_mix[15:2];   // I need to review the mixer so bits 1:0 are used too
+        op_val = { {2{noise_mix[11]}}, noise_mix };
     else
         op_val = op_out;
 end

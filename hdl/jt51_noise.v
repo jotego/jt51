@@ -51,7 +51,7 @@ module jt51_noise(
     input             op31_no,
 
     output            out,
-    output reg [15:0] mix
+    output reg [11:0] mix
 );
 
 reg         update;
@@ -59,7 +59,7 @@ reg  [ 4:0] cnt;
 reg  [15:0] lfsr;
 reg         last_lfsr0;
 wire        nfrq_met, all1, fb;
-reg         mix_sgn;
+wire        mix_sgn;
 
 assign out = lfsr[0];
 
@@ -98,13 +98,16 @@ always @(posedge clk, posedge rst) begin
     end
 end
 
+
 // Noise mix
+
+assign mix_sgn = eg!=10'd0 && !out;
+
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        mix <= 16'd0;
+        mix <= 12'd0;
     end else if( op31_no && cen ) begin
-        mix_sgn <= eg!=10'd0 && !out;
-        mix     <= { {2{mix_sgn}}, eg ^ {10{~out}}, {4{mix_sgn}} };
+        mix     <= { mix_sgn, ~eg[9:2] ^ {8{~out}}, {3{mix_sgn}} };
     end
 end
 

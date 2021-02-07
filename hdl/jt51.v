@@ -219,7 +219,7 @@ jt51_op u_op(
 );
 
 wire [ 4:0] nfrq;
-wire [15:0] noise_mix;
+wire [11:0] noise_mix;
 wire        ne, op31_acc, op31_no, noise;
 
 jt51_noise u_noise(

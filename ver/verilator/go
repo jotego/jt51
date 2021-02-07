@@ -63,6 +63,10 @@ function set_slow {
         "-runonly")
             echo Skipping Verilator and make steps
             SKIPMAKE=TRUE;;
+        :)
+            shift
+            EXTRA="$EXTRA $*"
+            break;;
         -h | -help | --help)
             cat << EOF
     -w          dump all signals to file test.fst
@@ -74,6 +78,7 @@ function set_slow {
     -o          output wave file name
     -d          add Verilog macro
     -runonly    do not recompile
+    :           arguments after this are passed directly to the C++ test
 EOF
             exit 0;;
         *)
