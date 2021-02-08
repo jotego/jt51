@@ -85,6 +85,7 @@ assign pm_sign = lfo_w==TRIANG ? trig_sign : saw_sign;
 assign lfo_clk_next = test[2] | next_cnt2[15] | cnt3_step;
 
 always @(*) begin
+    next_cnt2 = {1'b0, cnt2};
     if( cnt2_load ) begin
         next_cnt2[15]   = 1'd0;
         next_cnt2[14:0] = lfo_lut[ lfo_freq[7:4] ];
@@ -112,7 +113,7 @@ always @(posedge clk, posedge rst) begin
     end else if( cen ) begin
         // counter 1
         if( cyc_c )
-            { cnt1_ov[0], cnt1 } <= { 1'b0, cnt1 } + 1;
+            { cnt1_ov[0], cnt1 } <= { 1'b0, cnt1 } + 5'd1;
         else
             cnt1_ov[0] <= 0;
         cnt1_ov[1] <= cnt1_ov[0];

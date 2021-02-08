@@ -67,15 +67,10 @@ assign out = lfsr[0];
 
 assign nfrq_met = ~nfrq == cnt;
 
-reg [15:0] debug;
-
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
         cnt  <= 5'b0;
     end else if(cen) begin
-        if( update ) begin
-            debug <= lfsr;
-        end
         if( half ) begin
             cnt <= nfrq_met ? 5'd0 : (cnt+5'd1);
         end
