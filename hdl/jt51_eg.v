@@ -40,7 +40,7 @@ module jt51_eg(
     output  reg         pg_rst_III,
     // envelope number
     input       [6:0]   tl_VII,
-    input       [6:0]   am,
+    input       [7:0]   am,
     input       [1:0]   ams_VII,
     input               amsen_VII,
     output      [9:0]   eg_XI
@@ -70,10 +70,10 @@ reg     [5:1]   rate_VI;
 
 // remember: { log_msb, pow_addr } <= log_val[11:0] + { tl, 5'd0 } + { eg, 2'd0 };
 
-reg     [1:0]   eg_cnt_base;
+reg     [ 1:0]  eg_cnt_base;
 reg     [14:0]  eg_cnt /*verilator public*/;
 
-reg     [8:0]   am_final_VII;
+reg     [ 9:0]  am_final_VII;
 
 always @(posedge clk) begin : envelope_counter
     if( rst ) begin
@@ -312,10 +312,11 @@ end
 // VII
 always @(*) begin : sum_eg_and_tl
     casez( {amsen_VII, ams_VII } )
-        3'b0??,3'b100: am_final_VII = 9'd0;
-        3'b101: am_final_VII = { 2'b00, am };
-        3'b110: am_final_VII = { 1'b0, am, 1'b0};
-        3'b111: am_final_VII = { am, 2'b0      };
+        3'b0_??,
+        3'b1_00: am_final_VII = 10'd0;
+        3'b1_01: am_final_VII = { 2'b0, am };
+        3'b1_10: am_final_VII = { 1'b0, am, 1'b0};
+        3'b1_11: am_final_VII = { am, 2'b0      };
     endcase
     `ifdef TEST_SUPPORT
     if( test_eg && tl_VII!=7'd0 )
@@ -324,7 +325,7 @@ always @(*) begin : sum_eg_and_tl
     `endif
     sum_eg_tl_VII = { 2'b0, tl_VII,   3'd0 }
                + {2'b0, eg_VII}
-               + {2'b0, am_final_VII, 1'b0 };
+               + {1'b0, am_final_VII, 1'b0 };
 end
 
 always @(posedge clk) if(cen) begin
@@ -424,7 +425,7 @@ sep32 #(.width(5),.stg(6)) sep_rate(
     .cnt    ( cnt           )
     );
 
-sep32 #(.width(9),.stg(7)) sep_amfinal(
+sep32 #(.width(10),.stg(7)) sep_amfinal(
     .clk    ( clk           ),
     .cen    ( cen           ),
     .mixed  ( am_final_VII  ),

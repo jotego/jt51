@@ -194,7 +194,7 @@ jt51_eg u_eg(
     .pg_rst_III ( pg_rst_III),
     // envelope number
     .tl_VII     ( tl_VII    ),
-    .am         ( am[6:0]   ), // fix me
+    .am         ( am        ),
     .ams_VII    ( ams_VII   ),
     .amsen_VII  ( amsen_VII ),
     .eg_XI      ( eg_XI )
