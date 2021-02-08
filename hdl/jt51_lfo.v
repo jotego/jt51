@@ -65,6 +65,7 @@ wire        pm_sign;
 reg         trig_sign, saw_sign;
 
 reg         bitcnt_rst, cnt2_load, cnt3_step;
+wire        lfo_clk_next;
 reg         lfo_clk_latch;
 
 wire cyc_5 = cycles[3:0]==4'h5;
@@ -78,7 +79,10 @@ reg  cnt3_clk;
 wire ampm_sel =  bitcnt[3];
 wire bit7     = &bitcnt[2:0];
 
+reg lfo_up_latch;
+
 assign pm_sign = lfo_w==TRIANG ? trig_sign : saw_sign;
+assign lfo_clk_next = test[2] | next_cnt2[15] | cnt3_step;
 
 always @(*) begin
     if( cnt2_load ) begin
@@ -88,6 +92,13 @@ always @(*) begin
         if( cnt1_ov[1] | test[3] )
             next_cnt2 = {1'd0,cnt2 } + {15'd0,cnt1_ov[1]};
     end
+end
+
+always @(posedge clk, posedge rst) begin
+    if( lfo_up )
+        lfo_up_latch <= 1;
+    else if( cen )
+        lfo_up_latch <= 0;
 end
 
 always @(posedge clk, posedge rst) begin
@@ -111,11 +122,11 @@ always @(posedge clk, posedge rst) begin
         else if( cyc_e )
             bitcnt <= bitcnt + 1'd1;
         // counter 2
-        cnt2_load <= lfo_up | next_cnt2[15];
+        cnt2_load <= lfo_up_latch | next_cnt2[15];
         cnt2 <= next_cnt2[14:0];
         if( cyc_e ) begin
             cnt2_ov[0]    <= next_cnt2[15];
-            lfo_clk_latch <= lfo_clk;
+            lfo_clk_latch <= lfo_clk_next;
         end
         if( cyc_5 ) cnt2_ov[1] <= cnt2_ov[0];
         // counter 3
@@ -133,7 +144,7 @@ always @(posedge clk, posedge rst) begin
         if( cnt3_clk )
             cnt3 <= cnt3 + 1'd1;
         // LFO clock
-        lfo_clk <= test[2] | next_cnt2[15] | cnt3_step;
+        lfo_clk <= lfo_clk_next;
     end
 end
 

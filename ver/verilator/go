@@ -139,6 +139,7 @@ if [ $SKIPMAKE = FALSE ]; then
 fi
 
 if [[ $DUMPSIGNALS == "-trace" ]]; then
+    EXTRA="$EXTRA -trace-ref"
     if which vcd2fst; then
         # Verilator VCD output goes through standard output
         echo VCD to FST conversion running in parallel

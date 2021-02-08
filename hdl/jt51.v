@@ -102,7 +102,6 @@ wire    [3:0]   d1l_I;
 wire    [3:0]   rrate_II;
 
 wire    [1:0]   cur_op;
-assign  sample =zero;
 wire            keyon_II;
 
 wire    [7:0]   lfo_freq;
@@ -114,6 +113,8 @@ wire    [6:0]   amd, pmd;
 
 wire m1_enters, m2_enters, c1_enters, c2_enters;
 wire use_prevprev1,use_internal_x,use_internal_y, use_prev2,use_prev1;
+
+assign  sample = zero;
 
 jt51_lfo u_lfo(
     .rst        ( rst       ),
