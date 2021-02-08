@@ -94,7 +94,7 @@ always @(*) begin
     end
 end
 
-always @(posedge clk, posedge rst) begin
+always @(posedge clk) begin
     if( lfo_up )
         lfo_up_latch <= 1;
     else if( cen )
