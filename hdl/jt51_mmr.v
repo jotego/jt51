@@ -42,6 +42,7 @@ module jt51_mmr(
     output  reg [6:0]   lfo_amd,
     output  reg [6:0]   lfo_pmd,
     output  reg         lfo_rst,
+    output  reg         lfo_up,
     // Timers
     output  reg [9:0]   value_A,
     output  reg [7:0]   value_B,
@@ -85,6 +86,7 @@ module jt51_mmr(
 
     output          zero,       // high once per round
     output          half,       // high twice per round
+    output  [4:0]   cycles,
     output          m1_enters,
     output          m2_enters,
     output          c1_enters,
@@ -141,6 +143,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         enable_irq_B, enable_irq_A, load_B, load_A } <= 6'd0;
         // LFO
         { lfo_amd, lfo_pmd }    <= 14'h0;
+        lfo_up          <= 1'b0;
         lfo_freq        <= 8'd0;
         lfo_w           <= 2'd0;
         lfo_rst         <= 1'b0;
@@ -189,7 +192,10 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                           enable_irq_B, enable_irq_A,
                           load_B, load_A } <= din[5:0];
                         end
-                    REG_LFRQ:   lfo_freq <= din;
+                    REG_LFRQ: begin
+                        lfo_freq <= din;
+                        lfo_up   <= 1;
+                    end
                     REG_PMDAMD: begin
                         if( !din[7] )
                             lfo_amd <= din[6:0];
@@ -235,8 +241,9 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
             `ifdef SIMULATION
             mmr_dump <= 1'b0;
             `endif
-            csm     <= 1'b0;
-            lfo_rst <= 1'b0;
+            csm     <= 0;
+            lfo_rst <= 0;
+            lfo_up  <= 0;
             { clr_flag_B, clr_flag_A } <= 2'd0;
         end
     end
@@ -313,6 +320,7 @@ jt51_reg u_reg(
     .op31_acc   ( op31_acc  ),
     .zero       ( zero      ),
     .half       ( half      ),
+    .cycles     ( cycles    ),
     .m1_enters  ( m1_enters ),
     .m2_enters  ( m2_enters ),
     .c1_enters  ( c1_enters ),

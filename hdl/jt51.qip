@@ -3,7 +3,6 @@ set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_eg
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_exp2lin.v     ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_exprom.v      ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_kon.v         ]
-set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_lfo_lfsr.v    ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_lfo.v         ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_lin2exp.v     ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) jt51_mmr.v         ]

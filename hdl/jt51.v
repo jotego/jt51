@@ -56,6 +56,7 @@ wire        enable_irq_A, enable_irq_B;
 wire        clr_flag_A, clr_flag_B;
 wire        flag_A, flag_B, overflow_A;
 wire        zero, half;
+wire [4:0]  cycles;
 
 jt51_timers u_timers(
     .clk        ( clk           ),
@@ -106,8 +107,8 @@ wire            keyon_II;
 
 wire    [7:0]   lfo_freq;
 wire    [1:0]   lfo_w;
-wire            lfo_rst;
-wire    [6:0]   am;
+wire            lfo_rst, lfo_up;
+wire    [7:0]   am;
 wire    [7:0]   pm;
 wire    [6:0]   amd, pmd;
 
@@ -117,20 +118,33 @@ wire use_prevprev1,use_internal_x,use_internal_y, use_prev2,use_prev1;
 jt51_lfo u_lfo(
     .rst        ( rst       ),
     .clk        ( clk       ),
-    .cen        ( cen       ),  // should it be cen_p1?
+    .cen        ( cen_p1    ),
     .zero       ( zero      ),
+    .half       ( half      ),
+    .cycles     ( cycles    ),
+
+    // Configuration
     .lfo_rst    ( lfo_rst   ),
     .lfo_freq   ( lfo_freq  ),
     .lfo_w      ( lfo_w     ),
     .lfo_amd    ( amd       ),
     .lfo_pmd    ( pmd       ),
+    .lfo_up     ( lfo_up    ),
+    .noise      ( noise     ),
+
+    // Test
+    .test       ( 8'd0      ),
+    .lfo_clk    (           ),
+
     .am         ( am        ),
-    .pm_u       ( pm        )
+    .pm         ( pm        )
 );
 
 wire    [ 4:0]  keycode_III;
 wire    [ 9:0]  ph_X;
 wire            pg_rst_III;
+
+/*verilator tracing_off*/
 
 jt51_pg u_pg(
     .rst        ( rst       ),
@@ -180,7 +194,7 @@ jt51_eg u_eg(
     .pg_rst_III ( pg_rst_III),
     // envelope number
     .tl_VII     ( tl_VII    ),
-    .am         ( am        ),
+    .am         ( am[6:0]   ), // fix me
     .ams_VII    ( ams_VII   ),
     .amsen_VII  ( amsen_VII ),
     .eg_XI      ( eg_XI )
@@ -285,6 +299,7 @@ jt51_mmr u_mmr(
     .lfo_amd    ( amd           ),
     .lfo_pmd    ( pmd           ),
     .lfo_rst    ( lfo_rst       ),
+    .lfo_up     ( lfo_up        ),
 
     // Noise
     .ne         ( ne            ),
@@ -331,6 +346,7 @@ jt51_mmr u_mmr(
     .op31_acc   ( op31_acc      ),
     .zero       ( zero          ),
     .half       ( half          ),
+    .cycles     ( cycles        ),
     .m1_enters  ( m1_enters     ),
     .m2_enters  ( m2_enters     ),
     .c1_enters  ( c1_enters     ),

@@ -43,7 +43,7 @@ void VCDwr::set_value( const char *name, uint64_t value ) {
     }
     else s = k->second;
     value &= (1<<s->width)-1;
-    if( value!=s->last ) {
+    if( value!=s->last || time==0 ) {
         if( tchange ) {
             fprintf( fout, "#%ld\n", time);
             tchange = false;
@@ -58,7 +58,7 @@ void VCDwr::set_value( const char *name, uint64_t value ) {
             fprintf( fout, "b" );
             for( int j=s->width; j; j--, aux<<=1 ) {
                 int v = (aux & (1L<<63))!=0;
-                if( !v && first ) continue;
+                if( !v && first && j!=1 ) continue;
                 first= false;
                 fprintf( fout, "%d", v ? 1: 0 );
             }

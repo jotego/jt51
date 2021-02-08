@@ -3,7 +3,6 @@ jt51_eg.v
 jt51_exp2lin.v
 jt51_exprom.v
 jt51_kon.v
-jt51_lfo_lfsr.v
 jt51_lfo.v
 jt51_lin2exp.v
 jt51_mmr.v

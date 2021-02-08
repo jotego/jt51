@@ -171,8 +171,6 @@ int main(int argc, char** argv, char** env) {
     vluint64_t SAMPLING_PERIOD=0, trace_start_time=0;
     string wav_filename;
 
-    OPM_Reset(&ref.opm);
-
     for( int k=1; k<argc; k++ ) {
         if( string(argv[k])=="-trace" ) { trace=true; continue; }
         if( string(argv[k])=="-trace-ref" ) { trace_ref=true; continue; }
@@ -308,9 +306,10 @@ int main(int argc, char** argv, char** env) {
         Verilated::traceEverOn(true);
         top->trace(tfp,99);
         tfp->open("/dev/stdout");
-        //tfp->spTrace()->declBus(OPM_SIGNAL+0, "opm lfsr", false, -1, 15, 0 );
     }
     // Reset
+    memset(&ref.opm, 0, sizeof(opm_t));
+    OPM_SetIC( &ref.opm, 1);
     top->rst    = 1;
     top->clk    = 0;
     top->cen    = 1;
@@ -322,10 +321,14 @@ int main(int argc, char** argv, char** env) {
     // cerr << "Reset\n";
     while( sim_time.get_time() < 256*sim_time.period() ) {
         sim_time.next_quarter();
-        // if(trace) tfp->dump(main_time);
+        if(trace) {
+            tfp->dump(main_time);
+            if( trace_ref ) ref.dump(main_time);
+        }
     }
-    top->rst = 0;
-    int last_a=0;
+    OPM_SetIC( &ref.opm, 0);
+    top->rst   = 0;
+    int last_a = 0;
     enum { WRITE_REG, WRITE_VAL, WAIT_FINISH } state;
     state = WRITE_REG;
 

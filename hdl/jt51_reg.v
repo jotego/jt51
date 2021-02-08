@@ -67,6 +67,7 @@ module jt51_reg(
     // Pipeline order
     output  reg     zero,
     output  reg     half,
+    output  [4:0]   cycles,
     output  reg     m1_enters,
     output  reg     m2_enters,
     output  reg     c1_enters,
@@ -108,6 +109,7 @@ always @(posedge clk) if(cen) begin
 end
 
 assign cur_op = cur[4:3];
+assign cycles = cur;
 
 wire [4:0] req_I   = { op, ch };
 wire [4:0] req_II  = req_I   + 5'd1;

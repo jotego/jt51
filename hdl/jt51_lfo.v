@@ -23,241 +23,206 @@ module jt51_lfo(
     input               clk,
     input               cen,
     input               zero,
+    input               half,
+    input       [4:0]   cycles,
+
+    // configuration
     input               lfo_rst,
     input       [7:0]   lfo_freq,
     input       [6:0]   lfo_amd,
     input       [6:0]   lfo_pmd,
     input       [1:0]   lfo_w,
-    output  reg [6:0]   am,
-    output  reg [7:0]   pm_u
+    input               lfo_up,
+    input               noise,
+
+    // test
+    input       [7:0]   test,
+    output  reg         lfo_clk,
+
+    // data
+    output  reg [7:0]   am,
+    output  reg [7:0]   pm
 );
 
-reg signed [7:0] pm;
+localparam [1:0] SAWTOOTH = 2'd0,
+                 SQUARE   = 2'd1,
+                 TRIANG   = 2'd2,
+                 NOISE    = 2'd3;
 
-always @(*) begin: signed_to_unsigned
-    if( pm[7] ) begin
-        pm_u[7] = pm[7];
-        pm_u[6:0] = ~pm[6:0];
-    end
-    else pm_u = pm;
-end
+reg  [14:0] lfo_lut[0:15];
 
-wire [6:0] noise_am;
-wire [7:0] noise_pm;
+// counters
+reg  [ 3:0] cnt1, cnt3, bitcnt;
+reg  [14:0] cnt2;
+reg  [15:0] next_cnt2;
+reg  [ 1:0] cnt1_ov, cnt2_ov;
 
-parameter b0=3;
-reg [15+b0:0] base;
+// LFO state (value)
+reg  [15:0] val,    // counts next integrator step
+            out2;   // integrator for PM/AM
+reg  [ 6:0] out1;
+wire        pm_sign;
+reg         trig_sign, saw_sign;
 
-always @(posedge clk) begin : base_counter
-    if( rst ) begin
-        base    <= {b0+16{1'b0}};
-    end
-    else if(cen) begin
-        if( zero ) base <= base + 1'b1;
-    end
-end
+reg         bitcnt_rst, cnt2_load, cnt3_step;
+reg         lfo_clk_latch;
 
-reg sel_base;
-reg [4:0] freq_sel;
+wire cyc_5 = cycles[3:0]==4'h5;
+wire cyc_6 = cycles[3:0]==4'h6;
+wire cyc_c = cycles[3:0]==4'hc; // 12
+wire cyc_d = cycles[3:0]==4'hd; // 13
+wire cyc_e = cycles[3:0]==4'he; // 14
+wire cyc_f = cycles[3:0]==4'hf; // 15
 
-always @(*) begin : base_mux
-    freq_sel = {1'b0,lfo_freq[7:4]}
-        + ( lfo_w==2'd2 ? 5'b1 : 5'b0 );
-    case( freq_sel )
-        5'h10: sel_base = base[b0-1];
-        5'hf: sel_base = base[b0+0];
-        5'he: sel_base = base[b0+1];
-        5'hd: sel_base = base[b0+2];
-        5'hc: sel_base = base[b0+3];
-        5'hb: sel_base = base[b0+4];
-        5'ha: sel_base = base[b0+5];
-        5'h9: sel_base = base[b0+6];
-        5'h8: sel_base = base[b0+7];
-        5'h7: sel_base = base[b0+8];
-        5'h6: sel_base = base[b0+9];
-        5'h5: sel_base = base[b0+10];
-        5'h4: sel_base = base[b0+11];
-        5'h3: sel_base = base[b0+12];
-        5'h2: sel_base = base[b0+13];
-        5'h1: sel_base = base[b0+14];
-        5'h0: sel_base = base[b0+15];
-        default: sel_base = base[b0-1];
-    endcase
-end
+reg  cnt3_clk;
+wire ampm_sel =  bitcnt[3];
+wire bit7     = &bitcnt[2:0];
 
-reg [7:0] cnt, cnt_lim;
+assign pm_sign = lfo_w==TRIANG ? trig_sign : saw_sign;
 
-reg signed [10:0] am_bresenham;
-reg signed [ 9:0] pm_bresenham;
-
-always @(*) begin : counter_limit
-    case( lfo_freq[3:0] )
-        4'hf: cnt_lim = 8'd66;
-        4'he: cnt_lim = 8'd68;
-        4'hd: cnt_lim = 8'd70;
-        4'hc: cnt_lim = 8'd73;
-        4'hb: cnt_lim = 8'd76;
-        4'ha: cnt_lim = 8'd79;
-        4'h9: cnt_lim = 8'd82;
-        4'h8: cnt_lim = 8'd85;
-        4'h7: cnt_lim = 8'd89;
-        4'h6: cnt_lim = 8'd93;
-        4'h5: cnt_lim = 8'd98;
-        4'h4: cnt_lim = 8'd102;
-        4'h3: cnt_lim = 8'd108;
-        4'h2: cnt_lim = 8'd114;
-        4'h1: cnt_lim = 8'd120;
-        4'h0: cnt_lim = 8'd128;
-    endcase
-end
-
-wire signed [7:0] pmd_min = (~{1'b0, lfo_pmd[6:0]})+8'b1;
-
-reg lfo_clk, last_base, am_up, pm_up;
-
-always @(posedge clk, posedge rst)
-    if( rst ) begin
-        last_base   <= 1'd0;
-        lfo_clk     <= 1'b0;
-        cnt         <= 8'd0;
-        am          <= 7'd0;
-        pm          <= 8'd0;
-        am_up       <= 1'b1;
-        pm_up       <= 1'b1;
-        am_bresenham <= 11'd0;
-        pm_bresenham <= 10'd0;
+always @(*) begin
+    if( cnt2_load ) begin
+        next_cnt2[15]   = 1'd0;
+        next_cnt2[14:0] = lfo_lut[ lfo_freq[7:4] ];
     end else begin
-        if( lfo_rst ) begin // synchronous reset
-            last_base   <= 1'd0;
-            lfo_clk     <= 1'b0;
-            cnt         <= 8'd0;
-            am          <= 7'd0;
-            pm          <= 8'd0;
-            am_up       <= 1'b1;
-            pm_up       <= 1'b1;
-            am_bresenham <= 11'd0;
-            pm_bresenham <= 10'd0;
-        end else if ( cen ) begin
-        last_base <= sel_base;
-        if( last_base != sel_base ) begin
-            case( lfo_w )
-            2'd0: begin // AM sawtooth
-                if( am_bresenham > 0 ) begin
-                    if( am == lfo_amd ) begin
-                        am <= 7'd0;
-                        am_bresenham <= 11'd0;
-                    end
-                    else begin
-                        am <= am + 1'b1;
-                        am_bresenham <= am_bresenham
-                        - { 2'd0, cnt_lim, 1'b0} + {4'd0,lfo_amd};
-                    end
-                end
-                else am_bresenham <= am_bresenham + {4'd0,lfo_amd};
+        if( cnt1_ov[1] | test[3] )
+            next_cnt2 = {1'd0,cnt2 } + {15'd0,cnt1_ov[1]};
+    end
+end
 
-                if( pm_bresenham > 0 ) begin
-                    if( pm == { 1'b0, lfo_pmd } ) begin
-                        pm <= pmd_min;
-                        pm_bresenham <= 10'd0;
-                    end
-                    else begin
-                        pm <= pm + 1'b1;
-                        pm_bresenham <= pm_bresenham
-                        - {2'd0,cnt_lim} + {3'd0,lfo_pmd};
-                    end
-                end
-                else pm_bresenham <= pm_bresenham + {3'b0,lfo_pmd};
-                end
-            2'd1: // AM square waveform
-                if( cnt == cnt_lim ) begin
-                    cnt <= 8'd0;
-                    lfo_clk <= ~lfo_clk;
-                    am <= lfo_clk ? lfo_amd : 7'd0;
-                    pm <= lfo_clk ? {1'b0, lfo_pmd } : pmd_min;
-                end
-                else cnt <= cnt + 1'd1;
-            2'd2:  begin // AM triangle
-                if( am_bresenham > 0 ) begin
-                    if( am == lfo_amd && am_up) begin
-                        am_up <= 1'b0;
-                        am_bresenham <= 11'd0;
-                    end
-                    else if( am == 7'd0 && !am_up) begin
-                        am_up <= 1'b1;
-                        am_bresenham <= 11'd0;
-                    end
-                    else begin
-                        am <= am_up ? am+1'b1 : am-1'b1;
-                        am_bresenham <= am_bresenham
-                        - { 2'b0, cnt_lim, 1'b0} + {4'd0,lfo_amd};
-                    end
-                end
-                else am_bresenham <= am_bresenham + {4'd0,lfo_amd};
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        cnt1      <= 4'd0;
+        cnt2      <= 15'd0;
+        cnt3      <= 4'd0;
+        cnt1_ov   <= 2'd0;
+        cnt3_step <= 0;
+        bitcnt    <= 4'h8;
+    end else if( cen ) begin
+        // counter 1
+        if( cyc_c )
+            { cnt1_ov[0], cnt1 } <= { 1'b0, cnt1 } + 1;
+        else
+            cnt1_ov[0] <= 0;
+        cnt1_ov[1] <= cnt1_ov[0];
+        bitcnt_rst <= cnt1==4'd2;
+        if( bitcnt_rst && !cyc_c )
+            bitcnt <= 4'd0;
+        else if( cyc_e )
+            bitcnt <= bitcnt + 1'd1;
+        // counter 2
+        cnt2_load <= lfo_up | next_cnt2[15];
+        cnt2 <= next_cnt2[14:0];
+        if( cyc_e ) begin
+            cnt2_ov[0]    <= next_cnt2[15];
+            lfo_clk_latch <= lfo_clk;
+        end
+        if( cyc_5 ) cnt2_ov[1] <= cnt2_ov[0];
+        // counter 3
+        cnt3_step <= 0;
+        if( cnt2_ov[1] & cyc_d ) begin
+            cnt3_clk <= 1;
+            // frequency LSB control
+            if( !cnt3[0] ) cnt3_step <= lfo_freq[3];
+            else if( !cnt3[1] ) cnt3_step <= lfo_freq[2];
+            else if( !cnt3[2] ) cnt3_step <= lfo_freq[1];
+            else if( !cnt3[3] ) cnt3_step <= lfo_freq[0];
+        end else begin
+            cnt3_clk <= 0;
+        end
+        if( cnt3_clk )
+            cnt3 <= cnt3 + 1'd1;
+        // LFO clock
+        lfo_clk <= test[2] | next_cnt2[15] | cnt3_step;
+    end
+end
 
-                if( pm_bresenham > 0 ) begin
-                    if( pm == {1'b0, lfo_pmd} && pm_up) begin
-                        pm_up <= 1'b0;
-                        pm_bresenham <= 10'd0;
-                    end
-                    else if( pm == pmd_min && !pm_up) begin
-                        pm_up <= 1'b1;
-                        pm_bresenham <= 10'd0;
-                    end
-                    else begin
-                        pm <= pm_up ? pm+1'b1 : pm-1'b1;
-                        pm_bresenham <= pm_bresenham
-                        - {2'd0,cnt_lim} + {3'd0,lfo_pmd};
-                    end
-                end
-                else pm_bresenham <= pm_bresenham + {3'd0,lfo_pmd};
-                end
-            2'd3: begin
-                casez( lfo_amd ) // same as real chip
-                    7'b1??????: am <= noise_am[6:0];
-                    7'b01?????: am <= { 1'b0, noise_am[5:0] };
-                    7'b001????: am <= { 2'b0, noise_am[4:0] };
-                    7'b0001???: am <= { 3'b0, noise_am[3:0] };
-                    7'b00001??: am <= { 4'b0, noise_am[2:0] };
-                    7'b000001?: am <= { 5'b0, noise_am[1:0] };
-                    7'b0000001: am <= { 6'b0, noise_am[0]   };
-                    default:    am <= 7'd0;
-                endcase
-                casez( lfo_pmd )
-                    7'b1??????: pm <= noise_pm;
-                    7'b01?????: pm <= { {2{noise_pm[7]}}, noise_pm[5:0] };
-                    7'b001????: pm <= { {3{noise_pm[7]}}, noise_pm[4:0] };
-                    7'b0001???: pm <= { {4{noise_pm[7]}}, noise_pm[3:0] };
-                    7'b00001??: pm <= { {5{noise_pm[7]}}, noise_pm[2:0] };
-                    7'b000001?: pm <= { {6{noise_pm[7]}}, noise_pm[1:0] };
-                    7'b0000001: pm <= { {7{noise_pm[7]}}, noise_pm[0]   };
-                    default:    pm <= 8'd0;
-                endcase
-                end
-            endcase
+// LFO value
+reg  [1:0] val_sum;
+reg        val_c, wcarry, val0_next;
+reg        w1, w2, w3, w4, w5, w6, w7, w8;
+
+reg  [6:0] dmux;
+reg        integ_c, out1bit;
+reg  [1:0] out2sum;
+wire [7:0] out2b;
+reg  [2:0] bitsel;
+
+assign out2b = out2[15:8];
+
+always @(*) begin
+    w1        = !lfo_clk || lfo_w==NOISE || !cyc_f;
+    w4        =  lfo_clk_latch && lfo_w==NOISE;
+    w3        = !w4 && val[15] && !test[1];
+    w2        = !w1 && lfo_w==TRIANG;
+    wcarry    = !w1 || ( !cyc_f && lfo_w!=NOISE && val_c);
+    val_sum   = {1'b0, w2} + {1'b0, w3} + {1'b0, wcarry};
+    val0_next = val_sum[0] || (lfo_w==NOISE && lfo_clk_latch && noise);
+    // LFO compound output, AM/PM base value one after the other
+    w5        = ampm_sel ? saw_sign : (!trig_sign || lfo_w!=TRIANG);
+    w6        = w5 ^ w3;
+    w7        = cycles[3:0]<4'd7 || cycles[3:0]==4'd15;
+    w8        = lfo_w == SQUARE ? (ampm_sel?cyc_6 : !saw_sign) : w6;
+    w8        = ~(w8 & w7);
+
+    // Integrator
+    dmux      = (ampm_sel ? lfo_pmd : lfo_amd) &~out1;
+    bitsel    = ~(bitcnt[2:0]+3'd1);
+    out1bit   = dmux[ bitsel ] & ~bit7;
+    out2sum   = {1'b0, out1bit} + {1'b0, out2[0] && bitcnt[2:0]!=0} + {1'b0, integ_c & ~cyc_f };
+end
+
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        val       <= 16'd0;
+        val_c     <= 0;
+        trig_sign <= 0;
+        saw_sign  <= 0;
+        out1      <= ~7'd0;
+        out2      <= 16'd0;
+        integ_c   <= 0;
+    end else if( cen ) begin
+        val   <= {val[14:0], val0_next };
+        val_c <= val_sum[1];
+        if( cyc_f ) begin
+            trig_sign <= val[7];
+            saw_sign  <= val[8];
+        end
+        // current step
+        out1 <= {out1[5:0], w8};
+        // integrator
+        integ_c <= out2sum[1];
+        out2    <= { out2sum[0], out2[15:1] };
+        // final output
+        if( bit7 & cyc_f ) begin
+            if( ampm_sel )
+                pm <= { out2b[7]^pm_sign, out2b[6:0]};
+            else
+                am <= out2b;
         end
     end
 end
 
-genvar aux;
-generate
-    for( aux=0; aux<7; aux=aux+1 ) begin : amnoise
-        jt51_lfo_lfsr #(.init(aux*aux+aux) ) u_noise_am(
-            .rst( rst ),
-            .clk( clk ),
-            .cen( cen ),
-            .base(sel_base),
-            .out( noise_am[aux] )
-        );
-    end
-    for( aux=0; aux<8; aux=aux+1 ) begin : pmnoise
-        jt51_lfo_lfsr #(.init(4*aux*aux-3*aux+40) ) u_noise_pm(
-            .rst( rst ),
-            .clk( clk ),
-            .cen( cen ),
-            .base(sel_base),
-            .out( noise_pm[aux] )
-        );
-    end
-endgenerate
+initial begin
+    lfo_lut[0] = 15'h0000;
+    lfo_lut[1] = 15'h4000;
+    lfo_lut[2] = 15'h6000;
+    lfo_lut[3] = 15'h7000;
+
+    lfo_lut[4] = 15'h7800;
+    lfo_lut[5] = 15'h7c00;
+    lfo_lut[6] = 15'h7e00;
+    lfo_lut[7] = 15'h7f00;
+
+    lfo_lut[8] = 15'h7f80;
+    lfo_lut[9] = 15'h7fc0;
+    lfo_lut[10] = 15'h7fe0;
+    lfo_lut[11] = 15'h7ff0;
+
+    lfo_lut[12] = 15'h7ff8;
+    lfo_lut[13] = 15'h7ffc;
+    lfo_lut[14] = 15'h7ffe;
+    lfo_lut[15] = 15'h7fff;
+end
 
 endmodule
