@@ -145,7 +145,8 @@ wire    [ 4:0]  keycode_III;
 wire    [ 9:0]  ph_X;
 wire            pg_rst_III;
 
-/*verilator tracing_off*/
+/*verilator tracing_on*/
+
 
 jt51_pg u_pg(
     .rst        ( rst       ),
@@ -201,6 +202,7 @@ jt51_eg u_eg(
     .eg_XI      ( eg_XI )
 );
 
+/*verilator tracing_off*/
 wire signed [13:0] op_out;
 
 jt51_op u_op(

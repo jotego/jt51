@@ -130,7 +130,7 @@ if [ $SKIPMAKE = FALSE ]; then
         $VERI_EXTRA $FAST --exe test.cpp VGMParser.cpp WaveWritter.cpp opm.c vcdwr.cc; then
         exit $?
     fi
-
+    export CPPFLAGS=-O2
     if ! make -j -C obj_dir -f V${TOP}.mk V${TOP}; then
         exit $?
     fi

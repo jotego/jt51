@@ -10,6 +10,7 @@
 #include "WaveWritter.hpp"
 #include "opm.h"
 #include "ref.h"
+#include "cmp.h"
 
   // #include "verilated.h"
 
@@ -99,7 +100,7 @@ class CmdWritter {
 public:
     CmdWritter( Vjt51* _top, opm_t* _ref );
     void Write( int _addr, int _cmd, int _val );
-    void block( int cmd_mask, int cmd, int (*filter)(int), int blk_addr=3 ) {
+    void block( int cmd_mask, int cmd, int (*filter)(int), int blk_addr=1 ) {
         Block_def aux;
         aux.cmd_mask = cmd_mask;
         aux.cmd = cmd;
@@ -167,6 +168,7 @@ int main(int argc, char** argv, char** env) {
     bool forever=true, dump_hex=false, decode_pcm=true;
     char *gym_filename;
     SimTime sim_time(top, &ref.opm);
+    Cmp cmp( &ref.opm, top );
     int SAMPLERATE=0;
     vluint64_t SAMPLING_PERIOD=0, trace_start_time=0;
     string wav_filename;
@@ -239,18 +241,20 @@ int main(int argc, char** argv, char** env) {
                 cerr << "ERROR: needs channel number after -mute\n";
                 return 1;
             }
-            if( ch<0 || ch>5 ) {
-                cerr << "ERROR: muted channel must be within 0-5 range\n";
+            if( ch<0 || ch>7 ) {
+                cerr << "ERROR: muted channel must be within 0-7 range\n";
                 return 1;
             }
             cerr << "Channel " << ch << " muted\n";
             switch(ch) {
-                case 0: writter.block( 0xFF, 0x28, [](int v)->int{ return (v&0xf)==0? 0 : v;} ); break;
-                case 1: writter.block( 0xFF, 0x28, [](int v)->int{ return (v&0xf)==1? 0 : v;} ); break;
-                case 2: writter.block( 0xFF, 0x28, [](int v)->int{ return (v&0xf)==2? 0 : v;} ); break;
-                case 3: writter.block( 0xFF, 0x28, [](int v)->int{ return (v&0xf)==4? 0 : v;} ); break;
-                case 4: writter.block( 0xFF, 0x28, [](int v)->int{ return (v&0xf)==5? 0 : v;} ); break;
-                case 5: writter.block( 0xFF, 0x28, [](int v)->int{ return (v&0xf)==6? 0 : v;} ); break;
+                case 0: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==0)? (v&7) : v;} ); break;
+                case 1: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==1)? (v&7) : v;} ); break;
+                case 2: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==2)? (v&7) : v;} ); break;
+                case 3: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==3)? (v&7) : v;} ); break;
+                case 4: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==4)? (v&7) : v;} ); break;
+                case 5: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==5)? (v&7) : v;} ); break;
+                case 6: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==6)? (v&7) : v;} ); break;
+                case 7: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==7)? (v&7) : v;} ); break;
             }
             continue;
         }
@@ -321,7 +325,7 @@ int main(int argc, char** argv, char** env) {
     // cerr << "Reset\n";
     while( sim_time.get_time() < 256*sim_time.period() ) {
         sim_time.next_quarter();
-        if(trace) {
+        if(trace && trace_start_time==0 ) {
             tfp->dump(main_time);
             if( trace_ref ) ref.dump(main_time);
         }
@@ -333,7 +337,6 @@ int main(int argc, char** argv, char** env) {
     state = WRITE_REG;
 
     vluint64_t timeout=0;
-    bool wait_nonzero=true;
     const int check_step = 200;
     int next_check=check_step;
     int reg, val;
@@ -347,7 +350,8 @@ int main(int argc, char** argv, char** env) {
     list<YMcmd> forced_values;
     // main loop
     // writter.watch( 1, 0 ); // top bank, channel 0
-    bool skip_zeros=true;
+    //bool skip_zeros=true;
+    bool skip_zeros=false;
     vluint64_t adjust_sum=0;
     int next_verbosity = 200;
     vluint64_t next_sample=0;
@@ -364,6 +368,9 @@ int main(int argc, char** argv, char** env) {
                     waves.write( top );
                     waves_ref.write( sim_time.ref_output );
                 }
+                //if( !cmp.equal() ) {
+                //    printf("Reference and RTL output diverged at time \n");
+                //}
                 next_sample += SAMPLING_PERIOD;
             }
             last_sample = top->sample;
@@ -488,9 +495,11 @@ void CmdWritter::Write( int _addr, int _cmd, int _val ) {
     for( auto&k : blocks ) {
         int aux = _cmd;
         aux &= k.cmd_mask;
-        if( aux == k.cmd && (k.blk_addr==3 || k.blk_addr==_addr )) {
+        if( aux == k.cmd ) {
             int old=_val;
-            _val = k.filter(_val);
+            _val = k.filter(old);
+            if( old!=_val )
+                printf("Blocked %X/ %X -> %X\n", aux, old, _val);
         }
     }
     addr = _addr;
@@ -498,8 +507,8 @@ void CmdWritter::Write( int _addr, int _cmd, int _val ) {
     val  = _val;
     done = false;
     state = 0;
-    if( addr == watch_addr && cmd>=(char)0x30 && (cmd&0x3)==watch_ch )
-        cerr << addr << '-' << watch_ch << " CMD = " << hex << (cmd&0xff) << " VAL = " << (val&0xff) << '\n';
+    if( cmd>=(char)0x30 && (cmd&0x7)==watch_ch )
+        cerr << watch_ch << " CMD = " << hex << (cmd&0xff) << " VAL = " << (val&0xff) << '\n';
     for( auto& k : features )
         k.check( cmd, val );
     // cerr << addr << '\t' << hex << "0x" << ((unsigned)cmd&0xff);

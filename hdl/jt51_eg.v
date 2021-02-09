@@ -432,6 +432,13 @@ sep32 #(.width(10),.stg(7)) sep_amfinal(
     .cnt    ( cnt           )
     );
 
+sep32 #(.width(5),.stg(3)) sep_kcfinal(
+    .clk    ( clk           ),
+    .cen    ( cen           ),
+    .mixed  ( keycode_III   ),
+    .cnt    ( cnt           )
+    );
+
 /* verilator lint_on PINMISSING */
 `endif
 `endif
