@@ -12,7 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.1
     Date: 15- 4-2016
@@ -30,8 +30,8 @@ module sep32 #(parameter width=10, parameter stg=5'd0)
     input   clk,
     input   cen,
     input [width-1:0] mixed,
-    input [4:0] cnt,    
-    
+    input [4:0] cnt,
+
     output reg [width-1:0]  slot_00,
     output reg [width-1:0]  slot_01,
     output reg [width-1:0]  slot_02,
@@ -63,8 +63,10 @@ module sep32 #(parameter width=10, parameter stg=5'd0)
     output reg [width-1:0]  slot_34,
     output reg [width-1:0]  slot_35,
     output reg [width-1:0]  slot_36,
-    output reg [width-1:0]  slot_37 
+    output reg [width-1:0]  slot_37
 );
+
+/*verilator coverage_off*/
 
 reg [4:0] cntadj;
 
@@ -112,8 +114,10 @@ always @(posedge clk) if(cen) begin
         5'o35:  slot_35 <= mixed;
         5'o36:  slot_36 <= mixed;
         5'o37:  slot_37 <= mixed;
-    endcase             
+    endcase
 end
-    
+
+/*verilator coverage_on*/
+
 endmodule
-    
+

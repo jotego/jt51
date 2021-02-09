@@ -4,66 +4,47 @@
 
 using namespace std;
 
-VCDwr::VCDwr( const char *name ) {
+VCDwr::VCDwr( const char *name, const char *toplevel ) {
     fout = fopen( name, "wb" );
+    fprintf( fout, "$date\n No particular date\n$end\n");
+    fprintf( fout, "$version JT51 $end\n");
     fprintf( fout, "$timescale 1ns $end\n");
+    fprintf( fout, "$scope module %s $end\n", toplevel);
     vars=0;
-    init=true;
+    scopes=1;
     tchange=true;
+    force=true;
     time = 0;
 }
 
 VCDwr::~VCDwr() {
-    for( auto k : last )
-        delete k.second;
-    last.erase( last.begin(), last.end() );
+    for( auto k : signals )
+        delete k;
     fclose(fout);
 }
 
-void VCDwr::define(const char *name, int width ) {
-    if( !init ) throw runtime_error("added new VCD signal after setting values or time");
-    fprintf( fout, "$var wire %d $%X %s $end\n", width, vars, name );
-    VCDsignal *s = new VCDsignal( {vars, width, 0} );
-    last[name] = s;
-    vars++;
-}
 
 void VCDwr::set_time( uint64_t t ) {
-    init = false;
+    bool closed=true;
+    while( scopes-->0 ) {
+        fprintf(fout, "$upscope $end\n");
+        closed=false;
+    }
+    if( !closed ) {
+        fprintf(fout, "$enddefinitions $end\n$dumpvars\n");
+    }
     tchange = true;
     time = t;
+    for( auto k : signals ) k->update(fout, time, tchange, force );
+    force = false;
 }
 
-void VCDwr::set_value( const char *name, uint64_t value ) {
-    string n(name);
-    auto k = last.find(n);
-    VCDsignal *s;
-    if( k==last.end()) {
-        throw runtime_error("cannot find VCD signal");
-    }
-    else s = k->second;
-    value &= (1<<s->width)-1;
-    if( value!=s->last || time==0 ) {
-        if( tchange ) {
-            fprintf( fout, "#%ld\n", time);
-            tchange = false;
-        }
-        s->last = value;
-        if( s->width==1 ) {
-            fprintf( fout, "%ld$%X\n", value, s->id );
-        } else {
-            uint64_t aux=value<<(64-s->width);
-            bool first=true;
-            //fprintf( fout, "value=%lx\n", value );
-            fprintf( fout, "b" );
-            for( int j=s->width; j; j--, aux<<=1 ) {
-                int v = (aux & (1L<<63))!=0;
-                if( !v && first && j!=1 ) continue;
-                first= false;
-                fprintf( fout, "%d", v ? 1: 0 );
-            }
-            fprintf( fout, " $%X\n", s->id );
-        }
-    }
-    init = false;
+void VCDwr::add_scope( const char *name ) {
+    fprintf( fout, "$scope module %s $end\n", name );
+    scopes++;
+}
+
+void VCDwr::close_scope() {
+    fprintf(fout, "$upscope $end\n");
+    scopes--;
 }

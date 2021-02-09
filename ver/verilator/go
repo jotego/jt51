@@ -45,6 +45,8 @@ function set_slow {
             if [[ "$WAV_FILE" == "" ]]; then
                 WAV_FILE=$(basename "$GYM_FILE" .vgm).wav
             fi;;
+        -cover)
+            VERI_EXTRA="$VERI_EXTRA --coverage";;
         "-time" | "-t")
             shift
             EXTRA="$EXTRA -time $1";;
@@ -130,7 +132,11 @@ if [ $SKIPMAKE = FALSE ]; then
         $VERI_EXTRA $FAST --exe test.cpp VGMParser.cpp WaveWritter.cpp opm.c vcdwr.cc; then
         exit $?
     fi
-    export CPPFLAGS=-O2
+    if [ $DUMPSIGNALS = -trace ]; then
+        export CPPFLAGS=-O3
+    else
+        export CPPFLAGS=-O2
+    fi
     if ! make -j -C obj_dir -f V${TOP}.mk V${TOP}; then
         exit $?
     fi
@@ -140,12 +146,17 @@ fi
 
 if [[ $DUMPSIGNALS == "-trace" ]]; then
     EXTRA="$EXTRA -trace-ref"
+
     if which vcd2fst; then
         # Verilator VCD output goes through standard output
         echo VCD to FST conversion running in parallel
         # filter out lines starting with INFO: because these come from $display commands in verilog and are
         # routed to standard output but are not part of the VCD file
+        rm -f ref.vcd
+        mkfifo ref.vcd
+        vcd2fst ref.vcd ref.fst&
         obj_dir/V${TOP} $DUMPSIGNALS $EXTRA $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE" |  grep -v "^INFO: " | vcd2fst -v - -f test.fst
+        rm ref.vcd
     else
         if which simvisdbutil; then
             obj_dir/V${TOP} $DUMPSIGNALS $EXTRA $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE" | grep -v "^INFO: " > test.vcd
