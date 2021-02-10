@@ -206,7 +206,7 @@ always @(posedge clk, posedge rst) begin
         // final output
         if( bit7 & cyc_f ) begin
             if( ampm_sel )
-                pm <= { out2b[7]^pm_sign, out2b[6:0]};
+                pm <= lfo_pmd==7'd0 ? 8'd0 : { out2b[7]^pm_sign, out2b[6:0]};
             else
                 am <= out2b;
         end

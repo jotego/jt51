@@ -130,9 +130,9 @@ if [ $SKIPMAKE = FALSE ]; then
     if ! verilator --cc -f gather.f --top-module jt51 \
         -I../../hdl --trace -DTEST_SUPPORT \
         $VERI_EXTRA $FAST --exe test.cpp VGMParser.cpp WaveWritter.cpp opm.c vcdwr.cc; then
-        exit $?
+        exit 1
     fi
-    if [ $DUMPSIGNALS = -trace ]; then
+    if [ $DUMPSIGNALS == -trace ]; then
         export CPPFLAGS=-O3
     else
         export CPPFLAGS=-O2
@@ -142,6 +142,7 @@ if [ $SKIPMAKE = FALSE ]; then
     fi
     echo Simulation start...
     echo obj_dir/V${TOP} $DUMPSIGNALS $EXTRA  $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE"
+    EXIT=$?
 fi
 
 if [[ $DUMPSIGNALS == "-trace" ]]; then
@@ -156,16 +157,24 @@ if [[ $DUMPSIGNALS == "-trace" ]]; then
         mkfifo ref.vcd
         vcd2fst ref.vcd ref.fst&
         obj_dir/V${TOP} $DUMPSIGNALS $EXTRA $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE" |  grep -v "^INFO: " | vcd2fst -v - -f test.fst
+        EXIT=$?
         rm ref.vcd
     else
         if which simvisdbutil; then
             obj_dir/V${TOP} $DUMPSIGNALS $EXTRA $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE" | grep -v "^INFO: " > test.vcd
-            echo VCD to SST2 conversion
-            simvisdbutil test.vcd -output test -overwrite -shm && rm test.vcd
+            EXIT=$?
+            if [ $EXIT = 0 ]; then
+                echo VCD to SST2 conversion
+                simvisdbutil test.vcd -output test -overwrite -shm && rm test.vcd
+                EXIT=$?
+            fi
         else
             obj_dir/V${TOP} $DUMPSIGNALS $EXTRA $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE" > test.vcd
+            EXIT=$?
         fi
     fi
 else
     obj_dir/V${TOP} $DUMPSIGNALS $EXTRA $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE"
+    EXIT=$?
 fi
+exit $EXIT

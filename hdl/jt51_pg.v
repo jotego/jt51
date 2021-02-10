@@ -12,7 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 27-10-2016
@@ -99,25 +99,9 @@ always @(*) begin : dt1_limit_mux
         3'd5:   dt1_unlimited = { pow2[4:0], 1'd0 };
         default:dt1_unlimited = 6'd0;
     endcase
-    dt1_limited_IV = dt1_unlimited > dt1_limit ? 
-                            dt1_limit[4:0] : dt1_unlimited[4:0]; 
+    dt1_limited_IV = dt1_unlimited > dt1_limit ?
+                            dt1_limit[4:0] : dt1_unlimited[4:0];
 end
-
-reg signed [8:0] mod_I;
-
-always @(*) begin
-    case( pms_I ) // comprobar en silicio
-        3'd0: mod_I = 9'd0;
-        3'd1: mod_I = { 7'd0, pm[6:5] };
-        3'd2: mod_I = { 6'd0, pm[6:4] };
-        3'd3: mod_I = { 5'd0, pm[6:3] };
-        3'd4: mod_I = { 4'd0, pm[6:2] };
-        3'd5: mod_I = { 3'd0, pm[6:1] };
-        3'd6: mod_I = { 1'd0, pm[6:0], 1'b0 };
-        3'd7: mod_I = {      pm[6:0], 2'b0 };
-    endcase     
-end
-
 
 reg [3:0]   octave_III;
 
@@ -125,34 +109,21 @@ wire [12:0] keycode_I;
 
 jt51_pm u_pm(
     // Channel frequency
-    .kc_I   ( kc_I      ),
-    .kf_I   ( kf_I      ),
-    .add    ( ~pm[7]    ),
-    .mod_I  ( mod_I     ),
+    .kc     ( kc_I      ),
+    .kf     ( kf_I      ),
+    .pms    ( pms_I     ),
+    .pm     ( pm        ),
+    .dt     ( dt2_I     ),
     .kcex   ( keycode_I )
 );
 
-// limit value at which we add +64 to the keycode
-// I assume this is to avoid the note==3 violation somehow
-parameter dt2_lim2 = 8'd11 + 8'd64;
-parameter dt2_lim3 = 8'd31 + 8'd64;
-
     // I
 always @(posedge clk) if(cen) begin : phase_calculation
-    case ( dt2_I )
-        2'd0: keycode_II <=  { 1'b0, keycode_I } +
-            (keycode_I[7:6]==2'd3 ? 14'd64:14'd0);
-        2'd1: keycode_II <= { 1'b0, keycode_I } + 14'd512 +
-            (keycode_I[7:6]==2'd3 ? 14'd64:14'd0);
-        2'd2: keycode_II <= { 1'b0, keycode_I } + 14'd628 +
-            (keycode_I[7:0]>dt2_lim2 ? 14'd64:14'd0);
-        2'd3: keycode_II <= { 1'b0, keycode_I } + 14'd800 + 
-            (keycode_I[7:0]>dt2_lim3  ? 14'd64:14'd0);
-    endcase
+    keycode_II <= {1'd0, keycode_I};
 end
 
     // II
-always @(posedge clk) if(cen) begin 
+always @(posedge clk) if(cen) begin
     phinc_addr_III  <= keycode_II[9:0];
     octave_III  <= keycode_II[13:10];
     keycode_III <=  keycode_II[12:8];
@@ -165,7 +136,7 @@ always @(posedge clk) if(cen) begin
     dt1_III   <= dt1_II;
 end
 
-    // III      
+    // III
 always @(posedge clk) if(cen) begin
     case( octave_III )
         4'd0:   phase_base_IV   <=  { 8'd0, phinc_III[11:2] };
@@ -186,7 +157,7 @@ end
 
     // IV LIMIT_BASE
 always @(posedge clk) if(cen) begin
-    if( phase_base_IV > 18'd82976 ) 
+    if( phase_base_IV > 18'd82976 )
         phase_base_V <= 18'd82976;
     else
         phase_base_V <= phase_base_IV;
@@ -218,11 +189,11 @@ end
 always @(posedge clk, posedge rst) begin
     if( rst )
         ph_VIII <= 20'd0;
-    else if(cen) begin 
+    else if(cen) begin
         ph_VIII <= pg_rst_VII ? 20'd0 : ph_VII + phase_step_VII;
         `ifdef DISPLAY_STEP
             $display( "%d", phase_step_VII );
-        `endif      
+        `endif
     end
 end
 
@@ -248,7 +219,7 @@ always @(posedge clk, posedge rst) begin
 end
 
 jt51_sh #( .width(20), .stages(32-3) ) u_phsh(
-    .rst    ( rst       ),    
+    .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
     .din    ( ph_X      ),
@@ -271,13 +242,13 @@ wire [4:0] cnt;
 
 sep32_cnt u_sep32_cnt (.clk(clk), .cen(cen), .zero(zero), .cnt(cnt));
 // wire zero_VIII;
-// 
+//
 // jt51_sh #(.width(1),.stages(7)) u_sep_aux(
 //     .clk    ( clk       ),
 //     .din    ( zero      ),
 //     .drop   ( zero_VIII )
 //     );
-// 
+//
 // sep32 #(.width(1),.stg(8)) sep_ref(
 //     .clk    ( clk           ),
 //     .cen(cen),
