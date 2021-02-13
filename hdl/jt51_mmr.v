@@ -28,6 +28,9 @@ module jt51_mmr(
     input           a0,
     output  reg     busy,
 
+    // Original test bits
+    output reg [7:0] test_mode,
+
     // CT
     output  reg     ct1,
     output  reg     ct2,
@@ -41,7 +44,6 @@ module jt51_mmr(
     output  reg [1:0]   lfo_w,
     output  reg [6:0]   lfo_amd,
     output  reg [6:0]   lfo_pmd,
-    output  reg         lfo_rst,
     output  reg         lfo_up,
     // Timers
     output  reg [9:0]   value_A,
@@ -146,10 +148,10 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         lfo_up          <= 1'b0;
         lfo_freq        <= 8'd0;
         lfo_w           <= 2'd0;
-        lfo_rst         <= 1'b0;
         { ct2, ct1 }    <= 2'd0;
         csm             <= 1'b0;
         din_copy        <= 8'd0;
+        test_mode       <= 8'd0;
         `ifdef SIMULATION
         mmr_dump <= 1'b0;
         `endif
@@ -177,7 +179,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                 if( selected_register < 8'h20 ) begin
                     case( selected_register)
                     // registros especiales
-                    REG_TEST:   lfo_rst <= 1'b1; // regardless of din
+                    REG_TEST:   test_mode <= din; // regardless of din
                     `ifdef TEST_SUPPORT
                     REG_TEST2:  { test_op0, test_eg } <= din[1:0];
                     `endif
@@ -242,7 +244,6 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
             mmr_dump <= 1'b0;
             `endif
             csm     <= 0;
-            lfo_rst <= 0;
             lfo_up  <= 0;
             { clr_flag_B, clr_flag_A } <= 2'd0;
         end

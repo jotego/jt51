@@ -110,6 +110,7 @@ wire            lfo_rst, lfo_up;
 wire    [7:0]   am;
 wire    [7:0]   pm;
 wire    [6:0]   amd, pmd;
+wire    [7:0]   test_mode;
 
 wire m1_enters, m2_enters, c1_enters, c2_enters;
 wire use_prevprev1,use_internal_x,use_internal_y, use_prev2,use_prev1;
@@ -134,7 +135,7 @@ jt51_lfo u_lfo(
     .noise      ( noise     ),
 
     // Test
-    .test       ( 8'd0      ),
+    .test       ( test_mode ),
     .lfo_clk    (           ),
 
     .am         ( am        ),
@@ -294,8 +295,9 @@ jt51_mmr u_mmr(
     .din        ( din           ),
     .busy       ( busy          ),
 
+    .test_mode  ( test_mode     ),
     // CT
-    .ct1        ( ct1           ),
+    .ct1        ( ct1           ), // the LFO clock can be outputted via CT1 -not implemented-
     .ct2        ( ct2           ),
     // LFO
     .lfo_freq   ( lfo_freq      ),
