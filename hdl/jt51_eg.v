@@ -61,7 +61,7 @@ reg     [ 5:0]  rate_IV;
 wire    [ 9:0]  eg_VI;
 reg     [ 9:0]  eg_VII, eg_VIII;
 wire    [ 9:0]  eg_II;
-reg     [10:0]  sum_eg_tl_VII;
+reg     [11:0]  sum_eg_tl_VII;
 
 reg     step_V, step_VI;
 reg     sum_up;
@@ -320,16 +320,16 @@ always @(*) begin : sum_eg_and_tl
     endcase
     `ifdef TEST_SUPPORT
     if( test_eg && tl_VII!=7'd0 )
-        sum_eg_tl_VII = 11'd0;
+        sum_eg_tl_VII = 12'd0;
     else
     `endif
-    sum_eg_tl_VII = { 1'b0, tl_VII, 3'd0 } // 0.75 dB steps
-                  + { 1'b0, eg_VII       } // 0.094 dB steps
-                  + { 1'b0, am_final_VII };
+    sum_eg_tl_VII = { 2'b0, tl_VII, 3'd0 } // 0.75 dB steps
+                  + { 2'b0, eg_VII       } // 0.094 dB steps
+                  + { 2'b0, am_final_VII };
 end
 
 always @(posedge clk) if(cen) begin
-    eg_VIII <= sum_eg_tl_VII[10] ? {10{1'b1}} : sum_eg_tl_VII[9:0];
+    eg_VIII <= |sum_eg_tl_VII[11:10] ? {10{1'b1}} : sum_eg_tl_VII[9:0];
 end
 
 jt51_sh #( .width(10), .stages(3) ) u_egpadding (

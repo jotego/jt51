@@ -106,7 +106,7 @@ wire            keyon_II;
 
 wire    [7:0]   lfo_freq;
 wire    [1:0]   lfo_w;
-wire            lfo_rst, lfo_up;
+wire            lfo_up;
 wire    [7:0]   am;
 wire    [7:0]   pm;
 wire    [6:0]   amd, pmd;
@@ -126,7 +126,6 @@ jt51_lfo u_lfo(
     .cycles     ( cycles    ),
 
     // Configuration
-    .lfo_rst    ( lfo_rst   ),
     .lfo_freq   ( lfo_freq  ),
     .lfo_w      ( lfo_w     ),
     .lfo_amd    ( amd       ),
@@ -304,7 +303,6 @@ jt51_mmr u_mmr(
     .lfo_w      ( lfo_w         ),
     .lfo_amd    ( amd           ),
     .lfo_pmd    ( pmd           ),
-    .lfo_rst    ( lfo_rst       ),
     .lfo_up     ( lfo_up        ),
 
     // Noise

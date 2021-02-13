@@ -27,7 +27,6 @@ module jt51_lfo(
     input       [4:0]   cycles,
 
     // configuration
-    input               lfo_rst,
     input       [7:0]   lfo_freq,
     input       [6:0]   lfo_amd,
     input       [6:0]   lfo_pmd,
