@@ -39,6 +39,10 @@ module jt51_pg(
     input               pg_rst_III,
     output  reg [ 4:0]  keycode_III,
     output      [ 9:0]  pg_phase_X
+    `ifdef JT51_PG_SIM
+    ,output [19:0] phase_step_VII_out
+    ,output [12:0] keycode_I_out
+    `endif
 );
 
 wire [19:0] ph_VII;
@@ -59,7 +63,14 @@ reg [4:0]   pow2;
 reg [4:0]   dt1_offset_V;
 reg [2:0]   pow2ind_IV;
 
-reg  [2:0]  dt1_III, dt1_IV, dt1_V;
+wire [12:0] keycode_I;
+reg  [ 2:0] dt1_III, dt1_IV, dt1_V;
+
+`ifdef JT51_PG_SIM
+assign phase_step_VII_out = phase_step_VII;
+assign keycode_I_out = keycode_I;
+`endif
+
 
 jt51_phinc_rom u_phinctable(
     // .clk     ( clk        ),
@@ -104,8 +115,6 @@ always @(*) begin : dt1_limit_mux
 end
 
 reg [3:0]   octave_III;
-
-wire [12:0] keycode_I;
 
 jt51_pm u_pm(
     // Channel frequency
