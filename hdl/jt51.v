@@ -111,6 +111,7 @@ wire    [7:0]   am;
 wire    [7:0]   pm;
 wire    [6:0]   amd, pmd;
 wire    [7:0]   test_mode;
+wire            noise;
 
 wire m1_enters, m2_enters, c1_enters, c2_enters;
 wire use_prevprev1,use_internal_x,use_internal_y, use_prev2,use_prev1;
@@ -238,7 +239,7 @@ jt51_op u_op(
 
 wire [ 4:0] nfrq;
 wire [11:0] noise_mix;
-wire        ne, op31_acc, op31_no, noise;
+wire        ne, op31_acc, op31_no;
 
 jt51_noise u_noise(
     .rst    ( rst       ),
