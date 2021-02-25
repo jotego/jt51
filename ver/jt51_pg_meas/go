@@ -1,0 +1,88 @@
+#!/bin/bash
+
+TOP=jt51_test
+DUMPSIGNALS=DONT
+LFO_PM=0
+LFO_PMS=0
+TEST_MODE=KC_TEST
+
+while [ $# -gt 0 ]; do
+	if [ $1 = "-w" ]; then
+		echo "Signal dump enabled"
+		DUMPSIGNALS=DUMPSIGNALS
+		shift
+		continue
+	fi
+ 	if [ $1 = "-lfo" ]; then
+		echo "LFO test enabled"
+		TEST_MODE=LFO_TEST
+		shift
+		continue
+	fi
+ 	if [ $1 = "-lfofull" ]; then
+		echo "LFO full test enabled"
+		TEST_MODE=LFO_FULL_TEST
+		shift
+		continue
+	fi
+	if [ $1 = "PM" ]; then
+		shift
+        LFO_PM=$1
+        shift
+		continue
+	fi
+	if [ $1 = "PMS" ]; then
+		shift
+        LFO_PMS=$1
+        shift
+		continue
+	fi
+	echo Unrecognized option
+    exit 1
+done
+
+if which iverilog &> /dev/null; then
+    iverilog -f basic.f -s $TOP -o basic -I../../hdl/jt51 -DDISPLAY_STEP \
+    	-D$DUMPSIGNALS -DLFO_PM=$LFO_PM -DLFO_PMS=$LFO_PMS -D$TEST_MODE && basic -lxt > s || exit $?
+    if [ $? -ne 0 ]; then
+	    cat s
+	    rm s
+	    exit 1
+    fi
+else
+	ncverilog -f basic.f +access+rc +incdir+../../hdl/jt51 +nctop+$TOP \
+    	+define+NCVERILOG+DISPLAY_STEP+$DUMPSIGNALS \
+        +define+LFO_PM=$LFO_PM +define+LFO_PMS=$LFO_PMS +define+$TEST_MODE > s || exit $?
+	if [ $? -ne 0 ]; then
+		cat s
+		rm s
+		exit 1
+	fi
+fi
+
+if [ $TEST_MODE == KC_TEST ]; then
+    myfile=out_${LFO_PMS}_${LFO_PM}
+
+    cat s | awk 'BEGIN{ g=0 }
+    /DUMP END/ { g=3 }
+    { if( g==2 ) print $0 }
+    /324/ { if(g<2) g=2 }' > $myfile
+    #rm s
+
+    if [[ $LFO_PM == 0 && $LFO_PMS == 0 ]]; then
+        ../../bin/phinc -c $myfile > errors
+        wc -l errors
+    fi
+else
+	if [ $TEST_MODE == LFO_TEST ]; then
+		myfile=out_lfo
+	else
+		myfile=out_lfofull
+    fi
+
+    cat s | awk 'BEGIN{ g=0 }
+    /DUMP END/ { g=3 }
+    { if( g==2 ) print $0 }
+    /162/ { if(g<2) ++g }' > $myfile
+    rm s
+fi
