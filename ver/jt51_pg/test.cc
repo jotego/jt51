@@ -2,6 +2,7 @@
 #include "Vjt51_pg.h"
 #include "opm.h"
 #include <cstdio>
+#include <cmath>
 
 using namespace std;
 
@@ -24,11 +25,17 @@ float phinc2freq( int phinc ) {
     return ((float)phinc)*CRYSTAL/32/(1<<20)/2.0;
 }
 
+float cent( float a, float b ) {
+    const float log2 = 0.693147;
+    return 1200*log(a/b)/log2;
+}
+
 int test_all( Vjt51_pg& dut, opm_t& opm );
 void report( const char* sz, bool bad );
 
 int test_dt1( Vjt51_pg& dut, opm_t& opm );
 int test_dt2( Vjt51_pg& dut, opm_t& opm );
+int test_pms( Vjt51_pg& dut, opm_t& opm );
 
 bool check_dt1( int oct, int note, int dt1, float delta );
 float expectedHz( int kc, int kf, int lfo, int pms, int dt1, int dt2, int mul );
@@ -39,13 +46,15 @@ int main(int argc, char *argv[]) {
 
     OPM_Reset(&opm);
 
-    bool run_dt1=true,
-         run_dt2=true;
+    bool run_dt1=false,
+         run_dt2=false,
+         run_pms=true;
 
     int good=0; // 0 = no errors
 
     if( run_dt1 ) good += test_dt1( dut, opm );
     if( run_dt2 ) good += test_dt2( dut, opm );
+    if( run_pms ) good += test_pms( dut, opm );
 
     return good;
 }
@@ -295,4 +304,52 @@ void report( const char* sz, bool bad ) {
         printf("%s FAIL\n", sz);
     else
         printf("%s PASS\n", sz);
+}
+
+int test_pms( Vjt51_pg& dut, opm_t& opm ) {
+    bool bad=false;
+    int kf=0, lfo=0, pms=0, dt1=0, dt2=0, mul=1;
+    printf("LFO (note)    | PMS=0 | PMS=1 | PMS=2 | PMS=3 | PMS=4 | PMS=5 | PMS=6 | PMS=7\n");
+    printf("--------------|-------|-------|-------|-------|-------|-------|-------|------\n");
+    int oct=4, note=10;
+    int lfo_lut[]={0, 31, 63, 127 };
+    //for( oct=4; oct<7; oct+=2 )
+    for( int lfok=0; lfok<4; lfok++ )
+    {
+        lfo=lfo_lut[lfok];
+        int kc = (oct<<4) | note;
+        dt1=0; dt2=0;
+        jt51_st dut_st;
+        int ref_phinc = ref( &opm, kc, kf, lfo, pms, dt1, dt2, mul );
+        eval_dut( &dut, dut_st, kc, kf, lfo, pms, dt1, dt2, mul );
+        float ref_base = phinc2freq( ref_phinc );
+        float dut_base = phinc2freq( dut_st.phinc );
+
+        printf("%3d (%4.0f Hz) ", lfo, dut_base );
+        for( pms=0; pms<8; pms++ ) {
+            float dt_exp[4] = { 1.0, 1.41, 1.57, 1.73 };
+
+            int ref_phinc = ref( &opm, kc, kf, lfo, pms, dt1, dt2, mul );
+            eval_dut( &dut, dut_st, kc, kf, lfo, pms, dt1, dt2, mul );
+            float ref_freq = phinc2freq( ref_phinc );
+            float dut_freq = phinc2freq( dut_st.phinc );
+            // print table
+            //float delta_cent = cent( dut_freq, dut_base );
+            float delta_cent = cent( ref_freq, ref_base );
+            printf("|%6.0f ", delta_cent );
+            /*
+            if( rel_dt > (dt_exp[dt2]+0.02) || rel_dt < (dt_exp[dt2]-0.02) ) {
+                printf("*");
+                bad=true;
+            }
+            else {
+                printf(" ");
+            }*/
+
+        }
+        printf("\n");
+    }
+    finish:
+    report("PMS",bad);
+    return 0;
 }
