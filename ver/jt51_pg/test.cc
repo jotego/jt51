@@ -1,6 +1,7 @@
 #include "verilated_vcd_c.h"
 #include "Vjt51_pg.h"
 #include "opm.h"
+#include "tables.h"
 #include <cstdio>
 #include <cmath>
 
@@ -36,6 +37,7 @@ void report( const char* sz, bool bad );
 int test_dt1( Vjt51_pg& dut, opm_t& opm );
 int test_dt2( Vjt51_pg& dut, opm_t& opm );
 int test_pms( Vjt51_pg& dut, opm_t& opm );
+int test_pg_nolfo( Vjt51_pg& dut, opm_t& opm);
 
 bool check_dt1( int oct, int note, int dt1, float delta );
 float expectedHz( int kc, int kf, int lfo, int pms, int dt1, int dt2, int mul );
@@ -46,15 +48,17 @@ int main(int argc, char *argv[]) {
 
     OPM_Reset(&opm);
 
-    bool run_dt1=true,
-         run_dt2=true,
-         run_pms=true;
+    bool run_dt1=false,
+         run_dt2=false,
+         run_pms=false,
+         run_nolfo=true;
 
     int good=0; // 0 = no errors
 
     if( run_dt1 ) good += test_dt1( dut, opm );
     if( run_dt2 ) good += test_dt2( dut, opm );
     if( run_pms ) good += test_pms( dut, opm );
+    if( run_nolfo ) good += test_pg_nolfo( dut, opm );
 
     return good;
 }
@@ -105,6 +109,36 @@ float expectedHz( int kc, int kf, int lfo, int pms, int dt1, int dt2, int mul ) 
     float f0 = 3.579545e6;
 }
 */
+
+// Runs against my own measurements
+int test_pg_nolfo( Vjt51_pg& dut, opm_t& opm) {
+    bool bad = false;
+    jt51_st dut_st;
+
+    int passed=0;
+    int octave=3, note=4, kf=0, lfo=0, pms=0, dt1=0, dt2=0, mul=1;
+    for( octave=0; octave<8; octave++ )
+    for( note=0; note<4; note++ )
+    //for( kf=0; kf<64; kf++ )
+    for( dt1=0; dt1<4; dt1++ )
+    //for( dt2=0; dt2<4; dt2++ )
+    //for( mul=0; mul<16; mul++ )
+    {
+        int kc = (octave<<4) | note;
+        int myref = ym_phaseinc( octave, note, kf, dt1, dt2, mul );
+        int opminc= ref( &opm, kc, kf, lfo, pms, dt1, dt2, mul );
+        eval_dut( &dut, dut_st, kc, kf, lfo, pms, dt1, dt2, mul );
+        if( myref != dut_st.phinc ) {
+            printf("%d %d %d %d %d %d: myref=%d <> %d=JT51 <> %d=OPM \n", octave, note, kf, dt1, dt2, mul,
+                myref, dut_st.phinc, opminc );
+            bad=true;
+            //goto finish;
+        }
+    }
+    finish:
+    report("Measurements", bad);
+    return bad;
+}
 
 int test_all( Vjt51_pg& dut, opm_t& opm ) {
     jt51_st dut_st;

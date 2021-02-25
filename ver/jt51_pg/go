@@ -3,7 +3,7 @@
 # This simulation compares the phase modulation RTL implementation
 # with the C++ model
 
-verilator --cc ../../hdl/jt51_{pg,pm,sh,phinc_rom}.v test.cc opm.c \
+verilator --cc ../../hdl/jt51_{pg,pm,sh,phinc_rom}.v test.cc tables.cc opm.c \
     --exe --top-module jt51_pg -DJT51_PG_SIM
 
 export CPPFLAGS=-O2

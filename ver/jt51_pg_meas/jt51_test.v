@@ -115,6 +115,7 @@ end
 
 jt51_pg u_uut(
 	.clk(clk),
+	.cen(1'b1),
 	// Channel frequency
 	.kc_I(kc),
 	.kf_I(kf),

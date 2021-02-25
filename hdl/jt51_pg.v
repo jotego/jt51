@@ -166,9 +166,9 @@ always @(posedge clk) if(cen) begin
     octave_III  <= keycode_II[13:10];
     keycode_III <=  keycode_II[12:8];
     case( dt1_II[1:0] )
-        2'd1:   dt1_kf_III  <=  keycode_II[13:8]    - 6'b00_0100;
-        2'd2:   dt1_kf_III  <=  keycode_II[13:8]    + 6'b00_0100;
-        2'd3:   dt1_kf_III  <=  keycode_II[13:8]    + 6'b00_1000;
+        2'd1:   dt1_kf_III  <=  keycode_II[13:8]    - (6'b1<<2);
+        2'd2:   dt1_kf_III  <=  keycode_II[13:8]    + (6'b1<<2);
+        2'd3:   dt1_kf_III  <=  keycode_II[13:8]    + (6'b1<<3);
         default:dt1_kf_III  <=  keycode_II[13:8];
     endcase
     dt1_III   <= dt1_II;
