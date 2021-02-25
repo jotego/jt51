@@ -14,20 +14,25 @@
 	wire p1;
 	wire signed [15:0] left, right, xleft, xright, dacleft, dacright;
     wire sample;
+    reg  cen_p1=0;
+
+    always @(posedge clk)
+    	cen_p1 <= ~cen_p1;
 
 
 	jt51 uut (
 		.clk(clk),
 		.rst(rst),
+		.cen(1'b1),
+		.cen_p1(	cen_p1	),
 		.cs_n(cs_n),
 		.wr_n(wr_n),
 		.a0(a0),
-		.d_in(d_in),
-		.d_out(d_out),
+		.din(d_in),
+		.dout(d_out),
 		.ct1(ct1),
 		.ct2(ct2),
 		.irq_n(irq_n),
-		.p1(p1),
 		.left	( left		),
 		.right	( right		),
         .xleft	( xleft		),
@@ -71,7 +76,7 @@
 
 
 	reg [15:0] cfg[0:511];
-    
+
 	initial begin
 		`include "inputs.vh"
 	end
@@ -81,7 +86,7 @@
 	reg prog_done;
 	reg [15:0] waitcnt;
 
-	parameter WAIT_FREE=0, WR_ADDR=1, WR_VAL=2, DONE=3, WRITE=4, 
+	parameter WAIT_FREE=0, WR_ADDR=1, WR_VAL=2, DONE=3, WRITE=4,
 		BLANK=5, WAIT_CNT=6;
 
 	always @(posedge clk or posedge rst) begin
@@ -103,7 +108,7 @@
 							8'h0: state <= DONE;
 							8'h1: begin
 								waitcnt <= { cfg[data_cnt][7:0], 8'h0 };
-								state <= WAIT_CNT;							
+								state <= WAIT_CNT;
 							end
 							// Wait for timer flag:
 							8'h3: if( d_out[1:0]&cfg[data_cnt][1:0] ) state<=next;

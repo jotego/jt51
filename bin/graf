@@ -1,0 +1,19 @@
+#!/bin/bash
+
+for i in $*; do
+	echo $i
+    b=$(basename $i)
+    ext=${b##*.}
+#    mueve=0
+    if [ $ext == ymx ]; then
+    	$ym/bin/ymx2ym $i > /tmp/$b
+        i=/tmp/$b
+ #       mueve=1
+    fi
+	gnuplot <<XXX		
+		set title "$b"
+		set term png size 1600,1000
+		set output "$b.png"
+		plot '$i' with lines
+XXX
+done

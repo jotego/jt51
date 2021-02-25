@@ -1,0 +1,170 @@
+#!/bin/bash
+
+#nombre << ym_dir() << "data/eg/eg_" << ar << "_" << d1r << "_" << d2r << "_" << rr << "_"
+#		<< ks << "_" << d1l << "#" << octava << '_' << nota << '_' << mul
+#		<< '_' << dt1 << '_' << dt2 << '_' << kf
+
+trap "killall ncsim;exit" int
+
+CH=0
+CON=7
+OPMASK=1
+TL=0
+FL=1
+AR=31
+KS=0
+D1R=0
+D2R=0
+RR=15
+D1L=12
+OCT=1
+NOTE=9
+MUL=1
+DT1=0
+DT2=0
+KF=57
+
+AMD=127
+AMS=2
+AMSEN=1
+PMD=127
+PMS=0
+LFRQ=255
+W=1
+
+#DUMPSIGNALS=DONOT_DUMPSIGNALS
+DUMPSIGNALS=DUMPSIGNALS
+RANDEXT=
+VERBOSE=1
+INCDIR="."
+INCCMD=
+WAIT0=DONTWAITFOR0
+WAIT1K=DONTWAITFOR1K
+DONTWAIT=DONTWAIT
+BORRADIR=0
+HAZPNG=0
+PARAM="$*"
+OTHER=
+
+while [ $# -gt 0 ]; do
+	if [ $1 = "-png" ]; then
+		HAZPNG=1
+		shift
+		continue
+	fi
+	if [ $1 = "-w" ]; then
+		echo "Signal dump enabled"
+		DUMPSIGNALS=DUMPSIGNALS
+		shift
+		continue
+	fi
+	if [ $1 = "-r" ]; then
+		RANDEXT=_${RANDOM}${RANDOM}
+		INCDIR=inc${RANDEXT}
+		INCCMD=" -I "$INCDIR" "
+		BORRADIR=1
+		mkdir $INCDIR
+		rm -f inputs.vh
+		shift
+		continue
+	fi
+	if [ $1 = "-q" ]; then VERBOSE=0; shift; continue; fi
+	if [ $1 = "-0" ]; then WAIT0=WAITFOR0; DONTWAIT=WILLWAIT; shift; continue;  fi
+	if [ $1 = "-1k" ]; then WAIT1K=WAITFOR1K; DONTWAIT=WILLWAIT; shift; continue;  fi
+
+	if [ $1 = "AR"  ]; then shift; AR=$1;  fi
+	if [ $1 = "KS"  ]; then shift; KS=$1;  fi
+	if [ $1 = "D1R" ]; then shift; D1R=$1; fi
+	if [ $1 = "D2R" ]; then shift; D2R=$1; fi
+	if [ $1 = "D1L" ]; then shift; D1L=$1; fi
+	if [ $1 = "RR"  ]; then shift; RR=$1;  fi
+	if [ $1 = "TL"  ]; then shift; TL=$1;  fi
+	if [ $1 = "OCT"  ]; then shift; OCT=$1;  fi
+	if [ $1 = "NOTE"  ]; then shift; NOTE=$1;  fi
+	if [ $1 = "CH"  ]; then shift; CH=$1;  fi
+	if [ $1 = "OPMASK"  ]; then shift; OPMASK=$1;  fi
+	if [ $1 = "FL"  ]; then shift; FL=$1;  fi
+	# LFO
+	if [ $1 = "PMS"  	]; 	then shift; PMS=$1;  	fi
+	if [ $1 = "PMD"  	]; 	then shift; PMD=$1;  	fi
+	if [ $1 = "AMS"  	]; 	then shift; AMS=$1;  	fi
+	if [ $1 = "AMD"  	]; 	then shift; AMD=$1;  	fi
+	if [ $1 = "AMSEN"  	]; 	then shift; AMSEN=$1;  	fi
+	if [ $1 = "LFRQ"  	]; 	then shift; LFRQ=$1;  	fi
+	if [ $1 = "W"	  	]; 	then shift; W=$1;	  	fi
+
+	if [ ${1:0:1} = "-" ]; then OTHER="$OTHER $1"; fi
+	shift
+done
+
+basename=eg_${AR}_${D1R}_${D2R}_${RR}_${KS}_${D1L}#${OCT}_${NOTE}_${MUL}_${DT1}_${DT2}_${KF}
+
+if [ $VERBOSE -eq 1 ]; then
+	echo Channel=$CH Connection=$CON OPMASK=$OPMASK TL=$TL FL=$FL
+	echo KS=$KS AR=$AR D1R=$D1R D2R=$D2R RR=$RR D1L=$D1L
+	echo OCT=$OCT NOTE=$NOTE KF=$KF
+    echo AMD=$AMD AMS=$AMS AMSEN=$AMSEN LFRQ=$LFRQ W=$W
+	echo $WAIT0 $WAIT1K $RANDEXT
+	echo Additional commands to \"inputs\" = $OTHER
+fi
+
+make --quiet && inputs $OTHER CH $CH CON $CON OPMASK $OPMASK FL $FL TL $TL \
+	AR $AR KS $KS D1R $D1R D2R $D2R RR $RR D1L $D1L \
+	OCT $OCT NOTE $NOTE MUL $MUL DT1 $DT1 DT2 $DT2 KF $KF \
+	AMS $AMS AMSEN $AMSEN AMD $AMD LFRQ $LFRQ W $W \
+	PMS $PMS PMD $PMD > $INCDIR/inputs.vh
+if [ $? -ne 0 ]; then
+	exit 1
+fi
+
+INCDIR2=../../hdl/jt51
+TOP=jt51_test
+
+
+if which iverilog &> /dev/null; then
+	iverilog jt51_test.v ../../hdl/*.v -s $TOP -I $INCDIR2 -I $INCDIR -DIVERILOG -DDUMP_SND_TOP \
+		-D$DUMPSIGNALS -D$WAIT0 -D$WAIT1K -DDUMPLEFT -D$DONTWAIT -o basic$RANDEXT
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+	basic$RANDEXT -lxt > s$RANDEXT
+ # -DTL=$TL -DPHASEINC=$FINC -DSAMPLES=$SAMPLES
+	rm basic$RANDEXT
+else
+	if [ $INCDIR != "." ]; then
+	    cd $INCDIR
+	    awk '{print "../"$0}' ../basic.f > basic.f
+        INCDIR2=../../../hdl/jt51
+    fi
+	ncverilog jt51_test.v  ../../hdl/*.v +incdir+$INCDIR2 +access+rc +nctop+$TOP +define+NCVERILOG+DUMP_SND_TOP+$DUMPSIGNALS+DUMPLEFT+$WAIT0+$WAIT1K+$DONTWAIT > s$RANDEXT
+#  	+define+TL=$TL +define+PHASEINC=$FINC +define+SAMPLES=$SAMPLES
+	if [ $? -ne 0 ]; then
+		cat s$RANDEXT
+		rm s$RANDEXT
+		exit 1
+	fi
+	if [ $INCDIR != "." ]; then
+    	mv s$RANDEXT ..
+		cd ..
+        rm -rf $INCDIR
+    fi
+fi
+
+myfile=${basename}.jt
+if [ $VERBOSE -eq 1 ]; then
+	echo "Output dumped to " $myfile
+fi
+
+cat s$RANDEXT | awk '/dump start/,/dump end/' | head -n -1 | tail -n +2 > $myfile
+rm s$RANDEXT
+if [ $HAZPNG -eq 1 ]; then
+	../../bin/graf $myfile
+    if [ $VERBOSE -eq 1 ]; then
+	    echo "Plot file " ${myfile}.png
+    fi
+fi
+mv ${myfile}* out
+#if [ $BORRADIR -eq 1 ]; then rm -rf $INCDIR; fi
+#  rm s$RANDEXT
+exit 0
+
