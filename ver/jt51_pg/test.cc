@@ -46,8 +46,8 @@ int main(int argc, char *argv[]) {
 
     OPM_Reset(&opm);
 
-    bool run_dt1=false,
-         run_dt2=false,
+    bool run_dt1=true,
+         run_dt2=true,
          run_pms=true;
 
     int good=0; // 0 = no errors
@@ -216,6 +216,7 @@ int test_dt1( Vjt51_pg& dut, opm_t& opm ) {
             eval_dut( &dut, dut_st, kc, kf, lfo, pms, dt1, dt2, mul );
             float ref_freq = phinc2freq( ref_phinc );
             float dut_freq = phinc2freq( dut_st.phinc );
+            /*
             if( ref_phinc != dut_st.phinc ) {
                 printf("%2X %2X // LFO=%2X PMS=%X // %X %X // MUL=%d -> FNUM=%X"
                        " // KCODE=%X <> %X"
@@ -227,7 +228,7 @@ int test_dt1( Vjt51_pg& dut, opm_t& opm ) {
                          ref_freq, dut_freq );
                 printf("FAIL\n");
                 goto finish;
-            }
+            }*/
             // print table
             printf("| %.3f", dut_freq-dut_base );
             if( check_dt1( oct, note, dt1, dut_freq-dut_base) )
@@ -246,10 +247,10 @@ int test_dt1( Vjt51_pg& dut, opm_t& opm ) {
 
 int test_dt2( Vjt51_pg& dut, opm_t& opm ) {
     bool bad=false;
-    int kf=0, lfo=0, pms=0, dt1=0, dt2=0, mul=1;
+    int kf=0, lfo=0, pms=0, dt1=0, dt2=0, mul=1, oct=4;
     printf("Oct  Note        | DT2=0 | DT2=1 | DT2=2 | DT2=3\n");
     printf("-----------------|-------|-------|-------|------\n");
-    for( int oct=7; oct<8; oct++ )
+    //for( int oct=7; oct<8; oct++ )
     for( int note=0; note<15; note++ )
     {
         int kc = (oct<<4) | note;
@@ -301,9 +302,9 @@ int test_dt2( Vjt51_pg& dut, opm_t& opm ) {
 
 void report( const char* sz, bool bad ) {
     if( bad )
-        printf("%s FAIL\n", sz);
+        printf("%s FAIL\n\n", sz);
     else
-        printf("%s PASS\n", sz);
+        printf("%s PASS\n\n", sz);
 }
 
 int test_pms( Vjt51_pg& dut, opm_t& opm ) {
@@ -334,8 +335,8 @@ int test_pms( Vjt51_pg& dut, opm_t& opm ) {
             float ref_freq = phinc2freq( ref_phinc );
             float dut_freq = phinc2freq( dut_st.phinc );
             // print table
-            //float delta_cent = cent( dut_freq, dut_base );
-            float delta_cent = cent( ref_freq, ref_base );
+            float delta_cent = cent( dut_freq, dut_base );
+            //float delta_cent = cent( ref_freq, ref_base );
             printf("|%6.0f ", delta_cent );
             /*
             if( rel_dt > (dt_exp[dt2]+0.02) || rel_dt < (dt_exp[dt2]-0.02) ) {

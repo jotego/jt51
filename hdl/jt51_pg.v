@@ -63,14 +63,12 @@ reg [4:0]   pow2;
 reg [4:0]   dt1_offset_V;
 reg [2:0]   pow2ind_IV;
 
-wire [12:0] keycode_I;
-reg  [ 2:0] dt1_III, dt1_IV, dt1_V;
+reg  [2:0]  dt1_III, dt1_IV, dt1_V;
 
 `ifdef JT51_PG_SIM
 assign phase_step_VII_out = phase_step_VII;
 assign keycode_I_out = keycode_I;
 `endif
-
 
 jt51_phinc_rom u_phinctable(
     // .clk     ( clk        ),
@@ -114,21 +112,52 @@ always @(*) begin : dt1_limit_mux
                             dt1_limit[4:0] : dt1_unlimited[4:0];
 end
 
+reg signed [8:0] mod_I;
+
+always @(*) begin
+    case( pms_I ) // comprobar en silicio
+        3'd0: mod_I = 9'd0;
+        3'd1: mod_I = { 7'd0, pm[6:5] };
+        3'd2: mod_I = { 6'd0, pm[6:4] };
+        3'd3: mod_I = { 5'd0, pm[6:3] };
+        3'd4: mod_I = { 4'd0, pm[6:2] };
+        3'd5: mod_I = { 3'd0, pm[6:1] };
+        3'd6: mod_I = { 1'd0, pm[6:0], 1'b0 };
+        3'd7: mod_I = {      pm[6:0], 2'b0 };
+    endcase
+end
+
+
 reg [3:0]   octave_III;
+
+wire [12:0] keycode_I;
 
 jt51_pm u_pm(
     // Channel frequency
-    .kc     ( kc_I      ),
-    .kf     ( kf_I      ),
-    .pms    ( pms_I     ),
-    .pm     ( pm        ),
-    .dt     ( dt2_I     ),
+    .kc_I   ( kc_I      ),
+    .kf_I   ( kf_I      ),
+    .add    ( ~pm[7]    ),
+    .mod_I  ( mod_I     ),
     .kcex   ( keycode_I )
 );
 
+// limit value at which we add +64 to the keycode
+// I assume this is to avoid the note==3 violation somehow
+parameter dt2_lim2 = 8'd11 + 8'd64;
+parameter dt2_lim3 = 8'd31 + 8'd64;
+
     // I
 always @(posedge clk) if(cen) begin : phase_calculation
-    keycode_II <= {1'd0, keycode_I};
+    case ( dt2_I )
+        2'd0: keycode_II <=  { 1'b0, keycode_I } +
+            (keycode_I[7:6]==2'd3 ? 14'd64:14'd0);
+        2'd1: keycode_II <= { 1'b0, keycode_I } + 14'd512 +
+            (keycode_I[7:6]==2'd3 ? 14'd64:14'd0);
+        2'd2: keycode_II <= { 1'b0, keycode_I } + 14'd628 +
+            (keycode_I[7:0]>dt2_lim2 ? 14'd64:14'd0);
+        2'd3: keycode_II <= { 1'b0, keycode_I } + 14'd800 +
+            (keycode_I[7:0]>dt2_lim3  ? 14'd64:14'd0);
+    endcase
 end
 
     // II
@@ -137,9 +166,9 @@ always @(posedge clk) if(cen) begin
     octave_III  <= keycode_II[13:10];
     keycode_III <=  keycode_II[12:8];
     case( dt1_II[1:0] )
-        2'd1:   dt1_kf_III  <=  keycode_II[13:8]    - (6'b1<<2);
-        2'd2:   dt1_kf_III  <=  keycode_II[13:8]    + (6'b1<<2);
-        2'd3:   dt1_kf_III  <=  keycode_II[13:8]    + (6'b1<<3);
+        2'd1:   dt1_kf_III  <=  keycode_II[13:8]    - 6'b00_0100;
+        2'd2:   dt1_kf_III  <=  keycode_II[13:8]    + 6'b00_0100;
+        2'd3:   dt1_kf_III  <=  keycode_II[13:8]    + 6'b00_1000;
         default:dt1_kf_III  <=  keycode_II[13:8];
     endcase
     dt1_III   <= dt1_II;
