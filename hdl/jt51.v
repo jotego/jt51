@@ -122,8 +122,6 @@ jt51_lfo u_lfo(
     .rst        ( rst       ),
     .clk        ( clk       ),
     .cen        ( cen_p1    ),
-    .zero       ( zero      ),
-    .half       ( half      ),
     .cycles     ( cycles    ),
 
     // Configuration

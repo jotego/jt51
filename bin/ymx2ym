@@ -1,0 +1,5 @@
+#!/bin/bash
+# convierte un fichero de int16 a texto
+# es decir pasa de .ymx a .ym
+
+od -A none -t d2 -w2 -v $*

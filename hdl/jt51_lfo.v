@@ -22,8 +22,6 @@ module jt51_lfo(
     input               rst,
     input               clk,
     input               cen,
-    input               zero,
-    input               half,
     input       [4:0]   cycles,
 
     // configuration
