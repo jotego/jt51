@@ -96,13 +96,13 @@ end
 
 // Noise mix
 
-assign mix_sgn = eg!=10'd0 && !out;
+assign mix_sgn = /*eg!=10'd0 ^*/ ~out;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
         mix <= 12'd0;
     end else if( op31_no && cen ) begin
-        mix     <= { mix_sgn, ~eg[9:2] ^ {8{~out}}, {3{mix_sgn}} };
+        mix     <= { mix_sgn, eg[9:2] ^ {8{out}}, {3{mix_sgn}} };
     end
 end
 

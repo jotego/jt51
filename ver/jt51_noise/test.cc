@@ -58,7 +58,7 @@ DUT::DUT() : edges(0), cycles(0) {
 void DUT::clock(int n, bool dump) {
     for(int k=0; k<(n<<1); k++ ) {
         rtl.clk    = k&1;
-        rtl.half = (cycles&0x1f)==0x10;
+        rtl.half = (cycles&0xf)==0x0;
         rtl.op31_no = (cycles&0x1f)==0x1f;
         rtl.eval();
         if( dump ) tracer.dump(edges*PERIOD);
