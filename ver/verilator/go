@@ -132,7 +132,7 @@ if [ $SKIPMAKE = FALSE ]; then
         $VERI_EXTRA $FAST --exe test.cpp VGMParser.cpp WaveWritter.cpp opm.c vcdwr.cc; then
         exit 1
     fi
-    if [ $DUMPSIGNALS == -trace ]; then
+    if [ "$DUMPSIGNALS" == -trace ]; then
         export CPPFLAGS=-O3
     else
         export CPPFLAGS=-O2

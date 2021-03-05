@@ -243,7 +243,7 @@ jt51_noise u_noise(
     .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen_p1    ),
-    .half   ( half      ),
+    .cycles ( cycles    ),
     .nfrq   ( nfrq      ),
     .eg     ( eg_XI     ),
     .op31_no( op31_no   ),

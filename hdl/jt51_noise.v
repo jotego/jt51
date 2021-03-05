@@ -41,7 +41,7 @@ module jt51_noise(
     input             rst,
     input             clk,
     input             cen,    // phi 1
-    input             half,   // high once every 16 cycles
+    input      [ 4:0] cycles,
 
     // Noise Frequency
     input      [ 4:0] nfrq,
@@ -71,8 +71,8 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         cnt  <= 5'b0;
     end else if(cen) begin
-        if( half ) begin
-            cnt <= nfrq_met ? 5'd0 : (cnt+5'd1);
+        if( &cycles[3:0] ) begin
+            cnt <= update ? 5'd0 : (cnt+5'd1);
         end
         update <= nfrq_met;
     end

@@ -212,27 +212,12 @@ int main(int argc, char** argv, char** env) {
             decode_pcm=false;
             continue;
         }
-        if( string(argv[k])=="-noam" ) {
-            writter.block( 0xF0, 0x60, [](int v){return v&0x7f;} );
+        if( string(argv[k])=="-nopms" ) {
+            writter.block( 0xF8, 0x38, [](int v){return v&0xf;} );
             continue;
         }
-        if( string(argv[k])=="-noks") {
-            writter.block( 0xF0, 0x50, [](int v){return v&0x1f;} );
-            continue;
-        }
-        if( string(argv[k])=="-nomul") {
-            cerr << "All writes to MULT locked to 1\n";
-            writter.block( 0xF0, 0x30, [](int v){ return (v&0x70)|1;} );
-            continue;
-        }
-        if( string(argv[k])=="-nodt") {
-            cerr << "All writes to DT locked to 1\n";
-            writter.block( 0xF0, 0x30, [](int v){ return (v&0x0F)|1;} );
-            continue;
-        }
-        if( string(argv[k])=="-nossg") {
-            cerr << "All writes to FM's SSG-EG locked to 0\n";
-            writter.block( 0xF0, 0x90, [](int v){ return 0;} );
+        if( string(argv[k])=="-noams" ) {
+            writter.block( 0xF8, 0x38, [](int v){return v&0xf0;} );
             continue;
         }
         if( string(argv[k])=="-mute") {
