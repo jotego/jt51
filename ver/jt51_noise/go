@@ -1,0 +1,26 @@
+#!/bin/bash
+
+TOP=jt51_noise
+
+verilator ../../hdl/${TOP}.v --cc test.cc --exe --trace
+
+export CPPFLAGS=-O2
+
+if which vcd2fst>/dev/null; then
+    rm -f test.vcd
+    mkfifo test.vcd
+    vcd2fst -v test.vcd -f test.fst&
+fi
+
+
+if ! make -j -C obj_dir -f V$TOP.mk > mk.log; then
+    cat mk.log
+    exit $?
+fi
+
+rm mk.log
+obj_dir/V$TOP
+
+if [ -p test.vcd ]; then
+    rm -f test.vcd
+fi

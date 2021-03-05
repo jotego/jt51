@@ -41,7 +41,7 @@ module jt51_noise(
     input             rst,
     input             clk,
     input             cen,    // phi 1
-    input             half,   // high ones every 16 cycles
+    input             half,   // high once every 16 cycles
 
     // Noise Frequency
     input      [ 4:0] nfrq,
