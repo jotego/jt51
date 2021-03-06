@@ -54,18 +54,16 @@ module jt51_noise(
     output reg [11:0] mix
 );
 
-reg         update;
+reg         update, nfrq_met;
 reg  [ 4:0] cnt;
 reg  [15:0] lfsr;
 reg         last_lfsr0;
-wire        nfrq_met, all1, fb;
+wire        all1, fb;
 wire        mix_sgn;
 
 assign out = lfsr[0];
 
 // period counter
-
-assign nfrq_met = ~nfrq == cnt;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
@@ -74,19 +72,21 @@ always @(posedge clk, posedge rst) begin
         if( &cycles[3:0] ) begin
             cnt <= update ? 5'd0 : (cnt+5'd1);
         end
-        update <= nfrq_met;
+        update   <= nfrq_met;
+        nfrq_met <= ~nfrq == cnt;
     end
 end
 
 // LFSR
 
-assign fb   = update ? ((all1 & ~last_lfsr0) | (lfsr[2]^last_lfsr0))
+assign fb   = update ? ~((all1 & ~last_lfsr0) | (lfsr[2]^last_lfsr0))
                      : ~lfsr[0];
 assign all1 = &lfsr;
 
 always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        lfsr <= 16'hffff;
+        lfsr       <= 16'hffff;
+        last_lfsr0 <= 1'b0;
     end else if(cen) begin
         lfsr       <= { fb, lfsr[15:1] };
         if(update) last_lfsr0 <= ~lfsr[0];
