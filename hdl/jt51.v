@@ -159,8 +159,7 @@ jt51_pg u_pg(
     .mul_VI     ( mul_VI    ),
     // Operator detuning
     .dt1_II     ( dt1_II    ),
-    //.dt2_I      ( dt2_I     ),
-    .dt2_I      ( 2'd0     ),
+    .dt2_I      ( dt2_I     ),
     // phase modulation from LFO
     .pms_I      ( pms_I     ),
     .pm         ( pm        ),
