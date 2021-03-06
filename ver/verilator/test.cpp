@@ -220,6 +220,14 @@ int main(int argc, char** argv, char** env) {
             writter.block( 0xF8, 0x38, [](int v){return v&0xf0;} );
             continue;
         }
+        if( string(argv[k])=="-nodt1" ) {
+            writter.block( 0xE0, 0x40, [](int v){return v&0x0f;} );
+            continue;
+        }
+        if( string(argv[k])=="-nodt2" ) {
+            writter.block( 0xE0, 0xC0, [](int v){return v&0x1f;} );
+            continue;
+        }
         if( string(argv[k])=="-mute") {
             int ch;
             if( sscanf(argv[++k],"%d",&ch) != 1 ) {
@@ -232,14 +240,14 @@ int main(int argc, char** argv, char** env) {
             }
             cerr << "Channel " << ch << " muted\n";
             switch(ch) {
-                case 0: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==0)? (v&7) : v;} ); break;
-                case 1: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==1)? (v&7) : v;} ); break;
-                case 2: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==2)? (v&7) : v;} ); break;
-                case 3: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==3)? (v&7) : v;} ); break;
-                case 4: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==4)? (v&7) : v;} ); break;
-                case 5: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==5)? (v&7) : v;} ); break;
-                case 6: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==6)? (v&7) : v;} ); break;
-                case 7: writter.block( 0xFF, 0x28, [](int v)->int{ return ((v&7)==7)? (v&7) : v;} ); break;
+                case 0: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==0)? (v&7) : v;} ); break;
+                case 1: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==1)? (v&7) : v;} ); break;
+                case 2: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==2)? (v&7) : v;} ); break;
+                case 3: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==3)? (v&7) : v;} ); break;
+                case 4: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==4)? (v&7) : v;} ); break;
+                case 5: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==5)? (v&7) : v;} ); break;
+                case 6: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==6)? (v&7) : v;} ); break;
+                case 7: writter.block( 0xFF, 0x8, [](int v)->int{ return ((v&7)==7)? (v&7) : v;} ); break;
             }
             continue;
         }
@@ -485,7 +493,7 @@ void CmdWritter::Write( int _addr, int _cmd, int _val ) {
             int old=_val;
             _val = k.filter(old);
             if( old!=_val )
-                printf("Blocked %X/ %X -> %X\n", aux, old, _val);
+                printf("Blocked %X/ %X -> %X\n", aux, old&0xff, _val);
         }
     }
     addr = _addr;

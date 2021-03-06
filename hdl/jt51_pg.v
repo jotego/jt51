@@ -123,7 +123,7 @@ always @(*) begin
         3'd4: mod_I = { 4'd0, pm[6:2] };
         3'd5: mod_I = { 3'd0, pm[6:1] };
         3'd6: mod_I = { 1'd0, pm[6:0], 1'b0 };
-        3'd7: mod_I = {      pm[6:0], 2'b0 };
+        3'd7: mod_I = {       pm[6:0], 2'b0 };
     endcase
 end
 
@@ -279,26 +279,55 @@ jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
 wire [4:0] cnt;
 
 sep32_cnt u_sep32_cnt (.clk(clk), .cen(cen), .zero(zero), .cnt(cnt));
-// wire zero_VIII;
-//
-// jt51_sh #(.width(1),.stages(7)) u_sep_aux(
-//     .clk    ( clk       ),
-//     .din    ( zero      ),
-//     .drop   ( zero_VIII )
-//     );
-//
-// sep32 #(.width(1),.stg(8)) sep_ref(
-//     .clk    ( clk           ),
-//     .cen(cen),
-//     .mixed  ( zero_VIII     ),
-//     .cnt    ( cnt           )
-//     );
+
 sep32 #(.width(10),.stg(10)) sep_ph(
     .clk    ( clk           ),
-    .cen(cen),
+    .cen    ( cen           ),
     .mixed  ( pg_phase_X    ),
     .cnt    ( cnt           )
-    );
+);
+
+sep32 #(.width(20),.stg(7)) sep_phstep(
+    .clk    ( clk           ),
+    .cen    ( cen           ),
+    .mixed  ( phase_step_VII),
+    .cnt    ( cnt           )
+);
+
+sep32 #(.width(13),.stg(1)) sep_kc1(
+    .clk    ( clk           ),
+    .cen    ( cen           ),
+    .mixed  ( keycode_I     ),
+    .cnt    ( cnt           )
+);
+
+sep32 #(.width(14),.stg(2)) sep_kc2(
+    .clk    ( clk           ),
+    .cen    ( cen           ),
+    .mixed  ( keycode_II    ),
+    .cnt    ( cnt           )
+);
+
+sep32 #(.width(3),.stg(1)) sep_pms(
+    .clk    ( clk           ),
+    .cen    ( cen           ),
+    .mixed  ( pms_I         ),
+    .cnt    ( cnt           )
+);
+
+sep32 #(.width(18),.stg(4)) sep_base4(
+    .clk    ( clk           ),
+    .cen    ( cen           ),
+    .mixed  ( phase_base_IV ),
+    .cnt    ( cnt           )
+);
+
+sep32 #(.width(18),.stg(5)) sep_base5(
+    .clk    ( clk           ),
+    .cen    ( cen           ),
+    .mixed  ( phase_base_V  ),
+    .cnt    ( cnt           )
+);
 
 /* verilator lint_on PINMISSING */
 `endif

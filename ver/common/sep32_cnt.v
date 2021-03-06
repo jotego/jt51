@@ -12,7 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with JT51.  If not, see <http://www.gnu.org/licenses/>.
-	
+
 	Author: Jose Tejada Gomez. Twitter: @topapate
 	Version: 1.1
 	Date: 15- 4-2016
@@ -25,12 +25,11 @@ module sep32_cnt(
     output reg [4:0]    cnt
     );
 
-always @(posedge clk) begin : proc_cnt
-    if(zero) begin
-        cnt <= 5'b1;
-    end else if(cen) begin
-        cnt <= cnt + 5'b1;
-    end
+reg last_zero;
+
+always @(posedge clk) if(cen) begin : proc_cnt
+    last_zero <= zero;
+    cnt <= (zero&&!last_zero) ? 5'd1 : cnt + 5'b1;
 end
 
 endmodule // sep32_cnt

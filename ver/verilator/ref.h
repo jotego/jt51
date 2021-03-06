@@ -29,6 +29,17 @@ Ref::Ref() : wr("ref.vcd", "opm") {
         DUMP_VCD(noise_timer, 5)
     wr.close_scope();
 
+    wr.add_scope("MMR");
+        DUMP_VCD(ch_pms[0],3)
+        DUMP_VCD(ch_pms[1],3)
+        DUMP_VCD(ch_pms[2],3)
+        DUMP_VCD(ch_pms[3],3)
+        DUMP_VCD(ch_pms[4],3)
+        DUMP_VCD(ch_pms[5],3)
+        DUMP_VCD(ch_pms[6],3)
+        DUMP_VCD(ch_pms[7],3)
+    wr.close_scope();
+
     wr.add_scope("waveform");
         DUMP_VCD(nc_active, 1)
         DUMP_VCD(nc_active_lock, 1)
@@ -145,7 +156,7 @@ void Ref::dump( uint64_t time ) {
 template <typename A>void Ref::dump_array(const char *name, A* signals, int width ) {
     char *sz = new char[ std::strlen(name)+10 ];
     for( int k=0; k<32; k++ ) {
-        sprintf( sz, "%s_%o",name,k);
+        sprintf( sz, "%s_%02o",name,k);
         wr.define( sz, &signals[k], width );
     }
     delete[] sz;

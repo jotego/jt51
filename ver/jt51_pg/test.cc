@@ -48,10 +48,10 @@ int main(int argc, char *argv[]) {
 
     OPM_Reset(&opm);
 
-    bool run_dt1=false,
-         run_dt2=false,
-         run_pms=false,
-         run_nolfo=true;
+    bool run_dt1=true,
+         run_dt2=true,
+         run_pms=true,
+         run_nolfo=false;
 
     int good=0; // 0 = no errors
 
@@ -60,6 +60,9 @@ int main(int argc, char *argv[]) {
     if( run_pms ) good += test_pms( dut, opm );
     if( run_nolfo ) good += test_pg_nolfo( dut, opm );
 
+    if( good!=0 ) {
+        printf("FAIL\n");
+    }
     return good;
 }
 
@@ -343,15 +346,19 @@ void report( const char* sz, bool bad ) {
 
 int test_pms( Vjt51_pg& dut, opm_t& opm ) {
     bool bad=false;
-    int kf=0, lfo=0, pms=0, dt1=0, dt2=0, mul=1;
-    printf("LFO (note)    | PMS=0 | PMS=1 | PMS=2 | PMS=3 | PMS=4 | PMS=5 | PMS=6 | PMS=7\n");
-    printf("--------------|-------|-------|-------|-------|-------|-------|-------|------\n");
+    int kf=0, lfo=128, pms=0, dt1=0, dt2=0, mul=1;
+    printf("LFO (note)    | PMS=0  | PMS=1  | PMS=2  | PMS=3  | PMS=4  | PMS=5  | PMS=6  | PMS=7 \n");
+    printf("--------------|--------|--------|--------|--------|--------|--------|--------|-------\n");
     int oct=4, note=10;
-    int lfo_lut[]={0, 31, 63, 127 };
-    //for( oct=4; oct<7; oct+=2 )
-    for( int lfok=0; lfok<4; lfok++ )
+    int lfo_lut[]={0, 31, 63, 127,160,210,255 };
+    for( oct=0; oct<8; oct+=1 )
+    for( note=0; note<16; note++ )
+    for( lfo=0; lfo<256; lfo++ )
+    //for( mul=0; mul<16; mul++ )
+    //for( int lfok=0; lfok<7; lfok++ )
     {
-        lfo=lfo_lut[lfok];
+        if( note&3 == 3 ) continue;
+        //lfo=lfo_lut[lfok];
         int kc = (oct<<4) | note;
         dt1=0; dt2=0;
         jt51_st dut_st;
@@ -370,16 +377,21 @@ int test_pms( Vjt51_pg& dut, opm_t& opm ) {
             float dut_freq = phinc2freq( dut_st.phinc );
             // print table
             float delta_cent = cent( dut_freq, dut_base );
-            //float delta_cent = cent( ref_freq, ref_base );
+            float ref_cent = cent( ref_freq, ref_base );
+            float error_freq = dut_freq-ref_freq;
             printf("|%6.0f ", delta_cent );
-            /*
-            if( rel_dt > (dt_exp[dt2]+0.02) || rel_dt < (dt_exp[dt2]-0.02) ) {
+            //printf("|%6.0f ", error_freq);
+            if( fabs(error_freq)>0  ) {
                 printf("*");
+                printf("\ndelta = %6.0f <> %6.0f\n", delta_cent, ref_cent);
+                printf("\nBase freq = %.1f <> %f\n", dut_base, ref_base);
+                printf("Mod  freq = %.1f <> %f\n", dut_freq, ref_freq);
                 bad=true;
+                goto finish;
             }
             else {
                 printf(" ");
-            }*/
+            }
 
         }
         printf("\n");
