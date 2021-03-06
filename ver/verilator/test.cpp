@@ -270,6 +270,7 @@ int main(int argc, char** argv, char** env) {
         cerr << "ERROR: Unknown argument " << argv[k] << "\n";
         return 1;
     }
+
     // determines the chip type
     switch( gym->chip() ) {
         case RipParser::ym2203: cerr << "YM2203 tune.\n"; return 1;

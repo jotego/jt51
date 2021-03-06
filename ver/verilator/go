@@ -141,9 +141,13 @@ if [ $SKIPMAKE = FALSE ]; then
         exit $?
     fi
     echo Simulation start...
-    echo obj_dir/V${TOP} $DUMPSIGNALS $EXTRA  $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE"
+#    echo obj_dir/V${TOP} $DUMPSIGNALS $EXTRA  $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE"
     EXIT=$?
 fi
+
+# Because ref.vcd is created as a fifo, its existance may cause
+# a halt under some circumstances. So always delete it first.
+rm -f ref.vcd
 
 if [[ $DUMPSIGNALS == "-trace" ]]; then
     EXTRA="$EXTRA -trace-ref"
@@ -153,7 +157,6 @@ if [[ $DUMPSIGNALS == "-trace" ]]; then
         echo VCD to FST conversion running in parallel
         # filter out lines starting with INFO: because these come from $display commands in verilog and are
         # routed to standard output but are not part of the VCD file
-        rm -f ref.vcd
         mkfifo ref.vcd
         vcd2fst ref.vcd ref.fst&
         obj_dir/V${TOP} $DUMPSIGNALS $EXTRA $GYM_ARG "$UNZIP_GYM" -o "$WAV_FILE" |  grep -v "^INFO: " | vcd2fst -v - -f test.fst
