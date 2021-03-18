@@ -116,7 +116,7 @@ wire            noise;
 wire m1_enters, m2_enters, c1_enters, c2_enters;
 wire use_prevprev1,use_internal_x,use_internal_y, use_prev2,use_prev1;
 
-assign  sample = zero;
+assign  sample = zero & cen_p1; // single strobe
 
 jt51_lfo u_lfo(
     .rst        ( rst       ),
