@@ -83,8 +83,7 @@ assign lfo_clk_next = test[2] | next_cnt2[15] | cnt3_step;
 
 always @(*) begin
     if( cnt2_load ) begin
-        next_cnt2[15]   = 1'd0;
-        next_cnt2[14:0] = lfo_lut[ lfo_freq[7:4] ];
+        next_cnt2 = {1'b0, lfo_lut[ lfo_freq[7:4] ] };
     end else begin
         next_cnt2 = {1'd0,cnt2 } + {15'd0,cnt1_ov[1]|test[3]};
     end
