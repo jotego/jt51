@@ -88,8 +88,8 @@ reg     kon, koff;
 reg [1:0] csm_state;
 reg [4:0] csm_cnt;
 
-wire csm_kon  = csm_state[0];
-wire csm_koff = csm_state[1];
+// wire csm_kon  = csm_state[0];
+// wire csm_koff = csm_state[1];
 
 always @(*) begin
     m1_enters = cur_op == 2'b00;
@@ -98,8 +98,10 @@ always @(*) begin
     c2_enters = cur_op == 2'b11;
 end
 
+`ifdef SIMULATION
 wire up =   up_rl | up_kc | up_kf | up_pms | up_dt1 | up_tl |
             up_ks | up_amsen | up_dt2 | up_d1l | up_keyon;
+`endif
 
 reg [4:0]   cur;
 
@@ -123,8 +125,8 @@ wire [4:0] req_VII = req_VI  + 5'd1;
 wire    update_op_I     = cur == req_I;
 wire    update_op_II    = cur == req_II;
 wire    update_op_III   = cur == req_III;
-wire    update_op_IV    = cur == req_IV;
-wire    update_op_V     = cur == req_V;
+// wire    update_op_IV    = cur == req_IV;
+// wire    update_op_V     = cur == req_V;
 wire    update_op_VI    = cur == req_VI;
 wire    update_op_VII   = cur == req_VII;
 

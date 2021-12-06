@@ -107,7 +107,7 @@ always @(posedge clk, posedge rst) begin
     end else if( cen ) begin
         // counter 1
         if( cyc_c )
-            { cnt1_ov[0], cnt1 } <= { 1'b0, cnt1 } + 1;
+            { cnt1_ov[0], cnt1 } <= { 1'b0, cnt1 } + 1'd1;
         else
             cnt1_ov[0] <= 0;
         cnt1_ov[1] <= cnt1_ov[0];
