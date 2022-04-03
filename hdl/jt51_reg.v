@@ -255,7 +255,7 @@ jt51_csr_ch u_csr_ch(
 );
 
 //////////////////// Debug
-`ifndef JT51_NODEBUG
+`ifdef JT51_DEBUG
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt_aux;

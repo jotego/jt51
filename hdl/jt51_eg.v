@@ -391,7 +391,7 @@ jt51_sh #( .width(2), .stages(32-3+2), .rstval(1'b1) ) u_statesh(
     .drop   ( state_II )
 );
 
-`ifndef JT51_NODEBUG
+`ifdef JT51_DEBUG
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
 wire [4:0] cnt;

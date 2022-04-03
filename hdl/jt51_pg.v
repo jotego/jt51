@@ -272,7 +272,7 @@ jt51_sh #( .width(1), .stages(4) ) u_pgrstsh(
     .drop   ( pg_rst_VII)
 );
 
-`ifndef JT51_NODEBUG
+`ifdef JT51_DEBUG
 `ifdef SIMULATION
 /* verilator lint_off PINMISSING */
 
