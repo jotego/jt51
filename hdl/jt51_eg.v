@@ -28,7 +28,7 @@ module jt51_eg(
     input               cen,
     input               zero,
     // envelope configuration
-    input       [5:0]   keycode_III,
+    input       [4:0]   keycode_III,
     input       [4:0]   arate_II,
     input       [4:0]   rate1_II,
     input       [4:0]   rate2_II,
@@ -96,14 +96,12 @@ end
 wire            cnt_out; // = all_cnt_last[3*31-1:3*30];
 
 reg     [6:0]   pre_rate_III;
-reg     [5:0]   kshift_III;
+reg     [4:0]   kshift_III;
 reg     [4:0]   cfg_III;
 
 always @(*) begin : pre_rate_calc
     kshift_III = keycode_III >> ~ks_III;
-    if( cfg_III==0 && ks_III==0 )
-        kshift_III[5:2]=0;
-    pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 1'b0, kshift_III };
+    pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 2'b0, kshift_III };
 end
 
 

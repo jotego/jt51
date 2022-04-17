@@ -140,7 +140,7 @@ jt51_lfo u_lfo(
     .pm         ( pm        )
 );
 
-wire    [ 5:0]  keycode_III;
+wire    [ 4:0]  keycode_III;
 wire    [ 9:0]  ph_X;
 wire            pg_rst_III;
 
