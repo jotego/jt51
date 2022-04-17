@@ -96,18 +96,12 @@ end
 wire            cnt_out; // = all_cnt_last[3*31-1:3*30];
 
 reg     [6:0]   pre_rate_III;
+reg     [4:0]   kshift_III;
 reg     [4:0]   cfg_III;
 
 always @(*) begin : pre_rate_calc
-    if( cfg_III == 5'd0 )
-        pre_rate_III = 7'd0;
-    else
-        case( ks_III )
-            2'd3:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 2'b0, keycode_III      };
-            2'd2:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 3'b0, keycode_III[4:1] };
-            2'd1:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 4'b0, keycode_III[4:2] };
-            2'd0:   pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 5'b0, keycode_III[4:3] };
-        endcase
+    kshift_III = keycode_III >> ~ks_III;
+    pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 2'b0, kshift_III };
 end
 
 
