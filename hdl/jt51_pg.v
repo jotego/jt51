@@ -37,7 +37,7 @@ module jt51_pg(
     input       [2:0]   pms_I,
     // phase operation
     input               pg_rst_III,
-    output  reg [ 4:0]  keycode_III,
+    output  reg [ 5:0]  keycode_III,
     output      [ 9:0]  pg_phase_X
     `ifdef JT51_PG_SIM
     ,output [19:0] phase_step_VII_out
@@ -164,7 +164,7 @@ end
 always @(posedge clk) if(cen) begin
     phinc_addr_III  <= keycode_II[9:0];
     octave_III  <= keycode_II[13:10];
-    keycode_III <=  keycode_II[12:8];
+    keycode_III <=  keycode_II[13:8];
     case( dt1_II[1:0] )
         2'd1:   dt1_kf_III  <=  keycode_II[13:8]    - (6'b1<<2);
         2'd2:   dt1_kf_III  <=  keycode_II[13:8]    + (6'b1<<2);

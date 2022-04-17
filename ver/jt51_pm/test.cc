@@ -11,18 +11,16 @@ int ref( int kc, int kf, int lfo, int pms, int dt );
 
 int main(int argc, char *argv[]) {
     Vjt51_pm top;
-    int passed=0, kc=0, kf=0, pm=0, pms=0, dt=0;
+    int passed=0, kc=0, kf=0, pm=0, pms=6, dt=0;
     for( kc=0; kc<128; kc++ )
     for( kf=0; kf<64; kf++ )
-    for( pm=0; pm<256; pm++ )
+    //for( pm=0; pm<256; pm++ )
     for( pms=0; pms<8; pms++ )
-    for( dt=0; dt<4; dt++ )
+    //for( dt=0; dt<4; dt++ )
     {
-        top.kc = kc;
-        top.kf = kf;
-        top.pm = pm;
-        top.pms = pms;
-        top.dt = dt;
+        top.kc_I = kc;
+        top.kf_I = kf;
+        top.mod_I = pm;
         top.eval();
         int kcex = top.kcex;
         int ref_kc = ref( kc, kf, pm, pms, dt);
