@@ -164,8 +164,9 @@ end
 always @(posedge clk) if(cen) begin
     phinc_addr_III  <= keycode_II[9:0];
     octave_III  <= keycode_II[13:10];
-    keycode_III <=  keycode_II[13:9]; // Fixes Double Dragon issue #14
-        // I used to take bits [12:8]
+    keycode_III <=  keycode_II[12:8];
+        // Using bits 13:9 fixes Double Dragon issue #14
+        // but notes get too long in Jackal
     case( dt1_II[1:0] )
         2'd1:   dt1_kf_III  <=  keycode_II[13:8]    - (6'b1<<2);
         2'd2:   dt1_kf_III  <=  keycode_II[13:8]    + (6'b1<<2);
