@@ -42,10 +42,7 @@ wire    ct1, ct2, irq_n;
     .right      (           ),
     // Full resolution output
     .xleft      ( xleft     ),
-    .xright     ( xright    ),
-    // unsigned outputs for sigma delta converters, full resolution
-    .dacleft    (           ),
-    .dacright   (           )
+    .xright     ( xright    )
 );
 
 endmodule

@@ -12,7 +12,7 @@
 	wire ct2;
 	wire irq_n;
 	wire p1;
-	wire signed [15:0] left, right, xleft, xright, dacleft, dacright;
+	wire signed [15:0] left, right, xleft, xright;
     wire sample;
     reg  cen_p1=0;
 
@@ -36,9 +36,7 @@
 		.left	( left		),
 		.right	( right		),
         .xleft	( xleft		),
-        .xright	( xright	),
-        .dacleft( dacleft	),
-        .dacright(dacright  ),
+        .xright	( xright	)
         .sample	( sample	)
 	);
 

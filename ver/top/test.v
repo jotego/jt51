@@ -49,10 +49,7 @@ wire                sample, ct1, ct2, irq_n;
     .right      ( right     ),
     // Full resolution output
     .xleft      (           ),
-    .xright     (           ),
-    // unsigned outputs for sigma delta converters, full resolution
-    .dacleft    (           ),
-    .dacright   (           )
+    .xright     (           )
 );
 
  time_commands u_cmd(

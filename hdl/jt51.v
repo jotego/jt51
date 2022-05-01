@@ -39,14 +39,8 @@ module jt51(
     output  signed  [15:0] right,
     // Full resolution output
     output  signed  [15:0] xleft,
-    output  signed  [15:0] xright,
-    // unsigned outputs for sigma delta converters, full resolution
-    output  [15:0] dacleft,
-    output  [15:0] dacright
+    output  signed  [15:0] xright
 );
-
-assign dacleft  = { ~xleft [15],  xleft[14:0] };
-assign dacright = { ~xright[15], xright[14:0] };
 
 // Timers
 wire [9:0]  value_A;
