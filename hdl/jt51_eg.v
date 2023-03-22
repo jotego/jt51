@@ -133,7 +133,7 @@ always @(*) begin : rate_step
         endcase
     end
     // a rate_IV of zero keeps the level still
-    step_V = rate_V[5:1]==5'd0 ? 1'b0 : step_idx[ cnt_V ];
+    step_V = rate_V[5:2]==4'd0 ? 1'b0 : step_idx[ cnt_V ];
 end
 
 
