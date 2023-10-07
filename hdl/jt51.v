@@ -71,8 +71,6 @@ jt51_timers u_timers(
     .irq_n      ( irq_n         )
 );
 
-/*verilator tracing_on*/
-
 `ifndef JT51_ONLYTIMERS
 `define YM_TIMER_CTRL 8'h14
 
@@ -138,9 +136,6 @@ wire    [ 4:0]  keycode_III;
 wire    [ 9:0]  ph_X;
 wire            pg_rst_III;
 
-/*verilator tracing_on*/
-
-
 jt51_pg u_pg(
     .rst        ( rst       ),
     .clk        ( clk       ),              // P1
@@ -195,7 +190,6 @@ jt51_eg u_eg(
     .eg_XI      ( eg_XI )
 );
 
-/*verilator tracing_off*/
 wire signed [13:0] op_out;
 
 jt51_op u_op(
@@ -274,8 +268,6 @@ wire    busy;
 wire    write = !cs_n && !wr_n;
 
 assign  dout = { busy, 5'h0, flag_B, flag_A };
-
-/*verilator tracing_on*/
 
 jt51_mmr u_mmr(
     .rst        ( rst           ),
