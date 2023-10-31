@@ -250,25 +250,18 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
     end
 end
 
-reg [4:0] busy_cnt; // busy lasts for 32 synth clock cycles
-reg       write_l;
+reg  [4:0] busy_cnt; // busy lasts for 32 synth clock cycles
+wire [5:0] nx_busy = {1'd0,busy_cnt}+{5'd0,busy};
 
-always @(posedge clk)
+always @(posedge clk, posedge rst) begin
     if( rst ) begin
-        busy <= 1'b0;
-        busy_cnt <= 5'd0;
+        busy_cnt <= 0;
+        busy     <= 0;
+    end else if(cen) begin
+        busy <= write&a0 | (busy & ~nx_busy[5]);
+        busy_cnt <= nx_busy[4:0];
     end
-    else begin
-        write_l <= write;
-        if (write_l && !write && a0 ) begin // only set for data writes
-            busy <= 1'b1;
-            busy_cnt <= 5'd0;
-        end
-        else if(cen) begin
-            if( busy_cnt == 5'd31 ) busy <= 1'b0;
-            busy_cnt <= busy_cnt+5'd1;
-        end
-    end
+end
 
 jt51_reg u_reg(
     .rst        ( rst       ),
