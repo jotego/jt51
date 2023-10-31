@@ -130,15 +130,6 @@ wire    update_op_III   = cur == req_III;
 wire    update_op_VI    = cur == req_VI;
 wire    update_op_VII   = cur == req_VII;
 
-wire up_rl_ch   = up_rl     & update_op_I;
-wire up_fb_ch   = up_rl     & update_op_II;
-wire up_con_ch  = up_rl     & update_op_I;
-
-wire up_kc_ch   = up_kc     & update_op_I;
-wire up_kf_ch   = up_kf     & update_op_I;
-wire up_pms_ch  = up_pms    & update_op_I;
-wire up_ams_ch  = up_pms    & update_op_VII;
-
 wire up_dt1_op  = up_dt1    & update_op_II; // DT1, MUL
 wire up_mul_op  = up_dt1    & update_op_VI; // DT1, MUL
 wire up_tl_op   = up_tl     & update_op_VII;
@@ -167,7 +158,7 @@ always @(posedge clk, posedge rst) begin : up_counter
     end
 end
 
-wire [2:0] cur_ch =  cur[2:0];
+wire [2:0] cur_ch   = cur[2:0];
 wire [3:0] keyon_op = din[6:3];
 wire [2:0] keyon_ch = din[2:0];
 
@@ -231,20 +222,19 @@ jt51_csr_op u_csr_op(
     .rrate          (  rrate_II     )
 );
 
-jt51_csr_ch u_csr_ch(
+jt51_reg_ch u_csr_ch(
     .rst        (  rst          ),
     .clk        (  clk          ),
     .cen        (  cen          ),
     .din        (  din          ),
 
-    .up_rl_ch   (  up_rl_ch     ),
-    .up_fb_ch   (  up_fb_ch     ),
-    .up_con_ch  (  up_con_ch    ),
-    .up_kc_ch   (  up_kc_ch     ),
-    .up_kf_ch   (  up_kf_ch     ),
-    .up_ams_ch  (  up_ams_ch    ),
-    .up_pms_ch  (  up_pms_ch    ),
+    .up_ch      ( ch            ),
+    .up_rl      ( up_rl         ),
+    .up_kc      ( up_kc         ),
+    .up_kf      ( up_kf         ),
+    .up_pms     ( up_pms        ),
 
+    .ch         (  next[2:0]    ),
     .rl         (  rl_I         ),
     .fb         (  fb_II        ),
     .con        (  con_I        ),

@@ -101,7 +101,7 @@ module jt51_mmr(
     output          use_prev1
 );
 
-reg [7:0] selected_register, din_copy ;
+reg [7:0] reg_sel, din_copy ;
 
 reg       up_rl,  up_kc,  up_kf,  up_pms,
           up_dt1, up_tl,  up_ks,  up_dt2,
@@ -130,7 +130,7 @@ reg csm;
 
 always @(posedge clk, posedge rst) begin : memory_mapped_registers
     if( rst ) begin
-        selected_register   <= 8'h0;
+        reg_sel   <= 8'h0;
         { up_rl, up_kc, up_kf, up_pms, up_dt1, up_tl,
                 up_ks, up_amsen, up_dt2, up_d1l, up_keyon } <= 11'd0;
         `ifdef TEST_SUPPORT
@@ -159,11 +159,11 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         // WRITE IN REGISTERS
         if( write ) begin
             if( !a0 )
-                selected_register <= din;
+                reg_sel <= din;
             else begin
                 din_copy <= din;
-                up_op    <= selected_register[4:3]; // operator to update
-                up_ch    <= selected_register[2:0]; // channel to update
+                up_op    <= reg_sel[4:3]; // operator to update
+                up_ch    <= reg_sel[2:0]; // channel to update
                 up_rl    <= 1'b0;
                 up_kc    <= 1'b0;
                 up_kf    <= 1'b0;
@@ -176,8 +176,8 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                 up_d1l   <= 1'b0;
                 up_keyon <= 1'b0;
                 // Global registers
-                if( selected_register < 8'h20 ) begin
-                    case( selected_register)
+                if( reg_sel < 8'h20 ) begin
+                    case( reg_sel)
                     // registros especiales
                     REG_TEST:   test_mode <= din; // regardless of din
                     `ifdef TEST_SUPPORT
@@ -216,8 +216,8 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                     endcase
                 end else
                 // channel registers
-                if( selected_register < 8'h40 ) begin
-                    case( selected_register[4:3] )
+                if( reg_sel < 8'h40 ) begin
+                    case( reg_sel[4:3] )
                         2'h0: up_rl <= 1'b1;
                         2'h1: up_kc <= 1'b1;
                         2'h2: up_kf <= 1'b1;
@@ -227,7 +227,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                 else
                 // operator registers
                 begin
-                    case( selected_register[7:5] )
+                    case( reg_sel[7:5] )
                         3'h2: up_dt1    <= 1'b1;
                         3'h3: up_tl     <= 1'b1;
                         3'h4: up_ks     <= 1'b1;
@@ -251,7 +251,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
 end
 
 reg [4:0] busy_cnt; // busy lasts for 32 synth clock cycles
-reg       old_write;
+reg       write_l;
 
 always @(posedge clk)
     if( rst ) begin
@@ -259,8 +259,8 @@ always @(posedge clk)
         busy_cnt <= 5'd0;
     end
     else begin
-        old_write <= write;
-        if (!old_write && write && a0 ) begin // only set for data writes
+        write_l <= write;
+        if (write_l && !write && a0 ) begin // only set for data writes
             busy <= 1'b1;
             busy_cnt <= 5'd0;
         end

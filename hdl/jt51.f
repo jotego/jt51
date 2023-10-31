@@ -14,7 +14,7 @@ jt51_pg.v
 jt51_phinc_rom.v
 jt51_phrom.v
 jt51_pm.v
-jt51_csr_ch.v
+jt51_reg_ch.v
 jt51_csr_op.v
 jt51_reg.v
 jt51_sh.v
