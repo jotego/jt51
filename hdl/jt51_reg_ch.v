@@ -38,11 +38,11 @@ module jt51_reg_ch(
 
     input      [2:0] ch, // next active channel
     output reg [1:0] rl,
-    output reg [2:0] fb,
+    output reg [2:0] fb_II,
     output reg [2:0] con,
     output reg [6:0] kc,
     output reg [5:0] kf,
-    output reg [1:0] ams,
+    output reg [1:0] ams_VII,
     output reg [2:0] pms
 );
 
@@ -65,13 +65,13 @@ reg [2:0] reg_pms[0:7];
 integer i;
 
 always @(posedge clk) if(cen) begin
-    rl  <= reg_rl[ch];
-    fb  <= reg_fb[ch];
-    con <= reg_con[ch];
-    kc  <= reg_kc[ch];
-    kf  <= reg_kf[ch];
-    ams <= reg_ams[ch];
-    pms <= reg_pms[ch];
+    rl      <= reg_rl[ch];
+    fb_II   <= reg_fb[ch-3'd1];
+    con     <= reg_con[ch];
+    kc      <= reg_kc[ch];
+    kf      <= reg_kf[ch];
+    ams_VII <= reg_ams[ch-3'd6];
+    pms     <= reg_pms[ch];
 end
 
 always @(posedge clk, posedge rst) begin

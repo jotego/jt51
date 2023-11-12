@@ -236,11 +236,11 @@ jt51_reg_ch u_csr_ch(
 
     .ch         (  next[2:0]    ),
     .rl         (  rl_I         ),
-    .fb         (  fb_II        ),
+    .fb_II      (  fb_II        ),
     .con        (  con_I        ),
     .kc         (  kc_I         ),
     .kf         (  kf_I         ),
-    .ams        (  ams_VII      ),
+    .ams_VII    (  ams_VII      ),
     .pms        (  pms_I        )
 );
 
