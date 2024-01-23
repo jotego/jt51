@@ -21,3 +21,5 @@ here:
   - jt51_reg_ch.v
   - jt51_csr_op.v
   - jt51.v
+  # - ../ver/common/sep32.v
+  # - ../ver/common/sep32_cnt.v

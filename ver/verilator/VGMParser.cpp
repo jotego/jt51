@@ -455,6 +455,12 @@ int VGMParser::parse() {
                     char ss;
                     file.read( &ss, 1 );
                 }
+            case 0xb8: // writes to OKIM6295 (in CPS1 tunes), ignored
+                {
+                    char ignore[2];
+                    file.read( ignore, 2 );
+                    continue; // not implemented
+                }
             case 0xe0:
                 file.read( (char*)&data_offset, 4);
                 continue;
