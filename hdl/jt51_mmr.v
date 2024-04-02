@@ -101,7 +101,7 @@ module jt51_mmr(
     output          use_prev1
 );
 
-reg [7:0] reg_sel, din_copy ;
+reg [7:0] reg_sel, op_din;
 
 reg       up_rl,  up_kc,  up_kf,  up_pms,
           up_dt1, up_tl,  up_ks,  up_dt2,
@@ -150,7 +150,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         lfo_w           <= 2'd0;
         { ct2, ct1 }    <= 2'd0;
         csm             <= 1'b0;
-        din_copy        <= 8'd0;
+        op_din          <= 8'd0;
         test_mode       <= 8'd0;
         `ifdef SIMULATION
         mmr_dump <= 1'b0;
@@ -158,17 +158,14 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
     end else begin
         // WRITE IN REGISTERS
         if( write ) begin
+            up_rl  <= 0;    // channel data is written in one clock cycle
+            up_kc  <= 0;
+            up_kf  <= 0;
+            up_pms <= 0;
             if( !a0 )
                 reg_sel <= din;
             else begin
-                din_copy <= din;
-                up_op    <= reg_sel[4:3]; // operator to update
-                up_ch    <= reg_sel[2:0]; // channel to update
-                up_rl    <= 1'b0;
-                up_kc    <= 1'b0;
-                up_kf    <= 1'b0;
-                up_pms   <= 1'b0;
-                up_dt1   <= 1'b0;
+                up_dt1   <= 1'b0;   // operator data is updated via CSR
                 up_tl    <= 1'b0;
                 up_ks    <= 1'b0;
                 up_amsen <= 1'b0;
@@ -215,18 +212,19 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                     default:;
                     endcase
                 end else
-                // channel registers
                 if( reg_sel < 8'h40 ) begin
+                    // channel registers
                     case( reg_sel[4:3] )
                         2'h0: up_rl <= 1'b1;
                         2'h1: up_kc <= 1'b1;
                         2'h2: up_kf <= 1'b1;
                         2'h3: up_pms<= 1'b1;
                     endcase
-                end
-                else
-                // operator registers
-                begin
+                end else begin
+                    // operator registers
+                    up_op  <= reg_sel[4:3]; // operator to update
+                    up_ch  <= reg_sel[2:0]; // channel to update
+                    op_din <= din;
                     case( reg_sel[7:5] )
                         3'h2: up_dt1    <= 1'b1;
                         3'h3: up_tl     <= 1'b1;
@@ -267,21 +265,26 @@ jt51_reg u_reg(
     .rst        ( rst       ),
     .clk        ( clk       ),      // P1
     .cen        ( cen       ),      // P1
-    .din        ( din_copy  ),
 
-    .up_rl      ( up_rl     ),
-    .up_kc      ( up_kc     ),
-    .up_kf      ( up_kf     ),
-    .up_pms     ( up_pms    ),
+    // operator updates
     .up_dt1     ( up_dt1    ),
     .up_tl      ( up_tl     ),
     .up_ks      ( up_ks     ),
     .up_amsen   ( up_amsen  ),
     .up_dt2     ( up_dt2    ),
     .up_d1l     ( up_d1l    ),
-    .up_keyon   ( up_keyon  ),
     .op         ( up_op     ),      // operator to update
     .ch         ( up_ch     ),      // channel to update
+    .op_din     ( op_din    ),
+    // channel updates
+    .up_rl      ( up_rl     ),
+    .up_kc      ( up_kc     ),
+    .up_kf      ( up_kf     ),
+    .up_pms     ( up_pms    ),
+    .ch_sel     (reg_sel[2:0]),     // channel is updated directly off the bus
+    .ch_din     ( din       ),
+
+    .up_keyon   ( up_keyon  ),
 
     .csm        ( csm       ),
     .overflow_A ( overflow_A),
