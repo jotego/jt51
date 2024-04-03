@@ -101,7 +101,7 @@ module jt51_mmr(
     output          use_prev1
 );
 
-reg [7:0] reg_sel, op_din;
+reg [7:0] reg_sel, op_din, ch_din;
 
 reg       up_rl,  up_kc,  up_kf,  up_pms,
           up_dt1, up_tl,  up_ks,  up_dt2,
@@ -180,7 +180,10 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                     `ifdef TEST_SUPPORT
                     REG_TEST2:  { test_op0, test_eg } <= din[1:0];
                     `endif
-                    REG_KON:    up_keyon     <= 1'b1;
+                    REG_KON:    begin
+                        up_keyon <= 1'b1;
+                        op_din   <= din;
+                    end
                     REG_NOISE:  { ne, nfrq } <= { din[7], din[4:0] };
                     REG_CLKA1:  value_A[9:2] <= din;
                     REG_CLKA2:  value_A[1:0] <= din[1:0];
@@ -214,6 +217,7 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                 end else
                 if( reg_sel < 8'h40 ) begin
                     // channel registers
+                    ch_din <= din;
                     case( reg_sel[4:3] )
                         2'h0: up_rl <= 1'b1;
                         2'h1: up_kc <= 1'b1;
@@ -282,7 +286,7 @@ jt51_reg u_reg(
     .up_kf      ( up_kf     ),
     .up_pms     ( up_pms    ),
     .ch_sel     (reg_sel[2:0]),     // channel is updated directly off the bus
-    .ch_din     ( din       ),
+    .ch_din     ( ch_din    ),
 
     .up_keyon   ( up_keyon  ),
 
