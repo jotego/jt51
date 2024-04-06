@@ -52,41 +52,6 @@ Ref::Ref() : wr("ref.vcd", "opm") {
     wr.close_scope();
     wr.close_scope(); // noise
 
-    // EG
-    /*
-    DUMP_VCD(eg_level00, 10);
-    DUMP_VCD(eg_level01, 10);
-    DUMP_VCD(eg_level02, 10);
-    DUMP_VCD(eg_level03, 10);
-    DUMP_VCD(eg_level04, 10);
-    DUMP_VCD(eg_level05, 10);
-    DUMP_VCD(eg_level06, 10);
-    DUMP_VCD(eg_level07, 10);
-    DUMP_VCD(eg_level10, 10);
-    DUMP_VCD(eg_level11, 10);
-    DUMP_VCD(eg_level12, 10);
-    DUMP_VCD(eg_level13, 10);
-    DUMP_VCD(eg_level14, 10);
-    DUMP_VCD(eg_level15, 10);
-    DUMP_VCD(eg_level16, 10);
-    DUMP_VCD(eg_level17, 10);
-    DUMP_VCD(eg_level20, 10);
-    DUMP_VCD(eg_level21, 10);
-    DUMP_VCD(eg_level22, 10);
-    DUMP_VCD(eg_level23, 10);
-    DUMP_VCD(eg_level24, 10);
-    DUMP_VCD(eg_level25, 10);
-    DUMP_VCD(eg_level26, 10);
-    DUMP_VCD(eg_level27, 10);
-    DUMP_VCD(eg_level30, 10);
-    DUMP_VCD(eg_level31, 10);
-    DUMP_VCD(eg_level32, 10);
-    DUMP_VCD(eg_level33, 10);
-    DUMP_VCD(eg_level34, 10);
-    DUMP_VCD(eg_level35, 10);
-    DUMP_VCD(eg_level36, 10);
-    DUMP_VCD(eg_level37, 10);
-*/
     // mixer
     DUMP_VCD(op_mix, 18)
 
@@ -141,11 +106,59 @@ Ref::Ref() : wr("ref.vcd", "opm") {
     wr.add_scope("eg");
         DUMP_VCD(eg_serial_bit, 1)
         DUMP_VCD(eg_serial, 10)
+        DUMP_VCD(eg_level[000], 10);
+        DUMP_VCD(eg_level[001], 10);
+        DUMP_VCD(eg_level[002], 10);
+        DUMP_VCD(eg_level[003], 10);
+        DUMP_VCD(eg_level[004], 10);
+        DUMP_VCD(eg_level[005], 10);
+        DUMP_VCD(eg_level[006], 10);
+        DUMP_VCD(eg_level[007], 10);
+        DUMP_VCD(eg_level[010], 10);
+        DUMP_VCD(eg_level[011], 10);
+        DUMP_VCD(eg_level[012], 10);
+        DUMP_VCD(eg_level[013], 10);
+        DUMP_VCD(eg_level[014], 10);
+        DUMP_VCD(eg_level[015], 10);
+        DUMP_VCD(eg_level[016], 10);
+        DUMP_VCD(eg_level[017], 10);
+        DUMP_VCD(eg_level[020], 10);
+        DUMP_VCD(eg_level[021], 10);
+        DUMP_VCD(eg_level[022], 10);
+        DUMP_VCD(eg_level[023], 10);
+        DUMP_VCD(eg_level[024], 10);
+        DUMP_VCD(eg_level[025], 10);
+        DUMP_VCD(eg_level[026], 10);
+        DUMP_VCD(eg_level[027], 10);
+        DUMP_VCD(eg_level[030], 10);
+        DUMP_VCD(eg_level[031], 10);
+        DUMP_VCD(eg_level[032], 10);
+        DUMP_VCD(eg_level[033], 10);
+        DUMP_VCD(eg_level[034], 10);
+        DUMP_VCD(eg_level[035], 10);
+        DUMP_VCD(eg_level[036], 10);
+        DUMP_VCD(eg_level[037], 10);
+    wr.close_scope();
+
+    wr.add_scope("acc");
+        DUMP_VCD(mix[0],16)
+    wr.close_scope();
+
+    wr.add_scope("op");
+        DUMP_VCD(op_out[0],16)
     wr.close_scope();
 
     wr.add_scope("kon");
         DUMP_VCD(kon_csm,1)
         DUMP_VCD(kon_csm_lock,1)
+        DUMP_VCD(kon[0],1)
+        DUMP_VCD(kon[1],1)
+        DUMP_VCD(kon[2],1)
+        DUMP_VCD(kon[3],1)
+        DUMP_VCD(kon[4],1)
+        DUMP_VCD(kon[5],1)
+        DUMP_VCD(kon[6],1)
+        DUMP_VCD(kon[7],1)
     wr.close_scope();
 }
 
