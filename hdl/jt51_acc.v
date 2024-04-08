@@ -135,26 +135,28 @@ wire signed [9:0] left_man, right_man;
 wire [2:0] left_exp, right_exp;
 
 jt51_exp2lin left_reconstruct(
-    .lin( left      ),
     .man( left_man  ),
-    .exp( left_exp  )
+    .exp( left_exp  ),
+    .lin( left      )
 );
 
 jt51_exp2lin right_reconstruct(
-    .lin( right     ),
     .man( right_man ),
-    .exp( right_exp )
+    .exp( right_exp ),
+    .lin( right     )
 );
 
 jt51_lin2exp left2exp(
-  .lin( xleft    ),
   .man( left_man ),
-  .exp( left_exp ) );
+  .exp( left_exp ),
+  .lin( xleft    )
+);
 
 jt51_lin2exp right2exp(
-  .lin( xright    ),
   .man( right_man ),
-  .exp( right_exp ) );
+  .exp( right_exp ),
+  .lin( xright    )
+);
 
 `ifdef DUMPLEFT
 
