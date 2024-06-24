@@ -18,7 +18,9 @@
     Date: 27-10-2016
     */
 
-`ifdef VERILATOR_KEEP_JT51 /* verilator tracing_on */ `endif
+`ifdef VERILATOR_KEEP_JT51
+/* verilator tracing_on */
+`endif
 module jt51(
     input               rst,    // reset
     input               clk,    // main clock
