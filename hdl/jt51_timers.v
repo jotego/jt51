@@ -91,7 +91,7 @@ always@(posedge clk, posedge rst)
     else /*if(cen)*/ begin
         if( clr_flag )
             flag <= 1'b0;
-        else if(overflow) flag<=1'b1;
+        else if( cen && zero && load && overflow ) flag<=1'b1;
     end
 
 always @(*) begin
