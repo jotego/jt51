@@ -18,7 +18,10 @@
     Date: 27-10-2016
     */
 
-
+// The rst scheme makes this module synthesizable as LUT shift register. This
+// saves 18% of logic cells at JT51 top level (3347 vs 2747)
+// for the reset value to be applied, the reset must be enabled for as many
+// clock cycles as stages are in the shift register
 module jt51_sh #(parameter width=5, stages=32, rstval=1'b0 ) (
     input                           rst,
     input                           clk,
@@ -32,13 +35,10 @@ reg [stages-1:0] bits[width-1:0];
 genvar i;
 generate
     for (i=0; i < width; i=i+1) begin: bit_shifter
-        always @(posedge clk, posedge rst) begin
-            if(rst)
-                bits[i] <= {stages{rstval}};
-            else if(cen)
-                bits[i] <= {bits[i][stages-2:0], din[i]};
+        always @(posedge clk) if(cen) begin
+            bits[i] <= {bits[i][stages-2:0], din[i]};
         end
-        assign drop[i] = bits[i][stages-1];
+        assign drop[i] = rst ? {stages{rstval[0]}} : bits[i][stages-1];
     end
 endgenerate
 
