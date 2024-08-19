@@ -22,7 +22,7 @@
 module jt51_pg(
     input               rst,
     input               clk,
-    input               cen /* direct_enable */,
+    input               cen,
     input               zero,
     // Channel frequency
     input       [6:0]   kc_I,

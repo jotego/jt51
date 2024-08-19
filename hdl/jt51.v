@@ -24,8 +24,8 @@
 module jt51(
     input               rst,    // reset
     input               clk,    // main clock
-    (* direct_enable *) input cen,    // clock enable
-    (* direct_enable *) input cen_p1, // clock enable at half the speed
+    input               cen,    // clock enable
+    input               cen_p1, // clock enable at half the speed
     input               cs_n,   // chip select
     input               wr_n,   // write
     input               a0,
