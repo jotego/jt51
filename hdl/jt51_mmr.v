@@ -156,6 +156,8 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
         mmr_dump <= 1'b0;
         `endif
     end else begin
+        clr_flag_A <= 1'b0;
+        clr_flag_B <= 1'b0;
         // WRITE IN REGISTERS
         if( write ) begin
             up_rl  <= 0;    // channel data is written in one clock cycle
@@ -190,9 +192,9 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
                     REG_CLKB:   value_B      <= din;
                     REG_TIMER: begin
                         csm <= din[7];
-                        { clr_flag_B, clr_flag_A,
-                          enable_irq_B, enable_irq_A,
-                          load_B, load_A } <= din[5:0];
+                        { clr_flag_B, clr_flag_A } <= din[5:4];
+                        { enable_irq_B, enable_irq_A,
+                          load_B, load_A } <= din[3:0];
                         end
                     REG_LFRQ: begin
                         lfo_freq <= din;
