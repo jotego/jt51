@@ -186,4 +186,4 @@ end else begin
 			end
 	endcase
 end
-endmodule // jt51_fir8
+endmodule
