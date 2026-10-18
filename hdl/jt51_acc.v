@@ -62,9 +62,9 @@ end
 
 wire ren = rl_I[1];
 wire len = rl_I[0];
-reg  signed [18:0] pre_left, pre_right;
+reg  signed [17:0] pre_left, pre_right;
 wire signed [15:0] total;
-wire signed [18:0] total_ex = { {3{total[15]}},total};
+wire signed [17:0] total_ex = { {2{total[15]}},total};
 
 reg sum_all;
 
@@ -75,8 +75,8 @@ wire rst_sum = c2_enters;
 
 // 16-bit clamp
 function signed [15:0] lim16;
-    input signed [18:0] din;
-    lim16 = din[18:16]=={3{din[15]}} ? din[15:0] : { din[18], {15{~din[18]}}};
+    input signed [17:0] din;
+    lim16 = din[17:16]=={2{din[15]}} ? din[15:0] : { din[17], {15{~din[17]}}};
 endfunction
 
 
@@ -88,12 +88,12 @@ always @(posedge clk) begin
         if( rst_sum )  begin
             sum_all <= 1'b1;
             if( !sum_all ) begin
-                pre_right <= ren ? total_ex : 19'd0;
-                pre_left  <= len ? total_ex : 19'd0;
+                pre_right <= ren ? total_ex : 18'd0;
+                pre_left  <= len ? total_ex : 18'd0;
             end
             else begin
-                pre_right <= pre_right + (ren ? total_ex : 19'd0);
-                pre_left  <= pre_left  + (len ? total_ex : 19'd0);
+                pre_right <= pre_right + (ren ? total_ex : 18'd0);
+                pre_left  <= pre_left  + (len ? total_ex : 18'd0);
             end
         end
         if( c1_enters ) begin

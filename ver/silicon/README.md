@@ -2,7 +2,8 @@
 
 Run `bash ver/silicon/sim.sh all` from the JT51 repository. Individual groups
 are `analysis`, `timer`, `attack`, `zero`, `d1l`, `granularity`, `csm`,
-`routes`, `noise`, `slowhold`, `csm_states`, and `release`.
+`routes`, `noise`, `slowhold`, `csm_states`, `release`, `mixing`, and
+`mixing_mirror`.
 Set `JT51_SILICON_BUILD` to an absolute, fresh artifact directory. Builds and
 logs are external to this source tree by default. Every execution has a
 15-minute external timeout. `--keep` enables `test.fst` in that directory;
@@ -51,7 +52,7 @@ Plateau classification follows the recorded output-domain method: less than
 No candidate frequency/gain/phase/threshold is fitted. The retained physical
 source reports and archives remain the authority for narrower comparisons.
 
-The suite is a representative regression for seven confirmed gaps, not a full
+The suite is a representative regression for confirmed gaps, not a full
 chip conformance claim or a substitute for broader archived interaction sweeps.
 There is no `.simunit` marker: the slower release family and standalone
 measurement workflow are intentionally launched through `sim.sh`.
@@ -91,3 +92,37 @@ quiet output after disabling CSM while A keeps running or stopping A while
 CSM stays set. It is included in `all`. The maximum Timer-A preload1023 is
 already exercised by every measured/documented flag-control case in `timer`;
 no unqualified exact automatic waveform claim is made for its one-frame period.
+
+`mixing`, also included in `all`, preserves the prospectively frozen raw-output
+method used for jt51#16's independently initialized native-record confirmations.
+Literal ALG7/FB0, KC4A/KF0, MUL0, AR31/KS0, D1/D2=0, noise/LFO/CSM-off images
+key N5 or N32 operators once per history. Only pan/TL registers change during
+component exposure. RIGHT retains channel1 M1 (N5) or channel0 (N32), while LEFT
+exposes each channel at TL32, then TL0, followed by aggregate and low-return
+controls. Native16384-frame records use179000 master clocks of settling,
+128-frame guards,8192 training samples and4096 untouched heldout samples.
+
+Raw RIGHT bins are2048PCM wide, with separate strictly monotonic rising/falling
+branches. Adjacent-bin component min/max hulls require complete observed-domain
+bin support and at least3 samples, with64PCM component and aggregate output
+quantization allowances. Each heldout, aggregate and low-return assessment must
+have zero missing support, at least75% monotonic covered samples and at least3
+points in every positive/negative RIGHT × rising/falling quadrant. Ambiguous
+turnpoints remain outside the conditional subset; no phase/gain fit or internal
+tap is used. Endpoint-censored components fail qualification.
+
+The frozen physical expectation is signed18-bit modular wrapping before16-bit
+clipping and unchanged DAC quantization. TL32 component closure, initial/return
+history controls, N5 clipping positives and exact-zero cleanup must also pass.
+N32 must distinguish the18-bit map from clip16/wrap17/wrap19 on both observed
+output signs. Signed wrap discontinuities retain their disjoint image intervals.
+This is the measured finite external transfer, not a claim of internal adder
+topology or complete-chip conformance. Source evidence and retained failed
+cosine/harmonic/short-hull methods are recorded in the parent task report
+`/nobackup/tasks/jt51-16/plans/round2-20261018-mixing/production-requirement.md`.
+
+`mixing_mirror` adds the independently measured RIGHT overflow control. It uses
+the same N32 history, swaps only literal PAN bits64/128 and swaps public output
+columns before the unchanged raw-bin observer. Timing, quantization allowances,
+coverage and expected18-bit map remain identical. Both groups run in `all`; the
+mirrored supplement protects against a correction applied to only one output.
