@@ -101,7 +101,10 @@ reg     [4:0]   cfg_III;
 
 always @(*) begin : pre_rate_calc
     kshift_III = keycode_III >> ~ks_III;
-    pre_rate_III = { 1'b0, cfg_III, 1'b0 } + { 2'b0, kshift_III };
+    // A programmed zero AR/D1R/D2R inhibits the stage before key scaling.
+    // Release uses { RR, 1'b1 }, so even RR=0 remains an active rate.
+    pre_rate_III = cfg_III == 5'd0 ? 7'd0 :
+        { 1'b0, cfg_III, 1'b0 } + { 2'b0, kshift_III };
 end
 
 
@@ -122,9 +125,6 @@ always @(*) begin : rate_step
         endcase
     end
     else begin
-        if( rate_V[5:2]==4'd0 && state_in_V != ATTACK)
-            step_idx = 8'b11111110; // limit slowest decay rate_IV
-        else
         case( rate_V[1:0] )
             2'd0: step_idx = 8'b10101010; // 4
             2'd1: step_idx = 8'b11101010; // 5
@@ -132,8 +132,11 @@ always @(*) begin : rate_step
             2'd3: step_idx = 8'b11111110; // 7
         endcase
     end
-    // a rate_IV of zero keeps the level still
-    step_V = rate_V[5:2]==4'd0 ? 1'b0 : step_idx[ cnt_V ];
+    // Attack/decay rates 0..3 hold. The measured low release rates 2/3
+    // remain active; release's odd configuration cannot produce rate zero.
+    step_V = (rate_V == 6'd0 ||
+        (rate_V[5:2] == 4'd0 && state_in_V != RELEASE)) ?
+        1'b0 : step_idx[ cnt_V ];
 end
 
 
@@ -143,7 +146,7 @@ wire    ar_off_VI;
 always @(posedge clk) if(cen) begin
     // I
     if( d1l_I == 4'd15 )
-        d1level_II <= 5'h10; // 48dB
+        d1level_II <= 5'h1f; // special 93dB level
     else
         d1level_II <= {1'b0,d1l_I};
 end
@@ -230,18 +233,20 @@ always @(posedge clk) if(cen) begin
         endcase
     else
         case( rate_IV[5:2] )
-            4'h0: cnt_V <= eg_cnt[14:12];
-            4'h1: cnt_V <= eg_cnt[13:11];
-            4'h2: cnt_V <= eg_cnt[12:10];
-            4'h3: cnt_V <= eg_cnt[11: 9];
-            4'h4: cnt_V <= eg_cnt[10: 8];
-            4'h5: cnt_V <= eg_cnt[ 9: 7];
-            4'h6: cnt_V <= eg_cnt[ 8: 6];
-            4'h7: cnt_V <= eg_cnt[ 7: 5];
-            4'h8: cnt_V <= eg_cnt[ 6: 4];
-            4'h9: cnt_V <= eg_cnt[ 5: 3];
-            4'ha: cnt_V <= eg_cnt[ 4: 2];
-            4'hb: cnt_V <= eg_cnt[ 3: 1];
+            // Single attenuation units at twice the former low-rate cadence.
+            // The high-rate increments below already use this counter slice.
+            4'h0: cnt_V <= eg_cnt[13:11];
+            4'h1: cnt_V <= eg_cnt[12:10];
+            4'h2: cnt_V <= eg_cnt[11: 9];
+            4'h3: cnt_V <= eg_cnt[10: 8];
+            4'h4: cnt_V <= eg_cnt[ 9: 7];
+            4'h5: cnt_V <= eg_cnt[ 8: 6];
+            4'h6: cnt_V <= eg_cnt[ 7: 5];
+            4'h7: cnt_V <= eg_cnt[ 6: 4];
+            4'h8: cnt_V <= eg_cnt[ 5: 3];
+            4'h9: cnt_V <= eg_cnt[ 4: 2];
+            4'ha: cnt_V <= eg_cnt[ 3: 1];
+            4'hb: cnt_V <= eg_cnt[ 2: 0];
             default: cnt_V <= eg_cnt[ 2: 0];
         endcase
 end
@@ -280,7 +285,7 @@ always @(posedge clk) if(cen) begin
     else
     if( state_in_VI == ATTACK ) begin
         if( sum_up && eg_VI != 10'd0 )
-            if( rate_VI[5:1]==5'hf )
+            if( rate_VI[5:1]==5'h1f )
                 eg_VII <= 10'd0;
             else
                 eg_VII <= ar_result_VI;
@@ -295,7 +300,7 @@ always @(posedge clk) if(cen) begin
                     4'b1101: eg_VII <= eg_VI + { 7'd0, step_VI, ~step_VI, 1'b0 }; // 13
                     4'b1110: eg_VII <= eg_VI + { 6'd0, step_VI, ~step_VI, 2'b0 }; // 14
                     4'b1111: eg_VII <= eg_VI + 10'd8;// 15
-                    default: eg_VII <= eg_VI + { 8'd0, step_VI, 1'b0 };
+                    default: eg_VII <= eg_VI + { 9'd0, step_VI };
                 endcase
             else eg_VII <= 10'h3FF;
         end

@@ -247,7 +247,6 @@ always @(posedge clk, posedge rst) begin : memory_mapped_registers
             `ifdef SIMULATION
             mmr_dump <= 1'b0;
             `endif
-            csm     <= 0;
             lfo_up  <= 0;
             { clr_flag_B, clr_flag_A } <= 2'd0;
         end

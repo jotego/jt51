@@ -102,7 +102,10 @@ always @(posedge clk, posedge rst) begin
     if( rst ) begin
         mix <= 12'd0;
     end else if( op31_no && cen ) begin
-        mix     <= { mix_sgn, eg[9:2] ^ {8{out}}, {3{mix_sgn}} };
+        // Maximum attenuation is silent on the measured serial output.
+        // Keep the keyed low-level noise steps below that off value.
+        mix <= (&eg) ? 12'd0 :
+            { mix_sgn, eg[9:2] ^ {8{out}}, {3{mix_sgn}} };
     end
 end
 

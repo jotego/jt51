@@ -37,7 +37,9 @@ module jt51_timers(
     output        irq_n
 );
 
-assign irq_n = ~( (flag_A&enable_irq_A) | (flag_B&enable_irq_B) );
+// The enable bits control creation of sticky flags. Clearing a flag releases
+// its interrupt; disabling further flag creation does not clear a latched IRQ.
+assign irq_n = ~(flag_A | flag_B);
 
 jt51_timer #(.CW(10)) timer_A(
     .rst        ( rst       ),
@@ -47,6 +49,7 @@ jt51_timer #(.CW(10)) timer_A(
     .start_value( value_A   ),
     .load       ( load_A    ),
     .clr_flag   ( clr_flag_A),
+    .enable     ( enable_irq_A ),
     .flag       ( flag_A    ),
     .overflow   ( overflow_A)
 );
@@ -59,6 +62,7 @@ jt51_timer #(.CW(8),.FREE_EN(1)) timer_B(
     .start_value( value_B       ),
     .load       ( load_B        ),
     .clr_flag   ( clr_flag_B    ),
+    .enable     ( enable_irq_B  ),
     .flag       ( flag_B        ),
     .overflow   (               )
 );
@@ -76,14 +80,18 @@ module jt51_timer #(parameter
     input   [CW-1:0] start_value,
     input   load,
     input   clr_flag,
+    input   enable,
     output reg flag,
-    output reg overflow
+    output  overflow
 );
 
 reg          last_load;
 reg [CW-1:0] cnt, next;
 reg [   3:0] free_cnt, free_next;
 reg          free_ov;
+reg          cnt_ov;
+
+assign overflow = cnt_ov && load;
 
 always@(posedge clk, posedge rst)
     if( rst )
@@ -91,19 +99,19 @@ always@(posedge clk, posedge rst)
     else /*if(cen)*/ begin
         if( clr_flag )
             flag <= 1'b0;
-        else if( cen && zero && load && overflow ) flag<=1'b1;
+        else if( cen && zero && load && cnt_ov && enable ) flag<=1'b1;
     end
 
 always @(*) begin
     {free_ov, free_next} = { 1'b0, free_cnt} + 1'b1;
     /* verilator lint_off WIDTH */
-    {overflow, next }    = { 1'b0, cnt }     + (FREE_EN ? free_ov : 1'b1);
+    {cnt_ov, next }      = { 1'b0, cnt }     + (FREE_EN ? free_ov : 1'b1);
     /* verilator lint_on WIDTH */
 end
 
 always @(posedge clk) if(cen && zero) begin : counter
     last_load <= load;
-    if( (load && !last_load) || overflow ) begin
+    if( (load && !last_load) || cnt_ov ) begin
       cnt  <= start_value;
     end
     else if( last_load ) cnt <= next;
