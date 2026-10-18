@@ -101,8 +101,6 @@ reg     [4:0]   cfg_III;
 
 always @(*) begin : pre_rate_calc
     kshift_III = keycode_III >> ~ks_III;
-    // A programmed zero AR/D1R/D2R inhibits the stage before key scaling.
-    // Release uses { RR, 1'b1 }, so even RR=0 remains an active rate.
     pre_rate_III = cfg_III == 5'd0 ? 7'd0 :
         { 1'b0, cfg_III, 1'b0 } + { 2'b0, kshift_III };
 end
@@ -132,8 +130,6 @@ always @(*) begin : rate_step
             2'd3: step_idx = 8'b11111110; // 7
         endcase
     end
-    // Attack/decay rates 0..3 hold. The measured low release rates 2/3
-    // remain active; release's odd configuration cannot produce rate zero.
     step_V = (rate_V == 6'd0 ||
         (rate_V[5:2] == 4'd0 && state_in_V != RELEASE)) ?
         1'b0 : step_idx[ cnt_V ];
@@ -146,7 +142,7 @@ wire    ar_off_VI;
 always @(posedge clk) if(cen) begin
     // I
     if( d1l_I == 4'd15 )
-        d1level_II <= 5'h1f; // special 93dB level
+        d1level_II <= 5'h1f;
     else
         d1level_II <= {1'b0,d1l_I};
 end
@@ -233,8 +229,6 @@ always @(posedge clk) if(cen) begin
         endcase
     else
         case( rate_IV[5:2] )
-            // Single attenuation units at twice the former low-rate cadence.
-            // The high-rate increments below already use this counter slice.
             4'h0: cnt_V <= eg_cnt[13:11];
             4'h1: cnt_V <= eg_cnt[12:10];
             4'h2: cnt_V <= eg_cnt[11: 9];

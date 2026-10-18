@@ -37,8 +37,6 @@ module jt51_timers(
     output        irq_n
 );
 
-// The enable bits control creation of sticky flags. Clearing a flag releases
-// its interrupt; disabling further flag creation does not clear a latched IRQ.
 assign irq_n = ~(flag_A | flag_B);
 
 jt51_timer #(.CW(10)) timer_A(
