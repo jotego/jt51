@@ -18,18 +18,27 @@ const header_bytes = 160
 const max_clock = uint64(1<<48) - 1
 
 type result_header struct {
-	ClockHz    uint32 `json:"clock_Hz"`
-	RunID      uint32 `json:"run_id"`
-	Lane       uint32 `json:"lane"`
-	Count      uint32 `json:"count"`
-	Stride     uint32 `json:"stride"`
-	Mode       uint32 `json:"mode"`
-	First      uint64 `json:"first_clock"`
-	Last       uint64 `json:"last_clock"`
-	Logical    uint64 `json:"logical_clock"`
-	Generation uint32 `json:"generation"`
-	EventShift uint32 `json:"event_shift"`
-	Idle       uint64 `json:"idle_clocks"`
+	HeaderBytes    uint32 `json:"header_bytes"`
+	Version        uint32 `json:"version"`
+	Protocol       uint32 `json:"protocol"`
+	RecordsSHA256  string `json:"records_sha256,omitempty"`
+	LastPageSHA256 string `json:"last_page_sha256,omitempty"`
+	PageCount      uint32 `json:"page_count,omitempty"`
+	Stream         uint32 `json:"stream"`
+	TotalRecords   uint32 `json:"total_records"`
+	EventFirst     uint32 `json:"event_first"`
+	ClockHz        uint32 `json:"clock_Hz"`
+	RunID          uint32 `json:"run_id"`
+	Lane           uint32 `json:"lane"`
+	Count          uint32 `json:"count"`
+	Stride         uint32 `json:"stride"`
+	Mode           uint32 `json:"mode"`
+	First          uint64 `json:"first_clock"`
+	Last           uint64 `json:"last_clock"`
+	Logical        uint64 `json:"logical_clock"`
+	Generation     uint32 `json:"generation"`
+	EventShift     uint32 `json:"event_shift"`
+	Idle           uint64 `json:"idle_clocks"`
 }
 
 func main() {
@@ -87,7 +96,7 @@ func decode(input, output string, expected [32]byte) (result_header, error) {
 	if err != nil {
 		return h, err
 	}
-	if info.Size() < 160 || info.Size() > 160+16384*5 {
+	if info.Size() < 160 || info.Size() > 256+16384*5 {
 		return h, errors.New("result file size out of bounds")
 	}
 	data, err := os.ReadFile(input)
@@ -109,10 +118,15 @@ func parse_result(data []byte, expected [32]byte) (result_header, error) {
 	}
 	u32 := func(n int) uint32 { return binary.LittleEndian.Uint32(data[n : n+4]) }
 	u64 := func(n int) uint64 { return binary.LittleEndian.Uint64(data[n : n+8]) }
-	if string(data[:8]) != "JT51FP01" || u32(8) != 160 || u32(12) != 1 || u32(16) != 0x965101 {
+	v1 := string(data[:8]) == "JT51FP01" && u32(8) == 160 && u32(12) == 1 && u32(16) == 0x965101
+	v2 := string(data[:8]) == "JT51FP02" && u32(8) == 256 && u32(12) == 2 && u32(16) == 0x965102
+	if !v1 && !v2 {
 		return bad("magic/header/version/protocol mismatch")
 	}
-	h = result_header{ClockHz: u32(20), RunID: u32(24), Lane: u32(28), Count: u32(32), Stride: u32(40), Mode: u32(44), First: u64(64), Last: u64(72), Logical: u64(80), Generation: u32(96), EventShift: u32(100), Idle: u64(104)}
+	if len(data) < int(u32(8)) {
+		return bad("truncated versioned header")
+	}
+	h = result_header{HeaderBytes: u32(8), Version: u32(12), Protocol: u32(16), TotalRecords: u32(60), EventFirst: u32(144), ClockHz: u32(20), RunID: u32(24), Lane: u32(28), Count: u32(32), Stride: u32(40), Mode: u32(44), First: u64(64), Last: u64(72), Logical: u64(80), Generation: u32(96), EventShift: u32(100), Idle: u64(104)}
 	if h.ClockHz == 0 || h.RunID == 0 || h.RunID > 0xffffff || h.Lane >= 4 {
 		return bad("invalid clock/run/lane")
 	}
@@ -122,7 +136,7 @@ func parse_result(data []byte, expected [32]byte) (result_header, error) {
 	if u32(48)&4 == 0 || u32(48)&^uint32(5) != 0 || u32(52) != 0 {
 		return bad("result is failed, busy, nonterminal or has an error")
 	}
-	if u32(60) == 0 || u32(60) > 4096 || u32(56) != u32(60) || u32(144) == 0 || u32(144) >= u32(60) {
+	if u32(60) == 0 || (v1 && u32(60) > 4096) || u32(56) != u32(60) || u32(144) == 0 || u32(144) >= u32(60) {
 		return bad("incomplete or invalid tape execution")
 	}
 	if h.First > max_clock || h.Last > max_clock || h.Logical > max_clock || h.Logical < h.Last || u64(88) != 0 || h.Idle > max_clock-512 || h.EventShift > 63 {
@@ -135,8 +149,32 @@ func parse_result(data []byte, expected [32]byte) (result_header, error) {
 	if h.First < 512+h.Idle {
 		return bad("capture precedes INIT")
 	}
-	if u32(148) != 5 || u64(152) != 0 || len(data) != header_bytes+int(h.Count)*5 {
+	if u32(148) != 5 || u64(152) != 0 || len(data) != int(h.HeaderBytes)+int(h.Count)*5 {
 		return bad("sample size/reserved/payload length mismatch")
+	}
+	if v2 {
+		if h.ClockHz != 50000000 {
+			return bad("unexpected v2 logical clock frequency")
+		}
+		h.RecordsSHA256 = hex.EncodeToString(data[160:192])
+		h.LastPageSHA256 = hex.EncodeToString(data[192:224])
+		h.PageCount = u32(224)
+		h.Stream = u32(232)
+		zeroHash := [32]byte{}
+		if string(data[160:192]) == string(zeroHash[:]) || h.PageCount == 0 || h.PageCount > 4096 || h.Stream > 1 || u32(228) == 0 || u32(228) > 4096 || u32(228) > h.TotalRecords || h.TotalRecords > 4000000 {
+			return bad("invalid stream digest/page geometry")
+		}
+		if h.Stream == 0 && (h.PageCount != 1 || h.TotalRecords > 4096 || u32(228) != h.TotalRecords || string(data[192:224]) != string(zeroHash[:])) {
+			return bad("invalid resident v2 page identity")
+		}
+		if h.Stream == 1 && (h.TotalRecords < h.PageCount || string(data[192:224]) == string(zeroHash[:])) {
+			return bad("invalid stream chain identity")
+		}
+		for _, b := range data[236:256] {
+			if b != 0 {
+				return bad("nonzero v2 reserved bytes")
+			}
+		}
 	}
 	var actual [32]byte
 	copy(actual[:], data[112:144])
@@ -158,7 +196,7 @@ func write_csv(output string, data []byte, h result_header) error {
 	}
 	if err = w.Write(names); err == nil {
 		for i := uint32(0); i < h.Count; i++ {
-			b := data[header_bytes+int(i)*5:]
+			b := data[int(h.HeaderBytes)+int(i)*5:]
 			right := int16(binary.LittleEndian.Uint16(b))
 			left := int16(binary.LittleEndian.Uint16(b[2:]))
 			clock := h.First + uint64(i)*64*uint64(h.Stride)

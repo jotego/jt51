@@ -131,3 +131,94 @@ func TestFailedCreatesNoCSV(t *testing.T) {
 		t.Fatal("failed result produced CSV")
 	}
 }
+
+func fixtureV2(stream bool) ([]byte, [32]byte) {
+	old, hash := fixture()
+	b := make([]byte, 266)
+	copy(b, old[:160])
+	copy(b[256:], old[160:])
+	copy(b, "JT51FP02")
+	u32 := func(n int, v uint32) { binary.LittleEndian.PutUint32(b[n:], v) }
+	u32(8, 256)
+	u32(20, 50000000)
+	u32(12, 2)
+	u32(16, 0x965102)
+	for i := 160; i < 192; i++ {
+		b[i] = byte(i)
+	}
+	u32(224, 1)
+	u32(228, 2)
+	if stream {
+		u32(56, 10000)
+		u32(60, 10000)
+		u32(144, 9000)
+		u32(224, 3)
+		u32(228, 1810)
+		u32(232, 1)
+		for i := 192; i < 224; i++ {
+			b[i] = byte(i)
+		}
+	}
+	return b, hash
+}
+func TestV2ResidentAndStream(t *testing.T) {
+	for _, stream := range []bool{false, true} {
+		b, hash := fixtureV2(stream)
+		h, e := parse_result(b, hash)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if h.HeaderBytes != 256 || h.Version != 2 || h.Protocol != 0x965102 || h.RecordsSHA256 == "" || h.PageCount == 0 {
+			t.Fatal("lost v2 identity")
+		}
+		out := filepath.Join(t.TempDir(), "out.csv")
+		if e = write_csv(out, b, h); e != nil {
+			t.Fatal(e)
+		}
+		got, e := os.ReadFile(out)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if string(got) != "sample,left,right,clock,status\n0,-32768,32767,1000,128\n1,-1,-2,1192,3\n" {
+			t.Fatalf("v2 payload offset: %s", got)
+		}
+	}
+}
+func TestV2Rejections(t *testing.T) {
+	cases := []struct {
+		name string
+		off  int
+		val  uint32
+	}{
+		{"clock", 20, 100000000}, {"zeroPages", 224, 0}, {"manyPages", 224, 4097}, {"zeroFinalExecuted", 228, 0}, {"largeFinalExecuted", 228, 4097}, {"unknownStream", 232, 2}, {"reserved", 236, 1}, {"hugeTotal", 60, 4000001}, {"version", 12, 1}, {"legacyProtocol", 16, 0x965101},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			b, h := fixtureV2(true)
+			binary.LittleEndian.PutUint32(b[tc.off:], tc.val)
+			if _, e := parse_result(b, h); e == nil {
+				t.Fatal("invalid stream header accepted")
+			}
+		})
+	}
+	for _, region := range [][2]int{{160, 192}, {192, 224}} {
+		b, h := fixtureV2(true)
+		for i := region[0]; i < region[1]; i++ {
+			b[i] = 0
+		}
+		if _, e := parse_result(b, h); e == nil {
+			t.Fatal("zero chain digest accepted")
+		}
+	}
+	for _, n := range []int{160, 200, 255, 256, 265} {
+		b, h := fixtureV2(true)
+		if _, e := parse_result(b[:n], h); e == nil {
+			t.Fatalf("truncated v2 length%d accepted", n)
+		}
+	}
+	b, h := fixtureV2(false)
+	b[192] = 1
+	if _, e := parse_result(b, h); e == nil {
+		t.Fatal("resident accepted fabricated active page hash")
+	}
+}

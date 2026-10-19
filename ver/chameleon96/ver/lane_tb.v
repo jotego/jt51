@@ -1,5 +1,9 @@
 `timescale 1ns/1ps
 module lane_tb;
+reg stream_enable=0,continue_page=0;
+reg [31:0] stream_event_first=0;
+wire paused;
+wire [31:0] total_executed,page_index;
 reg clk=0;
 always #5 clk=~clk;
 reg rst=1,start=0,abort_run=0,prog_we=0,output_mode=0;
@@ -19,6 +23,7 @@ wire debug_cs_n,debug_wr_n,debug_a0,debug_dut_rst,debug_sample;
 wire[7:0]debug_din;
 integer checks=0,i;
 reg[47:0]saved_first,saved_last;
+reg[4:0]saved_count;
 reg[39:0]saved_data;
 jt51_replay_lane #(.AW(4),.CAP_AW(4))dut(.*);
 task tick;begin @(posedge clk);#1;end endtask
@@ -92,6 +97,46 @@ initial begin
  finish_run(0);
  // Long decimation performs logical clocks continuously, never cen pauses.
  capture_limit=2;stride=1024;launch;finish_run(0);check(first_clock==513&&last_clock==66049,"stride1024 exact clock labels");
+ // Stream pages stop the whole DUT and preserve pending capture/history.
+ stride=1;capture_limit=2;length=5;event_first=1;stream_event_first=1;
+ stream_enable=1;
+ put(0,rec(0,3,0,0));put(1,rec(1,0,8'h80,3'b001));
+ put(2,rec(3,0,0,3'b011));put(3,rec(5,2,0,3'b011));put(4,rec(6,5,0,0));
+ launch;while(!paused&&!done)tick;
+ check(paused&&busy&&!done,"PAGE pauses active run");
+ check(executed==5&&total_executed==5&&page_index==0,"first page accounting");
+ saved_first=logical_clock;saved_count=count;saved_data={32'd0,last_status};
+ repeat(33)tick;
+ check(logical_clock==saved_first&&count==saved_count&&last_status==saved_data[7:0],"frozen public time/status");
+ put(0,rec(8,2,0,3'b011));put(1,rec(9,4,0,0));length=2;
+ check(paused&&logical_clock==saved_first,"RAM upload keeps DUT frozen");
+ @(negedge clk);continue_page=1;tick;@(negedge clk);continue_page=0;
+ finish_run(0);check(count==2&&executed==2&&total_executed==7&&page_index==1,"continued accounting");
+ check(first_clock==513&&last_clock==577,"continued capture cadence");
+ // PAGE is rejected by revision1 and must terminate a stream page.
+ stream_enable=0;length=2;put(0,rec(0,3,0,0));put(1,rec(1,5,0,0));launch;finish_run(3);
+ stream_enable=1;length=3;put(1,rec(1,5,0,0));put(2,rec(3,4,0,0));launch;finish_run(3);
+ length=2;put(1,rec(1,5,0,0)|1);launch;finish_run(3);
+ put(1,rec(1,5,0,0));launch;while(!paused&&!done)tick;
+ length=0;@(negedge clk);continue_page=1;tick;@(negedge clk);continue_page=0;finish_run(1);
+ length=2;launch;while(!paused&&!done)tick;
+ @(negedge clk);abort_run=1;tick;@(negedge clk);abort_run=0;finish_run(2);
+ // A resumed page cannot replay a passed timestamp or reorder history.
+ length=2;put(0,rec(0,3,0,0));put(1,rec(1,5,0,0));launch;while(!paused&&!done)tick;
+ put(0,rec(2,4,0,0));length=1;
+ @(negedge clk);continue_page=1;tick;@(negedge clk);continue_page=0;finish_run(5);
+ length=2;put(0,rec(0,3,0,0));put(1,rec(1,5,0,0));launch;while(!paused&&!done)tick;
+ put(0,rec(0,4,0,0));length=1;
+ @(negedge clk);continue_page=1;tick;@(negedge clk);continue_page=0;finish_run(4);
+ // An upload during continuation prefetch is a mutation and cannot qualify.
+ length=2;put(0,rec(0,3,0,0));put(1,rec(1,5,0,0));launch;while(!paused&&!done)tick;
+ put(0,rec(8,4,0,0));length=1;
+ @(negedge clk);continue_page=1;tick;@(negedge clk);continue_page=0;prog_we=1;
+ tick;@(negedge clk);prog_we=0;finish_run(11);
+ length=2;put(0,rec(0,3,0,0));
+ // Continuation while executing is a mutation, never an implicit restart.
+ put(1,rec(2,4,0,0));launch;repeat(10)tick;
+ @(negedge clk);continue_page=1;tick;@(negedge clk);continue_page=0;finish_run(11);
  $display("PASS %0d directed checks",checks);$finish;
 end
 endmodule

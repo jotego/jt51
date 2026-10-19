@@ -45,10 +45,21 @@ input [23:0] field_index,value;
 begin cmd(16,field_index,0);cmd(17,value,0);cmd(18,field_index,0);check(answer==value,"config readback");end
 endtask
 
+task page_hashes;
+input [15:0] next_low,previous_low;
+integer h;
+begin
+    for(h=0;h<16;h=h+1)begin
+        cmd(25,{h[3:0],4'd0,(h==0?next_low:16'd0)},0);
+        cmd(26,{h[3:0],4'd0,(h==0?previous_low:16'd0)},0);
+    end
+end
+endtask
+
 initial begin
     repeat(5) @(negedge clk);
     rst=0;
-    cmd(0,0,0);check(answer==24'h965101,"protocol");
+    cmd(0,0,0);check(answer==24'h965102,"protocol");
     cmd(1,0,0);check(answer==24'h030404,"capacities");
     cmd(7,0,1);
     cmd(2,4,1);
@@ -103,6 +114,60 @@ initial begin
     end
     cmd(21,0,1);
     cmd(16,8,0);cmd(17,0,1);
+    // Strict chained stream: all four DUT clocks stop while RAM is replaced.
+    cmd(3,15,0);cmd(4,0,0);
+    tape[0]=(64'd0<<16)|(64'd3<<12);
+    tape[1]=(64'd2<<16)|(64'd3<<1);
+    tape[2]=(64'd20<<16)|(64'd5<<12);
+    for(i=0;i<3;i=i+1)begin
+        cmd(5,tape[i][23:0],0);cmd(6,tape[i][47:24],0);cmd(7,{8'd0,tape[i][63:48]},0);
+    end
+    config_field(0,3);config_field(1,3);config_field(7,99);
+    config_field(9,1);config_field(10,4);config_field(11,0);
+    cmd(11,0,1); // missing first page identity cannot START
+    cmd(24,0,0);page_hashes(16'h11,0);cmd(11,0,0);cmd(12,15,0);
+    cycles=0;cmd(22,22,0);
+    while(answer!=1&&cycles<2048)begin cmd(22,22,0);cycles=cycles+1;end
+    check(cycles<2048,"bounded page pause");
+    for(lane=0;lane<4;lane=lane+1)begin
+        cmd(2,lane[23:0],0);cmd(22,22,0);check(answer==1,"all lanes paused");
+        cmd(22,2,0);check(answer==533,"pause logical clock");
+        cmd(22,18,0);check(answer==3,"first page total execution");
+        cmd(28,0,0);check(answer==17,"latched initial page digest");
+    end
+    // Config controls affecting DUT/epoch are immutable during a pause.
+    cmd(16,2,0);cmd(17,7,1);
+    cmd(3,15,0);cmd(4,0,0);
+    tape[0]=(64'd22<<16)|(64'd2<<12)|(64'd3<<1);
+    tape[1]=(64'd24<<16)|(64'd4<<12);
+    for(i=0;i<2;i=i+1)begin
+        cmd(5,tape[i][23:0],0);cmd(6,tape[i][47:24],0);cmd(7,{8'd0,tape[i][63:48]},0);
+    end
+    config_field(0,2);config_field(1,1);
+    cmd(24,2,0);page_hashes(16'h22,16'h11);cmd(11,0,0);cmd(27,15,1);
+    cmd(24,1,0);page_hashes(16'h22,0);cmd(11,0,0);cmd(27,15,1);
+    page_hashes(16'h22,16'h11);cmd(11,0,0);
+    for(lane=0;lane<4;lane=lane+1)begin
+        cmd(2,lane[23:0],0);cmd(22,2,0);check(answer==533,"RAM and hash upload freeze logical clock");
+        cmd(22,16,0);check(answer==99,"page loading preserves run ID");
+        cmd(22,18,0);check(answer==3,"page loading preserves execution count");
+    end
+    // Global identity staging invalidates readiness on EVERY lane, even
+    // when the selected upload/config mask contains only another lane.
+    cmd(3,1,0);cmd(25,24'h000033,0);cmd(27,14,1);
+    cmd(3,15,0);page_hashes(16'h22,16'h11);cmd(11,0,0);
+    cmd(27,15,0);cmd(27,15,1);
+    cycles=0;cmd(13,0,0);
+    while(answer[1]&&cycles<2048)begin cmd(13,0,0);cycles=cycles+1;end
+    check(cycles<2048,"bounded continued completion");
+    for(lane=0;lane<4;lane=lane+1)begin
+        cmd(2,lane[23:0],0);cmd(13,0,0);check(answer[3:0]==4,"continued DONE");
+        cmd(22,0,0);check(answer==2,"final page execution count");
+        cmd(22,18,0);check(answer==5,"complete stream execution count");
+        cmd(22,20,0);check(answer==1,"final page index");
+        cmd(22,16,0);check(answer==99,"continued run ID");
+        cmd(28,0,0);check(answer==34,"latched final page digest");
+    end
     $display("PASS controller %0d checks",checks);
     $finish;
 end

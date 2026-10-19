@@ -21,7 +21,7 @@ int main(int argc,char**argv) {try {
  if(line!="sample,left,right,xleft,xright,clock,status")throw std::runtime_error("golden header");
  std::vector<std::array<int64_t,7>> rows;while(std::getline(golden,line)){std::stringstream ss(line);std::string cell;std::array<int64_t,7>a{};unsigned j=0;while(std::getline(ss,cell,',')){if(j>=7)throw std::runtime_error("golden columns");a[j++]=std::stoll(cell);}if(j!=7||a[0]!=int64_t(rows.size()))throw std::runtime_error("golden sequence");rows.push_back(a);}
  if(rows.empty()||rows.size()>16384)throw std::runtime_error("golden bounds");
- top.rst=1;top.start=0;top.abort_run=0;top.prog_we=0;top.prog_addr=0;top.prog_data=0;top.read_addr=0;tick();tick();tick();top.rst=0;tick();
+ top.stream_enable=0;top.continue_page=0;top.stream_event_first=0;top.rst=1;top.start=0;top.abort_run=0;top.prog_we=0;top.prog_addr=0;top.prog_data=0;top.read_addr=0;tick();tick();tick();top.rst=0;tick();
  for(unsigned i=0;i<n;++i){uint64_t word=le(b,64+i*8,8);top.prog_addr=i;top.prog_data=word;top.prog_we=1;tick();top.prog_we=0;tick();if(top.prog_q!=word)throw std::runtime_error("tape RAM readback");}
  top.length=n;top.event_first=first;top.idle_clocks=std::stoull(argv[4]);top.event_shift=std::stoul(argv[5]);top.stride=std::stoul(argv[6]);top.output_mode=std::stoul(argv[7]);top.capture_limit=rows.size();top.start=1;tick();top.start=0;
  uint64_t guard=0;while(!top.done && guard++<100000000)tick();
