@@ -33,6 +33,7 @@ module jt51_kon(
     input           up_keyon,
     input           csm,
     input           overflow_A,
+    input           csm_start,
 
     output  reg     keyon_II
 );
@@ -45,7 +46,7 @@ wire drop;
 reg [3:0] cur_op_hot;
 
 always @(posedge clk) if (cen)
-    keyon_II <= (csm&&overflow_A) || drop;
+    keyon_II <= (csm&&(overflow_A||csm_start)) || drop;
 
 always @(*) begin
     case( cur_op )

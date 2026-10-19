@@ -2,7 +2,8 @@
 
 Run `bash ver/silicon/sim.sh all` from the JT51 repository. Individual groups
 are `analysis`, `timer`, `attack`, `zero`, `d1l`, `granularity`, `csm`,
-`routes`, `noise`, `slowhold`, `csm_states`, `release`, `mixing`,
+`routes`, `noise`, `slowhold`, `csm_states`, `held_ar_probe`,
+`csm_start_probe`, `release`, `mixing`,
 `mixing_mirror`, `nominal_pitch`, `stereo_age_analysis`, and `stereo_age`.
 Set `JT51_SILICON_BUILD` to an absolute, fresh artifact directory. Builds and
 logs are external to this source tree by default. Every execution has a
@@ -75,15 +76,18 @@ while preserving bipolar keyed-noise positives and the exact keyed TL127
 controls; they do not infer silicon's internal envelope values. This group is
 also included in `all`.
 
-`slowhold` adds a documentation control for the scope of the low-rate release
-correction. Yamaha's table describes arithmetic RATE0–3 as infinite for
-attack/decay. AR1/D1R1/D2R1 at KS0/KC00 and KS3/KC04 (RATE2/3) must therefore
-remain off/held during the finite65,536-native-frame window. These particular
-programs are documentary expectations, **not claimed physical measurements**.
-A held sine's first/last8192-frame raw peak may differ by at most16PCM to allow
-quantization and carrier-phase coverage; the output must remain bipolar/full
-level. The directly measured nonzero low-RR0 release expectations remain
-unchanged and distinct. This group is included in `all`.
+`slowhold` retains its name for compatibility and now covers issue17's
+silicon-qualified low nonrelease rates. With the fixed physical observer
+windows (stride4,16384 samples per lane; early `[1024,5120)`, late
+`[11264,15360)`), AR effective RATE2/3 late RMS must remain within2–32PCM;
+effective RATE0 is exact zero at both KC00/KS0 and KC04/KS3, and effective
+RATE4/5 provide active controls. D1R/D2R effective RATE2/3 must lose
+200–450PCM RMS between the windows; matched RATE0 controls remain within32PCM,
+and RATE4/5 controls lose 200–650PCM. The active decay and rate-control cases
+also require bipolar carrier output. These finite bounds enclose the qualified
+physical records and preserve the raw-zero inhibit. D1R and D2R use their measured initial envelope setup.
+The directly measured nonzero low-RR0 release expectations remain unchanged
+and distinct. This group is included in `all`.
 
 `csm_states` expands the physically measured state controls: CSM off while
 Timer A runs, CSM on with neither timer running, Timer B alone, enabling CSM on
@@ -92,6 +96,46 @@ quiet output after disabling CSM while A keeps running or stopping A while
 CSM stays set. It is included in `all`. The maximum Timer-A preload1023 is
 already exercised by every measured/documented flag-control case in `timer`;
 no unqualified exact automatic waveform claim is made for its one-frame period.
+
+`held_ar_probe` is a silicon-qualified public-pin regression for issue 17. It
+uses a left-lane AR10 target, a separately keyed right-lane marker, the measured
+marker interval, and the fixed target windows `[128,640)` and `[3584,4096)`.
+Held AR30 and AR31 writes must retain a positive plateau: prewrite RMS is
+50–160PCM, both target windows are 80–200PCM, and early-to-late RMS changes by
+less than16PCM. The matched marker-only case must stay at or below4PCM on the
+target lane; the AR10 no-op, AR12 progress, fresh AR31/AR30 key-on, and
+whole-record cleanup cases remain positive/quiet controls. Fresh AR30 has three
+qualified full-positive physical captures. Its new-key path is exercised across
+all32 operator/channel routes with nonuniform neighboring KC/KS registers.
+
+`csm_start_probe` is an issue17 public-pin regression for the qualified
+initial Timer-A load pulse. The target-lane startup RMS must remain 24–55PCM
+in `[tag+128,tag+384)`, the first-overflow RMS 190–320PCM in
+`[tag+1088,tag+1344)`, and the independent right marker remains positive.
+Timer-only, stopped-timer, delayed-enable-before-overflow, delayed-enable-after-
+overflow, and key-off/stop cleanup controls are included. These fixed windows
+measure the observed startup burst and overflow behavior; they do not assert an
+exact automatic-key pulse width. The existing `routes` group also checks that
+the initial-load event reaches each operator and channel while varying the
+write phase.
+
+The held-attack group also preserves effective RATE60/61 behavior with raw
+AR30 at KC00/KS0 and KC04/KS3: these unmeasured preservation controls continue
+attacking to full output. Only effective RATE62/63 has the measured held-key
+plateau behavior. The CSM fixed-window programs and observers deliberately
+allow their independent marker/tag implementations and sample phase; their
+coarse bands are physical discriminators, not a full-chip waveform-conformance
+claim.
+
+The issue17 physical source captures, frozen stimulus inventory, and separate
+review records are retained under `/nobackup/tasks/jt51-17/measurements/`,
+including `artifacts/held-ar-targets-v1/target-summary-v1.json`,
+`artifacts/fresh-key-ar30-v1/fresh-ar30-score-v1.json`, and
+`artifacts/csm-start-targets-v1/target-summary-v1.1.json`. Independent CAP
+reviews are in `/nobackup/tasks/jt51-17/artifacts/root-held-ar-review.json`,
+`root-fresh-ar30-review.json`, and `root-csm-target-review.json`. These
+provenance records identify the physical measurements behind the maintained
+issue17 bounds.
 
 `mixing`, also included in `all`, preserves the prospectively frozen raw-output
 method used for jt51#16's independently initialized native-record confirmations.

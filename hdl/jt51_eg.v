@@ -130,14 +130,16 @@ always @(*) begin : rate_step
             2'd3: step_idx = 8'b11111110; // 7
         endcase
     end
-    step_V = (rate_V == 6'd0 ||
-        (rate_V[5:2] == 4'd0 && state_in_V != RELEASE)) ?
+    // Silicon captures of AR/D1R/D2R at effective RATE 2 and 3 show progress;
+    // effective RATE 0 remains inhibited outside release.
+    step_V = rate_V == 6'd0 ?
         1'b0 : step_idx[ cnt_V ];
 end
 
 
 
-wire    ar_off_VI;
+wire    keyon_now_VI;
+wire    ar_off_VI = keyon_now_VI && (rate_VI[5:1] == 5'h1f);
 
 always @(posedge clk) if(cen) begin
     // I
@@ -151,7 +153,7 @@ end
 wire    keyon_last_II;
 wire    keyon_now_II  = !keyon_last_II && keyon_II;
 wire    keyoff_now_II = keyon_last_II && !keyon_II;
-wire    ar_off_II = keyon_now_II && (arate_II == 5'h1f);
+
 wire [1:0]  state_II;
 
 always @(posedge clk) if(cen) begin
@@ -278,11 +280,13 @@ always @(posedge clk) if(cen) begin
         eg_VII <= 10'd0;
     else
     if( state_in_VI == ATTACK ) begin
-        if( sum_up && eg_VI != 10'd0 )
-            if( rate_VI[5:1]==5'h1f )
-                eg_VII <= 10'd0;
-            else
-                eg_VII <= ar_result_VI;
+        // Physical held-key probes at effective AR62/63 show a plateau. The
+        // instant-key-on path above remains higher priority, while the
+        // existing fast-step logic continues to handle rates 60/61.
+        if( rate_VI[5:1] == 5'h1f )
+            eg_VII <= eg_VI;
+        else if( sum_up && eg_VI != 10'd0 )
+            eg_VII <= ar_result_VI;
         else
             eg_VII <= eg_VI;
     end
@@ -352,12 +356,12 @@ jt51_sh #( .width(10), .stages(4), .rstval(1'b1) ) u_eg2sh(
     .drop   ( eg_VI     )
 );
 
-jt51_sh #( .width(1), .stages(4) ) u_aroffsh(
+jt51_sh #( .width(1), .stages(4) ) u_keyonvis(
     .rst    ( rst       ),
     .clk    ( clk       ),
     .cen    ( cen       ),
-    .din    ( ar_off_II ),
-    .drop   ( ar_off_VI )
+    .din    ( keyon_now_II ),
+    .drop   ( keyon_now_VI )
 );
 
 jt51_sh #( .width(1), .stages(32) ) u_konsh(

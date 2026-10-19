@@ -127,6 +127,24 @@ parameter   REG_TEST    =   8'h01,
             REG_DUMP    =   8'h1f;
 
 reg csm;
+reg [5:0] csm_load_count;
+reg       load_A_last;
+wire      csm_load_start = |csm_load_count;
+
+// A simultaneous Timer-A start and CSM enable creates one automatic key-on
+// window. Delayed CSM enable while Timer A is already loaded does not.
+always @(posedge clk, posedge rst) begin
+    if( rst ) begin
+        csm_load_count <= 6'd0;
+        load_A_last    <= 1'b0;
+    end else if( cen ) begin
+        load_A_last <= load_A;
+        if( load_A && !load_A_last && csm )
+            csm_load_count <= 6'd32;
+        else if( csm_load_count != 0 )
+            csm_load_count <= csm_load_count - 1'b1;
+    end
+end
 
 always @(posedge clk, posedge rst) begin : memory_mapped_registers
     if( rst ) begin
@@ -293,6 +311,7 @@ jt51_reg u_reg(
 
     .csm        ( csm       ),
     .overflow_A ( overflow_A),
+    .csm_start  ( csm_load_start ),
 
     .rl_I       ( rl_I      ),
     .fb_II      ( fb_II     ),

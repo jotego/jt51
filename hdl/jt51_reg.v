@@ -45,6 +45,7 @@ module jt51_reg(
 
     input           csm,
     input           overflow_A,
+    input           csm_start,
 
     output  [1:0]   rl_I,
     output  [2:0]   fb_II,
@@ -177,6 +178,7 @@ jt51_kon u_kon (
     .up_keyon  (up_keyon  ),
     .csm       (csm       ),
     .overflow_A(overflow_A),
+    .csm_start (csm_start ),
     .keyon_II  (keyon_II  )
 );
 
