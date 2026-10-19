@@ -3,7 +3,7 @@
 Run `bash ver/silicon/sim.sh all` from the JT51 repository. Individual groups
 are `analysis`, `timer`, `attack`, `zero`, `d1l`, `granularity`, `csm`,
 `routes`, `noise`, `slowhold`, `csm_states`, `release`, `mixing`,
-`mixing_mirror`, and `nominal_pitch`.
+`mixing_mirror`, `nominal_pitch`, `stereo_age_analysis`, and `stereo_age`.
 Set `JT51_SILICON_BUILD` to an absolute, fresh artifact directory. Builds and
 logs are external to this source tree by default. Every execution has a
 15-minute external timeout. `--keep` enables `test.fst` in that directory;
@@ -134,3 +134,19 @@ PCM, have at least three rising crossings, and measure 439–441 Hz. A 4096-fram
 exact stereo-zero check follows KEYOFF and settling. This documentary
 expectation is independent of the anomalous near-static output observed on the
 measured PCB.
+
+`stereo_age` and `stereo_age_analysis` add 183 checks. Public-pin stereo age
+regression from the independently bound 96 saved captures covering every
+operator/channel in three repeats. The 32 full INIT write sequences match
+stereo-age-map-v1 canonical fixtures exactly. No physical files are needed at
+runtime. Reset each case, initialize one keyed operator, settle 1790000 master
+clocks (0.5 seconds), capture 2048 frames at stride8. Fit the fixed 32992/2^20
+retained carrier over [128,1920), amplitude≥32, bipolar, relative RMS≤.003.
+Each output fits independently; raw wrapped LEFT−RIGHT phase must be within
+.001 radians of −one native step at slots15..30, zero elsewhere. Register order
+is M1,M2,C1,C2; key bits are08,20,10,40. No per-case offset or frequency fit.
+Early/late1000-point windows overlap208 and test stability only. Every case
+ends with a whole2048-frame stereo quiet control after keyoff and0.5-second
+settle. Analytic signed0/±1, other-age, quiet, changed return, minimum window
+and wrong-carrier controls qualify the kernel. 160 physical-route checks plus23
+analytic checks =183 total.

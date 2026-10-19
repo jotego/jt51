@@ -23,6 +23,7 @@ module jt51_acc(
     input                   rst,
     input                   clk,
     input                   cen,
+    input            [4:0]  cycles,
     input                   m1_enters,
     input                   m2_enters,
     input                   c1_enters,
@@ -62,74 +63,40 @@ end
 
 wire ren = rl_I[1];
 wire len = rl_I[0];
-reg  signed [17:0] pre_left, pre_right;
-wire signed [15:0] total;
-wire signed [17:0] total_ex = { {2{total[15]}},total};
+reg signed [17:0] pre_left, pre_right;
+reg signed [15:0] left_hold, right_hold;
+wire signed [17:0] add_left, add_right;
+assign add_left = len && sum_en ? {{4{op_val[13]}},op_val} : 18'sd0;
+assign add_right = ren && sum_en ? {{4{op_val[13]}},op_val} : 18'sd0;
 
-reg sum_all;
-
-wire rst_sum = c2_enters;
-//wire rst_sum = c1_enters;
-//wire rst_sum = m1_enters;
-//wire rst_sum = m2_enters;
-
-// 16-bit clamp
 function signed [15:0] lim16;
     input signed [17:0] din;
     lim16 = din[17:16]=={2{din[15]}} ? din[15:0] : { din[17], {15{~din[17]}}};
 endfunction
 
-
 always @(posedge clk) begin
-    if( rst ) begin
-        sum_all <= 1'b0;
-    end
-    else if(cen) begin
-        if( rst_sum )  begin
-            sum_all <= 1'b1;
-            if( !sum_all ) begin
-                pre_right <= ren ? total_ex : 18'd0;
-                pre_left  <= len ? total_ex : 18'd0;
-            end
-            else begin
-                pre_right <= pre_right + (ren ? total_ex : 18'd0);
-                pre_left  <= pre_left  + (len ? total_ex : 18'd0);
-            end
-        end
-        if( c1_enters ) begin
-            sum_all <= 1'b0;
-            xleft  <= lim16(pre_left);
-            xright <= lim16(pre_right);
+    if(rst) begin
+        pre_left <= 18'sd0;
+        pre_right <= 18'sd0;
+        left_hold <= 16'sd0;
+        right_hold <= 16'sd0;
+        xleft <= 16'sd0;
+        xright <= 16'sd0;
+    end else if(cen) begin
+        if(cycles==5'd31) begin
+            left_hold <= lim16(pre_left);
+            pre_left <= add_left;
+        end else pre_left <= pre_left + add_left;
+        if(cycles==5'd15) begin
+            right_hold <= lim16(pre_right);
+            pre_right <= add_right;
+        end else pre_right <= pre_right + add_right;
+        if(cycles==5'd16) begin
+            xleft <= left_hold;
+            xright <= right_hold;
         end
     end
 end
-
-reg  signed [15:0] opsum;
-wire signed [16:0] opsum10 = {{3{op_val[13]}},op_val}+{total[15],total};
-
-always @(*) begin
-    if( rst_sum )
-        opsum = sum_en ? { {2{op_val[13]}}, op_val } : 16'd0;
-    else begin
-        if( sum_en )
-            if( opsum10[16]==opsum10[15] )
-                opsum = opsum10[15:0];
-            else begin
-                opsum = opsum10[16] ? 16'h8000 : 16'h7fff;
-            end
-        else
-            opsum = total;
-    end
-end
-
-jt51_sh #(.width(16),.stages(8)) u_acc(
-    .rst    ( rst       ),
-    .clk    ( clk       ),
-    .cen    ( cen       ),
-    .din    ( opsum     ),
-    .drop   ( total     )
-);
-
 
 wire signed [9:0] left_man, right_man;
 wire [2:0] left_exp, right_exp;

@@ -245,6 +245,7 @@ jt51_acc u_acc(
     .rst        ( rst           ),
     .clk        ( clk           ),
     .cen        ( cen_p1        ),
+    .cycles     ( cycles        ),
     .m1_enters  ( m1_enters     ),
     .m2_enters  ( m2_enters     ),
     .c1_enters  ( c1_enters     ),
