@@ -2,8 +2,8 @@
 
 Run `bash ver/silicon/sim.sh all` from the JT51 repository. Individual groups
 are `analysis`, `timer`, `attack`, `zero`, `d1l`, `granularity`, `csm`,
-`routes`, `noise`, `slowhold`, `csm_states`, `release`, `mixing`, and
-`mixing_mirror`.
+`routes`, `noise`, `slowhold`, `csm_states`, `release`, `mixing`,
+`mixing_mirror`, and `nominal_pitch`.
 Set `JT51_SILICON_BUILD` to an absolute, fresh artifact directory. Builds and
 logs are external to this source tree by default. Every execution has a
 15-minute external timeout. `--keep` enables `test.fst` in that directory;
@@ -126,3 +126,11 @@ the same N32 history, swaps only literal PAN bits64/128 and swaps public output
 columns before the unchanged raw-bin observer. Timing, quantization allowances,
 coverage and expected18-bit map remain identical. Both groups run in `all`; the
 mirrored supplement protects against a correction applied to only one output.
+
+`nominal_pitch` adds five public-output checks from Yamaha application notes
+PDF page 7, section 2.1.2: KC4A, KF0, MUL1 and DT1=DT2=PMS=0 produce nominal
+440 Hz at a 3.579545 MHz master clock. Both outputs must be bipolar beyond 1000
+PCM, have at least three rising crossings, and measure 439–441 Hz. A 4096-frame
+exact stereo-zero check follows KEYOFF and settling. This documentary
+expectation is independent of the anomalous near-static output observed on the
+measured PCB.
