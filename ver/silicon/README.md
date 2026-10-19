@@ -23,7 +23,25 @@ RTL was tested:
 
 * `tasks/jtcores-143/plans/timer-measurements.md`: all16 register14 controls,
   disabled overflow, enabled flag, sticky disable/stop, and explicit clear.
-  IRQ is deliberately not described as physically measured.
+  Issue17's paired physical IRQ2 capture qualified the same seven settled A/B
+  phases over three independent trials per timer. The regression checks each
+  YM-status value and public IRQ output: JT51's active level is `!irq_n`,
+  matched to Nuked's public `OPM_ReadIRQ()`. The fixed event programs and raw
+  monitor replies are archived with the issue17 physical IRQ supplement and
+  `tasks/jt51-17/measurements/artifacts/irq-v2-runs/controlled-reset-round1/run.json`.
+  CPU mask, P.I, and HuC MPR5 are external monitor state and are not asserted by
+  either chip-model regression; no exact IRQ assertion or deassertion latency
+  is claimed.
+  The measured A/B phase levels are: disabled overflow (YM=0, IRQ=0),
+  enabled overflow (YM=A:1/B:2, IRQ=1), disable-preserves (same sticky
+  status and asserted IRQ), clear-disabled (0,0), reenabled overflow
+  (A:1/B:2,1), stop-preserves (same sticky status and asserted IRQ), and
+  clear-stopped (0,0). The paired capture, raw monitor transactions, frozen
+  event programs, and qualification scripts are sealed in
+  `/gdrive/jotego/reverse/YM2151/2026-10-19-jt51-17-irq-supplement-round1/`
+  (inventory SHA-256 `9549257a9ca3d5ce0827d9c9a1f4516772fb094849592650256496e7c66783fb`).
+  The harness samples these endpoint values after 8192 model clocks; that wait
+  does not set a physical transition-latency bound.
 * `tasks/jtcores-143/plans/envelope-measurements.md`: four measured effective
   AR30/31 attack boundaries must be gradual (35–55ms interior10–90%, a coarse
   discrimination around measured39–46ms), raw AR0 must remain exactly silent,

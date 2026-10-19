@@ -58,6 +58,7 @@ public:
         }
     }
     unsigned status() { return top.dout&3; }
+    unsigned irq_asserted() { return !top.irq_n; }
     void wait_busy() {unsigned n=0; while(top.dout&128) {if(++n>4096) throw std::runtime_error("busy timeout");step(1);}}
     void write(unsigned reg,unsigned val) {
         wait_busy(); top.a0=0;top.din=reg;top.wr_n=0;step(2);
@@ -128,12 +129,22 @@ static void timer_tests() {
     for(unsigned control=0;control<16;++control) {Chip c;c.write(0x10,255);c.write(0x11,3);c.write(0x12,255);c.write(0x14,0x30);c.write(0x14,control);c.step(8192);
         unsigned expected=((control&1)&&(control&4)?1:0)|((control&2)&&(control&8)?2:0);
         check("timer control "+std::to_string(control),c.status()==expected,c.status());}
-    for(unsigned t=0;t<2;++t){Chip c;unsigned load=1<<t,enable=4<<t,clear=16<<t;c.write(0x10,255);c.write(0x11,3);c.write(0x12,255);
-        c.write(0x14,load);c.step(8192);check("disabled overflow",c.status()==0,c.status());
-        c.write(0x14,load|enable);c.step(8192);check("enabled overflow",c.status()==load,c.status());
-        c.write(0x14,load);c.step(8192);check("disable preserves flag",c.status()==load,c.status());
-        c.write(0x14,load|clear);c.step(8192);check("clear disabled",c.status()==0,c.status());
-        c.write(0x14,load|enable);c.step(8192);c.write(0x14,0);c.step(8192);check("stop preserves flag",c.status()==load,c.status());c.write(0x14,clear);check("clear stopped",c.status()==0,c.status());}
+    // These measured endpoint levels are sampled after 8192 clocks, not latency checks.
+    auto phase=[](Chip& c,const std::string& timer,const std::string& name,unsigned expected_status,unsigned expected_irq) {
+        check(timer+" "+name+" YM status",c.status()==expected_status,c.status());
+        check(timer+" "+name+" measured settled IRQ level",c.irq_asserted()==expected_irq,c.irq_asserted());
+    };
+    for(unsigned t=0;t<2;++t){Chip c;unsigned load=1<<t,enable=4<<t,clear=16<<t;
+        const std::string timer=t==0?"Timer A":"Timer B";
+        c.write(0x14,0x30); // each physical trial clears before programming timer A/B
+        c.write(0x10,255);c.write(0x11,3);c.write(0x12,255);
+        c.write(0x14,load);c.step(8192);phase(c,timer,"disabled overflow",0,0);
+        c.write(0x14,load|enable);c.step(8192);phase(c,timer,"enabled overflow",load,1);
+        c.write(0x14,load);c.step(8192);phase(c,timer,"disable preserves flag",load,1);
+        c.write(0x14,load|clear);c.step(8192);phase(c,timer,"clear disabled",0,0);
+        c.write(0x14,load|enable);c.step(8192);phase(c,timer,"reenabled overflow",load,1);
+        c.write(0x14,0);c.step(8192);phase(c,timer,"stop preserves flag",load,1);
+        c.write(0x14,clear);c.step(8192);phase(c,timer,"clear stopped",0,0);}
 }
 static void attack_tests() {
     const unsigned settings[][2]={{14,0},{13,1},{11,2},{6,3}};
